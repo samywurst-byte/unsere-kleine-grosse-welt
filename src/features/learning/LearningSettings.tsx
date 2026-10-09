@@ -6,18 +6,20 @@ import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { db } from '../../database/db';
 import { LETTER_ORDER, READING_STAGES } from '../../data/readingCurriculum';
-import { useChildren, useLearning } from '../../hooks/useData';
+import { useChildren, useLearning, useLearningPacks } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import {
-  addObservation, deleteObservation, goalStates, LEVEL_LABEL, pathPhase, postponeGoal, releaseGoal, STATUS_LABEL, suggestions,
+  addObservation, deleteObservation, goalStates, LEVEL_LABEL, MOOD_LABEL, pathPhase, postponeGoal, releaseGoal, STATUS_LABEL, suggestions,
   unreleaseGoal, type GoalState, type GoalStatus,
 } from '../../services/learning';
 import { formatMonthYear } from '../../services/school';
-import type { ChildProfile, ObservationLevel } from '../../types';
-import { formatLong, toDateKey } from '../../utils/dates';
+import { packForWeek } from '../../services/learningPack';
+import type { ChildProfile, LearningMood, ObservationLevel } from '../../types';
+import { formatLong, toDateKey, weekStartKey } from '../../utils/dates';
 import './learning.css';
 
 const LEVELS: ObservationLevel[] = ['independent', 'little-help', 'much-help', 'not-yet', 'not-assessable'];
+const MOODS: LearningMood[] = ['fun', 'ok', 'reluctant'];
 const STATUSES: GoalStatus[] = ['not-started', 'introducing', 'practising', 'mostly', 'mastered', 'review'];
 
 /** Elternbereich › Lernen: Lesepfad je Kind mit Buchstabenatlas, Beobachtungen und Vorschlägen. */
@@ -160,14 +162,19 @@ function GoalModal({ state, child, today, onClose }: { state: GoalState; child: 
   const [level, setLevel] = useState<ObservationLevel | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState(today);
+  const [mood, setMood] = useState<LearningMood | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const packs = useLearningPacks();
   const { goal } = state;
+  // Beobachtung dem Lernpaket der Woche zuordnen, wenn das Kind darin vorkommt
+  const pack = packs ? packForWeek(packs, weekStartKey(date)) : undefined;
+  const packId = pack?.children.some((c) => c.childId === child.id && c.track !== 'skip') ? pack.id : undefined;
   const history = [...state.observations].sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
 
   const save = async () => {
     if (!level) return;
-    await addObservation(db, child.id, goal.id, level, date, note);
-    setLevel(null); setNote(''); setMsg('Gespeichert.');
+    await addObservation(db, child.id, goal.id, level, date, note, { mood: mood ?? undefined, packId });
+    setLevel(null); setNote(''); setMood(null); setMsg('Gespeichert.');
   };
 
   return (
@@ -190,6 +197,12 @@ function GoalModal({ state, child, today, onClose }: { state: GoalState; child: 
           <div className="obs-levels" role="group" aria-label="Wie lief es?">
             {LEVELS.map((l) => (
               <button key={l} type="button" className="obs-level" aria-pressed={level === l} onClick={() => { setLevel(l); setMsg(null); }}>{LEVEL_LABEL[l]}</button>
+            ))}
+          </div>
+          <p className="small muted" style={{ margin: 'var(--space-3) 0 var(--space-2)' }}>Stimmung (optional)</p>
+          <div className="obs-moods" role="group" aria-label="Stimmung">
+            {MOODS.map((m) => (
+              <button key={m} type="button" className="obs-level" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{MOOD_LABEL[m]}</button>
             ))}
           </div>
           <div className="form-grid" style={{ marginTop: 'var(--space-3)' }}>
@@ -217,7 +230,7 @@ function GoalModal({ state, child, today, onClose }: { state: GoalState; child: 
                 <li key={o.id} className="list-item">
                   <div className="list-item__main">
                     <p className="list-item__title">{LEVEL_LABEL[o.level]}</p>
-                    <p className="list-item__meta">{formatLong(o.date)}{o.note ? ` · ${o.note}` : ''}</p>
+                    <p className="list-item__meta">{formatLong(o.date)}{o.mood ? ` · ${MOOD_LABEL[o.mood]}` : ''}{o.packId ? ' · Lernpaket' : ''}{o.note ? ` · ${o.note}` : ''}</p>
                   </div>
                   <button type="button" className="btn btn--icon btn--ghost" aria-label="Beobachtung löschen" onClick={() => void deleteObservation(db, o.id)}><Trash2 size={18} /></button>
                 </li>

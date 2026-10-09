@@ -64,6 +64,7 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   learningObservations: (r) => (!isStr(r.childId) || !isStr(r.goalId) || !isValidDateKey(r.date)
     || !['independent', 'little-help', 'much-help', 'not-yet', 'not-assessable'].includes(String(r.level)) ? 'Lernbeobachtung ungültig' : null),
   learningReleases: (r) => (!isStr(r.childId) || !isStr(r.goalId) || (r.status !== 'released' && r.status !== 'postponed') ? 'Lernfreigabe ungültig' : null),
+  learningPacks: (r) => (!isValidDateKey(r.weekStart) || !isStr(r.letter) || !Array.isArray(r.children) || !Array.isArray(r.prints) ? 'Lernpaket ungültig' : null),
   settings: (r) => (r.id !== 'app' || !isValidTime(r.bedtime) || !isValidTime(r.kindergartenDeparture) ? 'Einstellungen ungültig' : null),
 };
 

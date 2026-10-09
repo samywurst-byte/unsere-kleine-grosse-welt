@@ -82,3 +82,15 @@ export function useLearning(childId: string | undefined) {
     return { observations, releases };
   }, [childId]);
 }
+
+/** Lernstand aller Kinder (für das Lernpaket der Woche). */
+export function useAllLearning() {
+  return useLiveQuery(async () => {
+    const [observations, releases] = await Promise.all([db.learningObservations.toArray(), db.learningReleases.toArray()]);
+    return { observations, releases };
+  }, []);
+}
+
+export function useLearningPacks() {
+  return useLiveQuery(() => db.learningPacks.orderBy('weekStart').reverse().toArray(), []);
+}

@@ -5,6 +5,7 @@ import { backupIsDue } from '../../services/backup';
 const TILES = [
   { to: '/eltern/familie', title: 'Familie', text: 'Namen, Geburtstage, Avatare, Farben, Altersstufen' },
   { to: '/eltern/lernen', title: 'Lesepfad', text: 'Buchstabenatlas, Beobachtungen, nächste Schritte je Kind' },
+  { to: '/eltern/lernpaket', title: 'Lernpaket der Woche', text: 'Ein Thema für alle, A4-Arbeitsblätter je Kind zum Drucken' },
   { to: '/eltern/kalender', title: 'Kalender', text: 'Termine, Serien, Ausnahmen, Ferien, Packlisten' },
   { to: '/eltern/routinen', title: 'Routinen', text: 'Morgen, Nachmittag, Abend: Aufgaben und Zuordnung' },
   { to: '/eltern/haushalt', title: 'Haushalt', text: 'Haushaltstage, Aufgaben verschieben oder aussetzen' },

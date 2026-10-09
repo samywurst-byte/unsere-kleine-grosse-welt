@@ -1,6 +1,6 @@
 import type { FamilyDatabase } from '../database/db';
 import { GOALS_BY_ID, LETTER_ORDER, READING_GOALS, type LearningGoal } from '../data/readingCurriculum';
-import type { ChildProfile, DateKey, LearningObservation, LearningRelease, ObservationLevel } from '../types';
+import type { ChildProfile, DateKey, LearningMood, LearningObservation, LearningRelease, ObservationLevel } from '../types';
 import { addDaysKey, daysBetween, isValidDateKey } from '../utils/dates';
 import { newId } from '../utils/id';
 import { readingPathStart } from './school';
@@ -21,6 +21,12 @@ export const STATUS_LABEL: Record<GoalStatus, string> = {
   mostly: 'Weitgehend sicher',
   mastered: 'Sicher',
   review: 'Wiederholung empfohlen',
+};
+
+export const MOOD_LABEL: Record<LearningMood, string> = {
+  fun: 'Hat Spaß gemacht',
+  ok: 'War okay',
+  reluctant: 'Heute keine Lust',
 };
 
 export const LEVEL_LABEL: Record<ObservationLevel, string> = {
@@ -188,10 +194,12 @@ export function pathPhase(child: ChildProfile, today: DateKey): PathPhase {
 
 export async function addObservation(
   db: FamilyDatabase, childId: string, goalId: string, level: ObservationLevel, date: DateKey, note?: string,
+  extra: { mood?: LearningMood; packId?: string } = {},
 ): Promise<LearningObservation> {
   if (!GOALS_BY_ID.has(goalId)) throw new Error('Unbekanntes Lernziel.');
   const obs: LearningObservation = {
     id: newId('obs'), childId, goalId, date, level, note: note?.trim() || undefined, createdAt: new Date().toISOString(),
+    ...(extra.mood ? { mood: extra.mood } : {}), ...(extra.packId ? { packId: extra.packId } : {}),
   };
   await db.transaction('rw', db.learningObservations, db.learningReleases, async () => {
     await db.learningObservations.add(obs);

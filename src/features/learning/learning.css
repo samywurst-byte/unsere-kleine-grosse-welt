@@ -64,3 +64,15 @@
   display: inline-grid; place-items: center; min-width: 56px; height: 56px; padding: 0 8px; border-radius: var(--radius-m);
   background: var(--tone-soft); color: var(--tone-ink); font-weight: 800; font-size: 24px;
 }
+
+.obs-moods { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.obs-moods .obs-level { min-height: 52px; }
+
+/* Lernpaket */
+.pack-child { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.pack-child__name { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 800; min-width: 150px; }
+.pack-pages { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.pack-pages__titles { display: block; color: var(--ink-soft); font-size: var(--fs-s); }
+.pack-print { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
+.pack-result { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.pack-result > span { flex: 1; min-width: 180px; font-weight: 700; }

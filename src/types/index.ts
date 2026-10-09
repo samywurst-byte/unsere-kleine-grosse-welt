@@ -391,7 +391,28 @@ export interface LearningObservation {
   date: DateKey;
   level: ObservationLevel;
   note?: string;
+  /** Stimmung beim Lernen (Interesse und Motivation). */
+  mood?: LearningMood;
+  /** Lernpaket der Woche, zu dem die Beobachtung gehört. */
+  packId?: Id;
   createdAt: string;
+}
+
+export type LearningMood = 'fun' | 'ok' | 'reluctant';
+
+/** Was ein Kind im Wochenpaket bekommt. */
+export type PackTrack = 'letters' | 'preschool' | 'toddler' | 'skip';
+
+/** Lernpaket einer Woche: ein gemeinsames Thema, passende Blätter je Kind. */
+export interface LearningPack {
+  id: Id;
+  weekStart: DateKey;
+  /** Buchstabe aus dem Lehrplan (LETTERS.upper), z. B. "M". */
+  letter: string;
+  children: { childId: Id; track: PackTrack }[];
+  createdAt: string;
+  /** Wann was gedruckt beziehungsweise als PDF erzeugt wurde. */
+  prints: { at: string; scope: string; pages: number }[];
 }
 
 /** Freigabe oder Zurückstellen eines Lernziels durch die Eltern. Id: `${childId}|${goalId}`. */

@@ -37,7 +37,7 @@ describe('Datenbank', () => {
 
     const upgraded = new FamilyDatabase(name);
     await upgraded.open();
-    expect(upgraded.verno).toBe(4);
+    expect(upgraded.verno).toBe(5);
     const settings = await upgraded.settings.get('app');
     expect(settings?.bedtime).toBe('19:15');
     expect(settings?.maxStarsPerChildPerDay).toBe(5);

@@ -23,6 +23,7 @@ import { TimerSettings } from '../features/parent-settings/TimerSettings';
 import { DataSettings } from '../features/parent-settings/DataSettings';
 import { PinSettings } from '../features/parent-settings/PinSettings';
 import { LearningSettings } from '../features/learning/LearningSettings';
+import { LearningPackPage } from '../features/learning/LearningPackPage';
 import { DiscoverPage, DiscoverPickerPage } from '../features/learning/DiscoverPage';
 
 export function App() {
@@ -49,6 +50,7 @@ export function App() {
               <Route index element={<ParentHome />} />
               <Route path="familie" element={<FamilySettings />} />
               <Route path="lernen" element={<LearningSettings />} />
+              <Route path="lernpaket" element={<LearningPackPage />} />
               <Route path="kalender" element={<CalendarSettings />} />
               <Route path="routinen" element={<RoutineSettings />} />
               <Route path="haushalt" element={<ChoreSettings />} />

@@ -46,4 +46,9 @@ export const SCHEMA_V4 = {
   learningReleases: 'id, childId, goalId',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 4;
+/** Version 5: Lernpakete der Woche (Arbeitsblätter). */
+export const SCHEMA_V5 = {
+  learningPacks: 'id, weekStart',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 5;
