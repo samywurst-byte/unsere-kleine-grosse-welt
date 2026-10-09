@@ -40,6 +40,13 @@ describe('Lernpaket planen', () => {
     expect(defaultTrack(small, today, [])).toBe('toddler');
   });
 
+  it('wechselt mit den Jahren: Schulkind pausiert, das mittlere liest, das kleine macht Vorschule', () => {
+    const later = '2028-10-02';
+    expect(defaultTrack(big, later, [])).toBe('skip');
+    expect(defaultTrack(middle, later, [])).toBe('letters');
+    expect(defaultTrack(small, later, [])).toBe('preschool');
+  });
+
   it('erzeugt das Wochenpaket aus dem Konzept: 3 + 2 + 1 Seiten, Memory und Beobachtungsbogen', () => {
     const plan = planPack({ pack: pack(), children, statesByChild: statesFor([]) });
     expect(plan.title).toBe('M wie Maus');

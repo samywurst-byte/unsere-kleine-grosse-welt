@@ -100,9 +100,12 @@ export function themeTitle(letter: LetterInfo): string {
   return `${letter.upper} wie ${letter.word}`;
 }
 
-/** Welche Blätter ein Kind bekommt: Lesepfad aktiv → Buchstaben, ab 3 Jahren → Vorschule, sonst Malen. */
+/** Welche Blätter ein Kind bekommt: Schulkind → keine, Lesepfad aktiv → Buchstaben, ab 3 Jahren → Vorschule, sonst Malen. */
 export function defaultTrack(child: ChildProfile, today: DateKey, states: GoalState[]): PackTrack {
-  if (pathPhase(child, today).kind === 'active' || states.some((s) => s.released)) return 'letters';
+  const phase = pathPhase(child, today).kind;
+  // Schulkinder machen ihre Hausaufgaben, das Paket ist für die Kleineren
+  if (phase === 'in-school') return 'skip';
+  if (phase === 'active' || states.some((s) => s.released)) return 'letters';
   const age = child.birthDate ? ageInYears(child.birthDate, today) : child.ageStage === 'small' ? 2 : 4;
   return age >= 3 ? 'preschool' : 'toddler';
 }
