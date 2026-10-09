@@ -40,4 +40,10 @@ export const SCHEMA_V3 = {
   safetyCopies: 'id, createdAt',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 3;
+/** Version 4: Lesepfad mit Elternbeobachtungen und Freigaben. */
+export const SCHEMA_V4 = {
+  learningObservations: 'id, childId, goalId, date, [childId+goalId]',
+  learningReleases: 'id, childId, goalId',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 4;

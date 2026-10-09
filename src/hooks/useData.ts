@@ -71,3 +71,14 @@ export function useKindergartenDay(date: DateKey): boolean | undefined {
 export function useDeviceMeta() {
   return useLiveQuery(async () => (await db.deviceMeta.get('device')) ?? { id: 'device' as const }, []);
 }
+
+export function useLearning(childId: string | undefined) {
+  return useLiveQuery(async () => {
+    if (!childId) return { observations: [], releases: [] };
+    const [observations, releases] = await Promise.all([
+      db.learningObservations.where('childId').equals(childId).toArray(),
+      db.learningReleases.where('childId').equals(childId).toArray(),
+    ]);
+    return { observations, releases };
+  }, [childId]);
+}

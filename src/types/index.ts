@@ -377,3 +377,30 @@ export interface PassportStamp {
   childId: Id;
   stampedAt: string;
 }
+
+// ------------------------------------------------------------- Lernwelt (Lesepfad)
+
+/** Elternbeobachtung in fünf Stufen, wie im Konzept festgelegt. */
+export type ObservationLevel = 'independent' | 'little-help' | 'much-help' | 'not-yet' | 'not-assessable';
+
+export interface LearningObservation {
+  id: Id;
+  childId: Id;
+  /** Id aus dem Lehrplan, z. B. "read.letter.M". */
+  goalId: string;
+  date: DateKey;
+  level: ObservationLevel;
+  note?: string;
+  createdAt: string;
+}
+
+/** Freigabe oder Zurückstellen eines Lernziels durch die Eltern. Id: `${childId}|${goalId}`. */
+export interface LearningRelease {
+  id: string;
+  childId: Id;
+  goalId: string;
+  status: 'released' | 'postponed';
+  at: string;
+  /** Bei "postponed": bis wann der Vorschlag ruht. */
+  until?: DateKey;
+}

@@ -61,6 +61,9 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   eventExceptions: (r) => (!isStr(r.id) || !isStr(r.eventId) || !isValidDateKey(r.originalDate)
     || (r.type !== 'cancelled' && r.type !== 'moved') ? 'Terminausnahme ungültig' : null),
   timerPresets: (r) => (!isStr(r.id) || typeof r.minutes !== 'number' || r.minutes <= 0 ? 'Timer-Vorlage ungültig' : null),
+  learningObservations: (r) => (!isStr(r.childId) || !isStr(r.goalId) || !isValidDateKey(r.date)
+    || !['independent', 'little-help', 'much-help', 'not-yet', 'not-assessable'].includes(String(r.level)) ? 'Lernbeobachtung ungültig' : null),
+  learningReleases: (r) => (!isStr(r.childId) || !isStr(r.goalId) || (r.status !== 'released' && r.status !== 'postponed') ? 'Lernfreigabe ungültig' : null),
   settings: (r) => (r.id !== 'app' || !isValidTime(r.bedtime) || !isValidTime(r.kindergartenDeparture) ? 'Einstellungen ungültig' : null),
 };
 

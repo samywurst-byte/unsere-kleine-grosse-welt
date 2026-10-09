@@ -22,6 +22,8 @@ import { TimeSettings } from '../features/parent-settings/TimeSettings';
 import { TimerSettings } from '../features/parent-settings/TimerSettings';
 import { DataSettings } from '../features/parent-settings/DataSettings';
 import { PinSettings } from '../features/parent-settings/PinSettings';
+import { LearningSettings } from '../features/learning/LearningSettings';
+import { DiscoverPage, DiscoverPickerPage } from '../features/learning/DiscoverPage';
 
 export function App() {
   const pinCount = useLiveQuery(() => db.parentAuth.count(), []);
@@ -36,6 +38,8 @@ export function App() {
             <Route index element={<DashboardPage />} />
             <Route path="aufgaben" element={<ChildPickerPage />} />
             <Route path="aufgaben/:childId" element={<ChildBoardPage />} />
+            <Route path="lernen" element={<DiscoverPickerPage />} />
+            <Route path="lernen/:childId" element={<DiscoverPage />} />
             <Route path="woche" element={<WeekPage />} />
             <Route path="woche/:date" element={<DayPage />} />
             <Route path="weltreise" element={<WorldPage />} />
@@ -44,6 +48,7 @@ export function App() {
             <Route path="eltern" element={<ParentLayout />}>
               <Route index element={<ParentHome />} />
               <Route path="familie" element={<FamilySettings />} />
+              <Route path="lernen" element={<LearningSettings />} />
               <Route path="kalender" element={<CalendarSettings />} />
               <Route path="routinen" element={<RoutineSettings />} />
               <Route path="haushalt" element={<ChoreSettings />} />

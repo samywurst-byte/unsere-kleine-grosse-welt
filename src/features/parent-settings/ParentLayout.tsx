@@ -12,6 +12,7 @@ import './parent.css';
 const SECTIONS = [
   { to: '/eltern', label: 'Übersicht', end: true },
   { to: '/eltern/familie', label: 'Familie' },
+  { to: '/eltern/lernen', label: 'Lesepfad' },
   { to: '/eltern/kalender', label: 'Kalender' },
   { to: '/eltern/routinen', label: 'Routinen' },
   { to: '/eltern/haushalt', label: 'Haushalt' },
