@@ -1,0 +1,30 @@
+.week__banner {
+  display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-m); background: var(--c-sage-soft); color: var(--c-sage-ink); font-weight: 700;
+}
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-2); }
+.week__day {
+  background: var(--card); border-radius: var(--radius-m); box-shadow: var(--shadow-s); padding: var(--space-2);
+  display: flex; flex-direction: column; gap: var(--space-2); min-height: 360px;
+}
+.week__day--today { outline: 3px solid var(--terracotta); }
+.week__head { display: flex; flex-direction: column; align-items: center; text-decoration: none; padding: var(--space-2) 0; border-radius: var(--radius-s); min-height: 64px; }
+.week__wd { font-weight: 800; font-size: var(--fs-l); }
+.week__date { color: var(--ink-soft); font-weight: 700; }
+.week__today { font-size: var(--fs-xs); font-weight: 800; color: var(--c-terracotta-ink); text-transform: uppercase; letter-spacing: 0.06em; }
+.week__chores {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap; text-decoration: none;
+  font-size: var(--fs-xs); font-weight: 800; color: var(--c-gold-ink); background: var(--c-gold-soft);
+  border-radius: var(--radius-s); padding: 6px 8px;
+}
+.week__chore-kids { display: flex; gap: 2px; }
+.week__events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.week__event {
+  width: 100%; text-align: left; border: 0; cursor: pointer; padding: 8px; border-radius: var(--radius-s);
+  background: var(--tone-soft); display: flex; flex-direction: column; gap: 2px; min-height: 48px;
+}
+.week__event-time { font-size: var(--fs-xs); font-weight: 800; color: var(--tone-ink); }
+.week__event-title { font-size: var(--fs-s); font-weight: 700; line-height: 1.2; display: flex; gap: 4px; align-items: flex-start; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; min-width: 0; }
+.week__event-title svg { flex-shrink: 0; margin-top: 2px; color: var(--tone-ink); }
+.week__birthdays { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
+.day-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-4); align-items: start; }

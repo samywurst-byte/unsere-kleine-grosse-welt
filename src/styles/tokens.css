@@ -1,0 +1,76 @@
+/* Zentrale Design Tokens: Farben, Abstände, Rundungen, Schrift, Schatten, Bewegung. */
+:root {
+  /* Primärpalette */
+  --cream: #F5F0E6;
+  --sage: #A5BBA5;
+  --terracotta: #D5A17E;
+  --sky: #91AEC7;
+  --rose: #D6B8C6;
+
+  /* Ergänzend */
+  --ink: #2F3437;
+  --ink-soft: #5B6266;
+  --ink-faint: #8A8F90;
+  --card: #FFFDF8;
+  --card-sunk: #EFE8DA;
+  --line: #E4DCCB;
+  --gold: #C9A55A;
+  --gold-soft: #EBD9AE;
+  --done: #7FA67F;
+  --done-soft: #DCE8D9;
+  --lavender: #B8B3D6;
+
+  /* Profilfarben: kräftig, sanft, dunkel (für Text auf hellem Grund) */
+  --c-sky: var(--sky); --c-sky-soft: #DCE6EF; --c-sky-ink: #3F6283;
+  --c-sage: var(--sage); --c-sage-soft: #DEE7DC; --c-sage-ink: #4C6B4C;
+  --c-rose: var(--rose); --c-rose-soft: #F0E4EA; --c-rose-ink: #84586D;
+  --c-terracotta: var(--terracotta); --c-terracotta-soft: #F2E1D4; --c-terracotta-ink: #8A5532;
+  --c-gold: var(--gold); --c-gold-soft: #F3E8CC; --c-gold-ink: #7A5F22;
+  --c-lavender: var(--lavender); --c-lavender-soft: #E6E4F1; --c-lavender-ink: #565084;
+
+  /* Abstände */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Rundungen */
+  --radius-s: 12px;
+  --radius-m: 20px;
+  --radius-l: 28px;
+  --radius-round: 999px;
+
+  /* Schrift */
+  --font: 'Nunito Sans', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-xs: 0.8125rem;
+  --fs-s: 0.9375rem;
+  --fs-m: 1.0625rem;
+  --fs-l: 1.375rem;
+  --fs-xl: 1.875rem;
+  --fs-xxl: 2.75rem;
+
+  /* Schatten */
+  --shadow-s: 0 1px 2px rgba(74, 60, 40, 0.06), 0 2px 6px rgba(74, 60, 40, 0.05);
+  --shadow-m: 0 2px 4px rgba(74, 60, 40, 0.05), 0 8px 24px rgba(74, 60, 40, 0.08);
+
+  /* Bewegung */
+  --ease: cubic-bezier(0.3, 0.7, 0.4, 1);
+  --dur-fast: 140ms;
+  --dur: 260ms;
+
+  /* Bedienung */
+  --touch: 48px;
+  --nav-width: 108px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; }
+}

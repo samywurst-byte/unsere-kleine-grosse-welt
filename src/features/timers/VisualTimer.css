@@ -1,0 +1,19 @@
+.vtimer { display: flex; align-items: center; gap: var(--space-6); }
+.vtimer--compact { flex-direction: column; gap: var(--space-3); text-align: center; }
+.vtimer svg { flex-shrink: 0; overflow: visible; }
+.vtimer__rim { fill: var(--card-sunk); }
+.vtimer__face { fill: var(--card); }
+.vtimer__tick { stroke: var(--ink-faint); stroke-width: 2.5; stroke-linecap: round; }
+.vtimer__sector { fill: var(--tone); transition: d 0.3s linear; }
+.vtimer__goal { fill: var(--done-soft); stroke: var(--done); stroke-width: 4; animation: fade-in 1.2s var(--ease); }
+.vtimer__center { fill: var(--card); }
+.vtimer__icon { width: 80px; height: 80px; display: grid; place-items: center; color: var(--tone-ink); }
+.vtimer--goal .vtimer__icon { color: var(--c-sage-ink); }
+.vtimer__info { display: flex; flex-direction: column; gap: var(--space-2); }
+.vtimer--compact .vtimer__info { align-items: center; }
+.vtimer__label { font-weight: 800; color: var(--tone-ink); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-s); }
+.vtimer__headline { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+.vtimer--compact .vtimer__headline { font-size: var(--fs-xxl); }
+.vtimer__note { color: var(--ink-soft); font-weight: 600; max-width: 340px; }
+.vtimer__controls { display: flex; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
+.vtimer--compact .vtimer__controls { justify-content: center; }

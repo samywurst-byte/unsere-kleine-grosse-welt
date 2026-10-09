@@ -1,0 +1,37 @@
+.child-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); }
+.child-picker__item {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
+  padding: var(--space-6) var(--space-4); border-radius: var(--radius-l);
+  background: var(--card); box-shadow: var(--shadow-s); text-decoration: none;
+  border-bottom: 8px solid var(--tone);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.child-picker__item:active { transform: scale(0.98); }
+.child-picker__name { font-size: var(--fs-xxl); font-weight: 800; }
+.child-picker__age { color: var(--ink-soft); font-weight: 700; }
+
+.board__head { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5); flex-wrap: wrap; }
+.board__name { font-size: var(--fs-xl); font-weight: 800; }
+.board__phases .seg__item { min-height: 52px; padding: 0 20px; font-size: var(--fs-m); }
+.board__hint {
+  display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-m);
+  background: var(--c-gold-soft); color: var(--c-gold-ink); font-weight: 700;
+}
+.board__cards { display: grid; gap: var(--space-4); }
+.board__cards--1 { grid-template-columns: minmax(0, 560px); justify-content: center; }
+.board__cards--2 { grid-template-columns: repeat(2, 1fr); }
+.board__cards--3 { grid-template-columns: repeat(3, 1fr); }
+.board__cards--4 { grid-template-columns: repeat(4, 1fr); }
+.board__cards .task__main { border-color: var(--tone-soft); }
+.board__cards .task--done .task__main { border-color: var(--done); }
+.board__more { margin-top: var(--space-3); text-align: center; color: var(--ink-soft); font-weight: 700; }
+.board__all-done { text-align: center; padding: var(--space-6); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.board__all-done h2 { font-size: var(--fs-xl); }
+.board__done { margin-top: var(--space-6); }
+.board__done-list { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.done-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 48px; padding: 0 var(--space-4);
+  border: 0; border-radius: 99px; background: var(--done-soft); color: var(--c-sage-ink); font-weight: 700; cursor: pointer;
+}
+.confirm-help { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; color: var(--c-rose-ink); }

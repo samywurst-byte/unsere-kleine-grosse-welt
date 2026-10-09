@@ -1,0 +1,101 @@
+.dash { display: grid; grid-template-columns: minmax(300px, 340px) 1fr; gap: var(--space-5); align-items: start; }
+.dash__left, .dash__right { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.dash__hello { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.dash__greeting { font-size: clamp(1.5rem, 2.6vw, var(--fs-xl)); white-space: nowrap; }
+.dash__date { color: var(--ink-soft); font-weight: 700; margin-top: 4px; }
+.dash__clock { margin: var(--space-4) 0 var(--space-2); }
+.dash__time { font-size: var(--fs-xl); font-weight: 800; letter-spacing: 0.02em; }
+.dash__words { color: var(--c-sky-ink); font-weight: 700; }
+.dash__phase { margin-top: var(--space-2); }
+
+.dash__next { text-decoration: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.dash__next-icon { color: var(--terracotta); flex-shrink: 0; }
+.dash__next-title { font-size: var(--fs-l); font-weight: 800; }
+.dash__countdown { font-size: var(--fs-l); font-weight: 800; color: var(--c-terracotta-ink); }
+.dash__reminder { background: var(--c-terracotta-soft); color: var(--c-terracotta-ink); border-radius: var(--radius-m); padding: var(--space-3); font-weight: 700; }
+
+.essentials { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.essentials__row {
+  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-m); background: var(--cream); min-height: 64px;
+}
+.essentials__row--chores { grid-template-columns: 36px minmax(0, 1fr); }
+.essentials__icon { color: var(--c-sage-ink); display: grid; place-items: center; width: 36px; }
+.essentials__title { font-weight: 800; line-height: 1.2; }
+.essentials__row > .btn { grid-column: 3; }
+.essentials__kids { grid-column: 4; }
+.essentials__kids { display: flex; gap: var(--space-2); }
+.essentials__chores { display: flex; gap: var(--space-2); flex-wrap: wrap; grid-column: 2 / -1; }
+.kid-tick {
+  position: relative; border: 3px solid transparent; border-radius: 50%; padding: 0; background: none; cursor: pointer;
+  opacity: 0.55; transition: opacity var(--dur-fast), border-color var(--dur-fast);
+  width: 54px; height: 54px; display: grid; place-items: center;
+}
+.kid-tick--done { opacity: 1; border-color: var(--done); }
+.kid-tick__check {
+  position: absolute; right: -4px; bottom: -4px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--done); color: #fff; display: grid; place-items: center; animation: pop var(--dur) var(--ease);
+}
+.chore-pill {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 52px; padding: 4px 16px 4px 6px;
+  border-radius: 99px; border: 2px solid var(--tone-soft); background: var(--card); font-weight: 700; cursor: pointer;
+}
+.chore-pill--done { background: var(--done-soft); border-color: var(--done); color: var(--c-sage-ink); }
+
+.kids { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.kid-card {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4);
+  background: var(--card); border-radius: var(--radius-l); box-shadow: var(--shadow-s); text-decoration: none;
+  border-left: 8px solid var(--tone); min-height: 100px;
+}
+.kid-card__body { min-width: 0; }
+.kid-card__name { font-size: var(--fs-l); font-weight: 800; }
+.kid-card__meta { font-size: var(--fs-xs); color: var(--ink-soft); font-weight: 700; }
+.kid-card__dots { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--tone); }
+.dot--done { background: var(--done); border-color: var(--done); }
+
+.dash__row { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--space-3); align-items: stretch; }
+.dash__row > :nth-child(3) { grid-column: 2; }
+.dash__timers { grid-row: span 2; }
+.dash__timer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: var(--space-2); }
+.timer-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--space-3);
+  border-radius: var(--radius-m); background: var(--tone-soft); color: var(--tone-ink); text-decoration: none; min-height: 92px;
+}
+.timer-tile--active { outline: 3px solid var(--tone); }
+.timer-tile__label { font-weight: 800; color: var(--ink); }
+.timer-tile__status { font-size: var(--fs-s); font-weight: 700; }
+.dash__birthday { background: var(--c-gold-soft); }
+.dash__birthday-line { color: var(--c-gold-ink); }
+.dash__world { text-decoration: none; background: linear-gradient(135deg, var(--c-sky-soft), var(--c-sage-soft)); }
+.dash__world-title { font-weight: 800; font-size: var(--fs-m); }
+
+.day-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.day-list__item {
+  display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-m); background: var(--tone-soft, var(--cream)); font-weight: 700;
+}
+.day-list__item--soft { background: var(--cream); color: var(--ink-soft); }
+.day-list__btn { all: unset; display: flex; align-items: center; gap: var(--space-3); width: 100%; cursor: pointer; min-height: 48px; }
+.day-list__time { width: 92px; flex-shrink: 0; font-variant-numeric: tabular-nums; color: var(--ink); }
+.day-list__icon { color: var(--tone-ink); display: grid; place-items: center; }
+.day-list__title { flex: 1; }
+
+.now-routine { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.now-routine__item {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 52px; padding: 6px 14px;
+  border-radius: 99px; background: var(--cream); font-weight: 700;
+}
+.now-routine__item--done { background: var(--done-soft); color: var(--c-sage-ink); }
+.now-routine__count { font-size: var(--fs-xs); color: var(--ink-soft); font-weight: 800; }
+
+@media (max-width: 1060px) {
+  .kid-tick { width: 46px; height: 46px; }
+  .kid-tick .avatar { width: 40px; height: 40px; }
+  .dash { grid-template-columns: 290px 1fr; }
+  .dash__row { grid-template-columns: 1fr; }
+  .dash__row > :nth-child(3) { grid-column: auto; }
+  .kid-card { flex-direction: column; text-align: center; border-left: 0; border-top: 8px solid var(--tone); }
+  .kid-card__dots { justify-content: center; }
+}

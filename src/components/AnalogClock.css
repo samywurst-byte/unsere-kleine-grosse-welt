@@ -1,0 +1,17 @@
+.clock { display: block; overflow: visible; }
+.clock__rim { fill: var(--card-sunk); }
+.clock__face { fill: var(--card); }
+.clock__tick { stroke: var(--line); stroke-width: 1.5; stroke-linecap: round; }
+.clock__tick--major { stroke: var(--ink-soft); stroke-width: 3; }
+.clock__num { font-family: var(--font); font-weight: 800; font-size: 19px; fill: var(--ink); }
+.clock__minute { font-family: var(--font); font-weight: 700; font-size: 9.5px; fill: var(--c-sky-ink); }
+.clock__hand { stroke-linecap: round; }
+.clock__hand--hour { stroke: var(--terracotta); stroke-width: 9; }
+.clock__hand--minute { stroke: var(--c-sky-ink); stroke-width: 6; }
+.clock__hand--second { stroke: #C77B7B; stroke-width: 1.8; }
+.clock__pin { fill: var(--ink); }
+.clock__quarter { opacity: 0.55; }
+.clock__quarter--1 { fill: var(--c-sky-soft); }
+.clock__quarter--2 { fill: var(--c-sage-soft); }
+.clock__quarter--3 { fill: var(--c-gold-soft); }
+.clock__quarter--4 { fill: var(--c-rose-soft); }

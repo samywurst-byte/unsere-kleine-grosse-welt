@@ -1,0 +1,37 @@
+.task { position: relative; display: flex; flex-direction: column; }
+.task__main {
+  position: relative; flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3);
+  min-height: 190px; width: 100%;
+  padding: var(--space-5) var(--space-4);
+  border: 3px solid transparent; border-radius: var(--radius-l);
+  background: var(--card); box-shadow: var(--shadow-s);
+  cursor: pointer; text-align: center;
+  transition: transform var(--dur-fast) var(--ease), background var(--dur), border-color var(--dur);
+}
+.task__main:active { transform: scale(0.98); }
+.task__icon { color: var(--tone-ink, var(--ink)); display: grid; place-items: center; }
+.task__title { font-weight: 800; font-size: var(--fs-l); line-height: 1.2; }
+.task__help { font-size: var(--fs-s); color: var(--ink-soft); font-weight: 600; }
+.task__badge {
+  position: absolute; top: 12px; left: 12px; font-size: var(--fs-xs); font-weight: 800;
+  padding: 3px 10px; border-radius: 99px; background: var(--c-gold-soft); color: var(--c-gold-ink);
+}
+.task__check {
+  position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border-radius: 50%;
+  border: 3px dashed var(--line); display: grid; place-items: center; color: #fff;
+}
+.task__done-label { font-size: var(--fs-s); font-weight: 800; color: var(--c-sage-ink); }
+.task--done .task__main { background: var(--done-soft); border-color: var(--done); }
+.task--done .task__check { background: var(--done); border: 0; animation: pop var(--dur) var(--ease); }
+.task--done .task__icon { color: var(--c-sage-ink); }
+.task__timer { position: absolute; bottom: 12px; right: 12px; }
+
+.task--s .task__main { min-height: 110px; padding: var(--space-3); gap: var(--space-2); }
+.task--s .task__title { font-size: var(--fs-m); }
+.task--s .task__check { width: 32px; height: 32px; top: 8px; right: 8px; }
+.task--l .task__main { min-height: 260px; }
+.task--l .task__title { font-size: var(--fs-xl); }
+.task--xl .task__main { min-height: 380px; }
+.task--xl .task__title { font-size: var(--fs-xxl); }
+.task--xl .task__check { width: 64px; height: 64px; }

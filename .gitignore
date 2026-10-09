@@ -1,0 +1,8 @@
+node_modules
+dist
+dev-dist
+*.tsbuildinfo
+docs/PHASENBERICHT.md
+docs/screenshots/
+*.local.json
+familie-import.json
