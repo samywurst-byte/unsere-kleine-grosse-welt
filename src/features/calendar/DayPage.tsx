@@ -56,16 +56,16 @@ export function DayPage() {
                 <Bus size={22} aria-hidden="true" /> Kindergarten bis ca. {settings.kindergartenReturn}
               </li>
             )}
-            {kg && (
+            {kg && settings.afterKindergartenNote && (
               <li className="day-list__item day-list__item--soft">
                 <span className="day-list__time">danach</span>
-                <Icon name="trees" size={22} /> Mittagessen und mindestens 15 Minuten draußen, flexibel
+                <Icon name="trees" size={22} /> {settings.afterKindergartenNote}
               </li>
             )}
-            {kg && weekdayOf(key) !== 4 && (
+            {kg && settings.homeArrivalLabel && settings.homeArrivalDays.includes(weekdayOf(key)) && (
               <li className="day-list__item day-list__item--soft">
                 <span className="day-list__time">≈ {settings.papaHome}</span>
-                <Home size={22} aria-hidden="true" /> Papa kommt nach Hause
+                <Home size={22} aria-hidden="true" /> {settings.homeArrivalLabel}
               </li>
             )}
             {occ.map((o) => <EventLine key={o.key} occ={o} onClick={() => setSelected(o)} />)}

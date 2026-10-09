@@ -51,7 +51,7 @@ export function RoutineSettings() {
               <li key={d.id} className="list-item" style={{ opacity: d.active ? 1 : 0.5 }}>
                 <Icon name={d.icon} size={28} />
                 <div className="list-item__main">
-                  <p className="list-item__title">{d.title}{d.highlight && <span className="chip" style={{ marginLeft: 8 }}>Startseite</span>}{!d.active && ' (pausiert)'}</p>
+                  <p className="list-item__title">{d.title}{d.highlight && <span className="chip" style={{ marginLeft: 8 }}>Startseite</span>}{d.kindergartenOnly && <span className="chip" style={{ marginLeft: 8 }}>Kindergarten</span>}{!d.active && ' (pausiert)'}</p>
                   <p className="list-item__meta">
                     {d.weekdays.length === 7 ? 'täglich' : WEEKDAY_ORDER.filter((w) => d.weekdays.includes(w)).map((w) => WEEKDAY_SHORT[w]).join(', ')}
                     {' · '}{children.filter((c) => d.assignedTo.includes(c.id)).map((c) => c.name).join(', ') || 'niemand'}
@@ -118,6 +118,10 @@ function RoutineEditor({ def, onClose }: { def: RoutineDefinition; onClose: () =
           />
         </Field>
         <Toggle label="Auf der Startseite zeigen" checked={d.highlight} onChange={(highlight) => set({ highlight })} />
+        <Toggle
+          label="Nur an Kindergartentagen (nicht in Ferien und an freien Tagen)"
+          checked={!!d.kindergartenOnly} onChange={(kindergartenOnly) => set({ kindergartenOnly })}
+        />
         <Toggle label="Aktiv" checked={d.active} onChange={(active) => set({ active })} />
       </div>
     </Modal>

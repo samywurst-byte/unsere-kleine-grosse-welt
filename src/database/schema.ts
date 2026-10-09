@@ -34,4 +34,10 @@ export const SCHEMA_V2 = {
   passportStamps: 'id, childId, countryId',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 2;
+/** Version 3: Gerätedaten (letzte Sicherung) und automatische Sicherheitskopien. */
+export const SCHEMA_V3 = {
+  deviceMeta: 'id',
+  safetyCopies: 'id, createdAt',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 3;

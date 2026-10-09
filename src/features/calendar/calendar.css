@@ -26,5 +26,6 @@
 .week__event-time { font-size: var(--fs-xs); font-weight: 800; color: var(--tone-ink); }
 .week__event-title { font-size: var(--fs-s); font-weight: 700; line-height: 1.2; display: flex; gap: 4px; align-items: flex-start; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; min-width: 0; }
 .week__event-title svg { flex-shrink: 0; margin-top: 2px; color: var(--tone-ink); }
+.week__event-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .week__birthdays { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
 .day-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: var(--space-4); align-items: start; }

@@ -10,7 +10,7 @@ const TIME_FIELDS: { key: keyof AppSettings; label: string; hint?: string }[] = 
   { key: 'kindergartenDeparture', label: 'Abfahrt Kindergarten' },
   { key: 'kindergartenReturn', label: 'Rückkehr vom Kindergarten' },
   { key: 'freeDayMorningEnd', label: 'Morgen endet an freien Tagen' },
-  { key: 'papaHome', label: 'Papa kommt ungefähr nach Hause' },
+  { key: 'papaHome', label: 'Heimkehr am Nachmittag (ungefähr)' },
   { key: 'eveningStart', label: 'Abend beginnt' },
   { key: 'bedtime', label: 'Schlafenszeit (normal)' },
 ];
@@ -37,7 +37,12 @@ export function TimeSettings() {
       return setError('Die Reihenfolge stimmt nicht: Morgen, Abfahrt, Rückkehr und Abend müssen nacheinander liegen.');
     }
     setError(null);
-    await db.settings.put(draft);
+    await db.settings.put({
+      ...draft,
+      homeArrivalLabel: draft.homeArrivalLabel.trim(),
+      afterKindergartenNote: draft.afterKindergartenNote.trim(),
+      weekBanner: draft.weekBanner.trim(),
+    });
     setSaved(true);
   };
 
@@ -53,6 +58,24 @@ export function TimeSettings() {
             </Field>
           ))}
           <Field label="Kindergartentage" className="span-2"><WeekdayPicker value={draft.kindergartenDays} onChange={(kindergartenDays) => set({ kindergartenDays })} /></Field>
+        </div>
+      </div>
+      <div className="card">
+        <h3 className="card__title">Texte im Tagesablauf</h3>
+        <p className="small muted" style={{ marginBottom: 'var(--space-3)' }}>Ein leeres Feld blendet die Zeile aus.</p>
+        <div className="form-grid">
+          <Field label="Heimkehr-Zeile" hint={`erscheint um ≈ ${draft.papaHome}`}>
+            <input className="input" value={draft.homeArrivalLabel} onChange={(e) => set({ homeArrivalLabel: e.target.value })} />
+          </Field>
+          <Field label="An diesen Tagen">
+            <WeekdayPicker value={draft.homeArrivalDays} onChange={(homeArrivalDays) => set({ homeArrivalDays })} />
+          </Field>
+          <Field label="Nach dem Kindergarten" className="span-2">
+            <input className="input" value={draft.afterKindergartenNote} onChange={(e) => set({ afterKindergartenNote: e.target.value })} />
+          </Field>
+          <Field label="Hinweis oben in „Unsere Woche“" className="span-2">
+            <input className="input" value={draft.weekBanner} onChange={(e) => set({ weekBanner: e.target.value })} />
+          </Field>
         </div>
       </div>
       <div className="card">

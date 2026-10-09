@@ -6,6 +6,7 @@ import { db } from '../../database/db';
 import { useNow } from '../../hooks/useNow';
 import { verifyPin } from '../../services/pin';
 import { useParentSession } from '../../app/ParentSession';
+import { ForgotPin } from './ForgotPin';
 import './parent.css';
 
 const SECTIONS = [
@@ -50,6 +51,7 @@ export function ParentLayout() {
 function PinGate({ onUnlock }: { onUnlock: () => void }) {
   const [message, setMessage] = useState<string | null>(null);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [forgot, setForgot] = useState(false);
   const now = useNow(1000).getTime();
   const locked = lockedUntil !== null && lockedUntil > now;
 
@@ -65,6 +67,8 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
     }
   };
 
+  if (forgot) return <ForgotPin onBack={() => setForgot(false)} />;
+
   return (
     <div className="pin-gate">
       <div className="card pin-gate__card">
@@ -73,6 +77,7 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
         <p className="muted">Bitte die Eltern-PIN eingeben.</p>
         {message && <p className="notice notice--error">{message}{locked && ` Noch ${Math.ceil((lockedUntil! - now) / 1000)} Sekunden.`}</p>}
         <PinPad onSubmit={submit} disabled={locked} submitLabel="Öffnen" />
+        <button type="button" className="btn btn--ghost btn--small" onClick={() => setForgot(true)}>PIN vergessen?</button>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { CalendarDays, Earth, Heart, LayoutGrid, Lock, Sun } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from './ErrorBoundary';
 import './AppShell.css';
 
 const NAV = [
@@ -11,6 +12,7 @@ const NAV = [
 ];
 
 export function AppShell() {
+  const { pathname } = useLocation();
   return (
     <div className="shell">
       <nav className="shell__nav" aria-label="Hauptnavigation">
@@ -37,7 +39,11 @@ export function AppShell() {
         </NavLink>
       </nav>
       <main className="shell__main">
-        <Outlet />
+        {/* Nach einem Fehler bringt der Wechsel in einen anderen Bereich die Seite zurück.
+            Schlüssel ist nur der Bereich, damit z. B. der Elternbereich beim Tab-Wechsel nicht neu startet (und sich sperrt). */}
+        <ErrorBoundary key={pathname.split('/')[1] ?? ''} scope="page">
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );

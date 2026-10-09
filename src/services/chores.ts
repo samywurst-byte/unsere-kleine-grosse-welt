@@ -59,6 +59,25 @@ export async function skipChore(db: FamilyDatabase, id: string): Promise<void> {
   await db.choreOccurrences.update(id, { status: 'skipped' });
 }
 
-export async function moveChore(db: FamilyDatabase, id: string, newDate: DateKey): Promise<void> {
-  await db.choreOccurrences.update(id, { date: newDate, status: 'open' });
+export type MoveResult = 'moved' | 'conflict' | 'missing';
+
+/**
+ * Verschiebt eine Haushaltsaufgabe. Steht dieselbe Aufgabe am Zieltag bereits an
+ * (verschoben oder regulär geplant), wird nicht verschoben, damit sie nicht doppelt erscheint.
+ */
+export async function moveChore(db: FamilyDatabase, id: string, newDate: DateKey): Promise<MoveResult> {
+  return db.transaction('rw', db.choreOccurrences, db.choreDefinitions, async () => {
+    const occ = await db.choreOccurrences.get(id);
+    if (!occ) return 'missing';
+    if (occ.date === newDate) return 'moved';
+    const sameDay = await db.choreOccurrences.where('date').equals(newDate)
+      .and((o) => o.definitionId === occ.definitionId && o.id !== id).count();
+    const def = await db.choreDefinitions.get(occ.definitionId);
+    const regular = newDate !== occ.scheduledDate && def
+      && choreDefinitionsFor([def], newDate).length > 0
+      && !(await db.choreOccurrences.get(choreOccurrenceId(def.id, newDate)));
+    if (sameDay > 0 || regular) return 'conflict';
+    await db.choreOccurrences.update(id, { date: newDate, status: 'open' });
+    return 'moved';
+  });
 }

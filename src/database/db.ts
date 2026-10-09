@@ -1,13 +1,14 @@
 import Dexie, { type Table } from 'dexie';
 import type {
-  AppSettings, CalendarEvent, ChoreDefinition, ChoreOccurrence, Country, CountryUnlock, EventException,
+  AppSettings, CalendarEvent, ChoreDefinition, ChoreOccurrence, Country, CountryUnlock, DeviceMeta, EventException,
   FamilyCouncilNote, FamilyTimeSession, LearningActivity, LearningProgress, Member, MissionCompletion,
   OptionalMission, ParentAuth, PassportStamp, RoutineDefinition, RoutineOccurrence, SpecialDayMode,
-  StarTransaction, TimerPreset, TimerState,
+  RoutineDefinition as RoutineDef, SafetyCopy, StarTransaction, TimerPreset, TimerState, Weekday,
 } from '../types';
 import { buildSeed } from '../data/seed';
 import { toDateKey } from '../utils/dates';
-import { DB_NAME, SCHEMA_V1, SCHEMA_V2 } from './schema';
+import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3 } from './schema';
+import { upgradeRoutine, upgradeSettings } from './migrations';
 
 export class FamilyDatabase extends Dexie {
   members!: Table<Member, string>;
@@ -32,6 +33,8 @@ export class FamilyDatabase extends Dexie {
   learningActivities!: Table<LearningActivity, string>;
   learningProgress!: Table<LearningProgress, string>;
   passportStamps!: Table<PassportStamp, string>;
+  deviceMeta!: Table<DeviceMeta, string>;
+  safetyCopies!: Table<SafetyCopy, string>;
 
   constructor(name: string = DB_NAME, options?: { seedDate?: Date }) {
     super(name);
@@ -44,6 +47,15 @@ export class FamilyDatabase extends Dexie {
         if (s.maxStarsPerChildPerDay === undefined) s.maxStarsPerChildPerDay = 5;
         if (s.starsPerCountry === undefined) s.starsPerCountry = 30;
       });
+    });
+
+    this.version(3).stores(SCHEMA_V3).upgrade(async (tx) => {
+      let kgDays: Weekday[] = [1, 2, 3, 4, 5];
+      await tx.table('settings').toCollection().modify((s: Partial<AppSettings>) => {
+        upgradeSettings(s, 2);
+        if (s.kindergartenDays) kgDays = s.kindergartenDays;
+      });
+      await tx.table('routineDefinitions').toCollection().modify((r: Partial<RoutineDef>) => upgradeRoutine(r, kgDays));
     });
 
     // Läuft ausschließlich, wenn die Datenbank zum allerersten Mal angelegt wird.
@@ -63,4 +75,4 @@ export class FamilyDatabase extends Dexie {
 export const db = new FamilyDatabase();
 
 /** Alle Tabellen in fester Reihenfolge, z. B. für Export und Import. */
-export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2)] as const;
+export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3)] as const;

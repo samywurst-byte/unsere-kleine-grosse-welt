@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useDeviceMeta } from '../../hooks/useData';
+import { backupIsDue } from '../../services/backup';
 
 const TILES = [
   { to: '/eltern/familie', title: 'Familie', text: 'Namen, Geburtstage, Avatare, Farben, Altersstufen' },
@@ -8,7 +10,7 @@ const TILES = [
   { to: '/eltern/zeiten', title: 'Uhrzeiten', text: 'Kindergarten, Tagesphasen, Schlafenszeiten, Uhr' },
   { to: '/eltern/timer', title: 'Timer', text: 'Timer-Vorlagen und Dauer' },
   { to: '/eltern/daten', title: 'Daten', text: 'Sicherung exportieren und wiederherstellen' },
-  { to: '/eltern/pin', title: 'PIN', text: 'Eltern-PIN ändern' },
+  { to: '/eltern/pin', title: 'PIN', text: 'Eltern-PIN ändern, Notfallcode für eine vergessene PIN' },
 ];
 
 const LATER = [
@@ -19,8 +21,15 @@ const LATER = [
 ];
 
 export function ParentHome() {
+  const meta = useDeviceMeta();
   return (
     <div className="parent-section">
+      {meta && backupIsDue(meta.lastBackupAt) && (
+        <p className="notice">
+          {meta.lastBackupAt ? 'Die letzte Sicherung ist über eine Woche her.' : 'Von diesem iPad gibt es noch keine Sicherung.'}{' '}
+          <Link to="/eltern/daten">Jetzt sichern</Link>
+        </p>
+      )}
       <div className="parent-tiles">
         {TILES.map((t) => (
           <Link key={t.to} to={t.to} className="card parent-tile">

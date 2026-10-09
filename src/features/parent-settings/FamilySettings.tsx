@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Avatar, AVATAR_LABELS } from '../../components/Avatar';
 import { ColorPicker, Field, Segmented, Toggle } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
+import { formatMonthYear, isValidSchoolEntry, readingPathStart } from '../../services/school';
 import { db } from '../../database/db';
 import { useMembers } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
@@ -45,6 +46,7 @@ export function FamilySettings() {
               <p className="list-item__meta">
                 {m.role === 'parent' ? 'Elternteil' : 'Kind'}
                 {m.birthDate && ` · ${ageInYears(m.birthDate, today)} Jahre · Geburtstag ${m.birthDate.split('-').reverse().join('.')}`}
+                {m.role === 'child' && (m as ChildProfile).schoolEntryDate && ` · Einschulung ${formatMonthYear((m as ChildProfile).schoolEntryDate!)}`}
               </p>
             </div>
             <button type="button" className="btn btn--small" onClick={() => setEditing(m)}><Pencil size={16} aria-hidden="true" /> Bearbeiten</button>
@@ -66,7 +68,11 @@ function MemberEditor({ member, onClose, today }: { member: Member; onClose: () 
   const save = async () => {
     if (!draft.name.trim()) { setError('Bitte einen Namen eingeben.'); return; }
     if (draft.birthDate && (!isValidDateKey(draft.birthDate) || draft.birthDate > today)) { setError('Bitte ein gültiges Geburtsdatum wählen.'); return; }
-    await db.members.put({ ...draft, name: draft.name.trim(), birthDate: draft.birthDate || undefined });
+    if (isChild && !isValidSchoolEntry(child.schoolEntryDate, draft.birthDate)) { setError('Bitte ein gültiges Einschulungsdatum wählen.'); return; }
+    await db.members.put({
+      ...draft, name: draft.name.trim(), birthDate: draft.birthDate || undefined,
+      ...(isChild ? { schoolEntryDate: child.schoolEntryDate || undefined } : {}),
+    });
     onClose();
   };
 
@@ -97,6 +103,14 @@ function MemberEditor({ member, onClose, today }: { member: Member; onClose: () 
         <Field label="Profilfarbe" className="span-2"><ColorPicker value={draft.color} onChange={(color) => set({ color })} /></Field>
         {isChild && (
           <>
+            <Field
+              label="Einschulung (geplant)"
+              hint={child.schoolEntryDate && isValidDateKey(child.schoolEntryDate)
+                ? `Der Lesepfad startet ein Jahr vorher, ab ${formatMonthYear(readingPathStart(child.schoolEntryDate))}.`
+                : 'Optional. Grundlage für den späteren Lesepfad.'}
+            >
+              <input className="input" type="date" value={child.schoolEntryDate ?? ''} onChange={(e) => set({ schoolEntryDate: e.target.value || undefined })} />
+            </Field>
             <Field label="Altersstufe" className="span-2" hint="Steuert, wie viele Karten gleichzeitig zu sehen sind. Einzelwerte lassen sich darunter anpassen.">
               <Segmented
                 label="Altersstufe" value={child.ageStage}

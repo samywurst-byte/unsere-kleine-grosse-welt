@@ -93,12 +93,19 @@ export function ChoreSettings() {
 
 function MoveDialog({ occ, onClose }: { occ: ChoreOccurrence; onClose: () => void }) {
   const [date, setDate] = useState(occ.date);
+  const [error, setError] = useState<string | null>(null);
+  const move = async () => {
+    const res = await moveChore(db, occ.id, date);
+    if (res === 'conflict') { setError('An diesem Tag steht dieselbe Aufgabe schon an. Bitte einen anderen Tag wählen.'); return; }
+    onClose();
+  };
   return (
     <Modal
       title="Aufgabe verschieben" onClose={onClose}
-      actions={(<><button type="button" className="btn" onClick={onClose}>Abbrechen</button><button type="button" className="btn btn--primary" disabled={!isValidDateKey(date)} onClick={async () => { await moveChore(db, occ.id, date); onClose(); }}>Verschieben</button></>)}
+      actions={(<><button type="button" className="btn" onClick={onClose}>Abbrechen</button><button type="button" className="btn btn--primary" disabled={!isValidDateKey(date)} onClick={move}>Verschieben</button></>)}
     >
-      <Field label="Neuer Tag"><input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+      <Field label="Neuer Tag"><input className="input" type="date" value={date} onChange={(e) => { setDate(e.target.value); setError(null); }} /></Field>
+      {error && <p className="notice notice--error">{error}</p>}
     </Modal>
   );
 }

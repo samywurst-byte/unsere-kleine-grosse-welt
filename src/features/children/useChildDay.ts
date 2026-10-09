@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useChoreDefinitions, useChores, useRoutineCompletions, useRoutineDefinitions } from '../../hooks/useData';
+import { useChoreDefinitions, useChores, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions } from '../../hooks/useData';
 import { routinesForChild } from '../../services/routines';
 import type { ChildProfile, ChoreDefinition, ChoreOccurrence, DateKey, RoutineDefinition, RoutinePhase } from '../../types';
 
@@ -18,12 +18,13 @@ export function useChildDay(child: ChildProfile | undefined, date: DateKey): Chi
   const completions = useRoutineCompletions(date);
   const choreOcc = useChores(date);
   const choreDefs = useChoreDefinitions();
+  const kindergartenDay = useKindergartenDay(date);
 
   return useMemo(() => {
     const byPhase: ChildDay['byPhase'] = { morning: [], afternoon: [], evening: [] };
-    if (!child || !defs || !completions || !choreOcc || !choreDefs) return { byPhase, chores: [], loaded: false };
+    if (!child || !defs || !completions || !choreOcc || !choreDefs || kindergartenDay === undefined) return { byPhase, chores: [], loaded: false };
     const done = new Set(completions.filter((c) => c.childId === child.id).map((c) => c.definitionId));
-    for (const def of routinesForChild(defs, child.id, date)) {
+    for (const def of routinesForChild(defs, child.id, date, { kindergartenDay })) {
       byPhase[def.phase].push({ kind: 'routine', def, done: done.has(def.id) });
     }
     const defMap = new Map(choreDefs.map((d) => [d.id, d]));
@@ -31,5 +32,5 @@ export function useChildDay(child: ChildProfile | undefined, date: DateKey): Chi
       .filter((o) => o.childId === child.id && defMap.has(o.definitionId))
       .map((occ) => ({ kind: 'chore' as const, occ, def: defMap.get(occ.definitionId)!, done: occ.status === 'done' }));
     return { byPhase, chores, loaded: true };
-  }, [child, defs, completions, choreOcc, choreDefs, date]);
+  }, [child, defs, completions, choreOcc, choreDefs, date, kindergartenDay]);
 }

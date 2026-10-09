@@ -3,6 +3,7 @@ import { useEffect, useMemo } from 'react';
 import { db } from '../database/db';
 import { expandOccurrences, isHolidayOn } from '../services/calendar';
 import { choresForDate, ensureChoreOccurrences } from '../services/chores';
+import { isKindergartenDay } from '../services/dayPhase';
 import type { ChildProfile, DateKey, EventOccurrence } from '../types';
 
 /** Live-Abfragen: Komponenten aktualisieren sich automatisch, wenn sich Daten ändern. */
@@ -58,4 +59,15 @@ export function useOccurrences(from: DateKey, to: DateKey): EventOccurrence[] | 
 export function useIsHoliday(date: DateKey): boolean {
   const occ = useOccurrences(date, date);
   return occ ? isHolidayOn(occ, date) : false;
+}
+
+/** Ist heute ein echter Kindergartentag (Wochentag laut Einstellungen und keine Ferien)? */
+export function useKindergartenDay(date: DateKey): boolean | undefined {
+  const settings = useSettings();
+  const holiday = useIsHoliday(date);
+  return settings ? isKindergartenDay(date, settings, holiday) : undefined;
+}
+
+export function useDeviceMeta() {
+  return useLiveQuery(async () => (await db.deviceMeta.get('device')) ?? { id: 'device' as const }, []);
 }

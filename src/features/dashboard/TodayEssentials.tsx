@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
 import { db } from '../../database/db';
-import { useChildren, useChoreDefinitions, useChores, useRoutineCompletions, useRoutineDefinitions } from '../../hooks/useData';
+import { useChildren, useChoreDefinitions, useChores, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions } from '../../hooks/useData';
 import { completeChore, reopenChore } from '../../services/chores';
 import { routinesForChild, setRoutineDone } from '../../services/routines';
 import type { ChildProfile, RoutineDefinition } from '../../types';
@@ -15,9 +15,10 @@ export function TodayEssentials({ date }: { date: string }) {
   const completions = useRoutineCompletions(date);
   const chores = useChores(date);
   const choreDefs = useChoreDefinitions();
-  if (!children || !defs || !completions || !chores || !choreDefs) return null;
+  const kindergartenDay = useKindergartenDay(date);
+  if (!children || !defs || !completions || !chores || !choreDefs || kindergartenDay === undefined) return null;
 
-  const highlighted = defs.filter((d) => d.highlight && children.some((c) => routinesForChild([d], c.id, date).length));
+  const highlighted = defs.filter((d) => d.highlight && children.some((c) => routinesForChild([d], c.id, date, { kindergartenDay }).length));
   const doneSet = new Set(completions.map((c) => `${c.definitionId}|${c.childId}`));
   const choreDefMap = new Map(choreDefs.map((d) => [d.id, d]));
   const visibleChores = chores.filter((c) => c.status !== 'skipped' && choreDefMap.has(c.definitionId));
@@ -38,7 +39,7 @@ export function TodayEssentials({ date }: { date: string }) {
               <Link to={`/timer/${def.timerPresetId}`} className="btn btn--small btn--sage"><Timer size={18} aria-hidden="true" /> Timer</Link>
             )}
             <span className="essentials__kids">
-              {children.filter((c) => routinesForChild([def], c.id, date).length).map((c) => {
+              {children.filter((c) => routinesForChild([def], c.id, date, { kindergartenDay }).length).map((c) => {
                 const done = doneSet.has(`${def.id}|${c.id}`);
                 return (
                   <button

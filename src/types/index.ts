@@ -42,6 +42,8 @@ export interface ChildProfile extends FamilyMember {
   needsHelp: boolean;
   /** Kurze Texte unter den Bildkarten anzeigen. */
   showLabels: boolean;
+  /** Geplanter Schulbeginn. Grundlage für den späteren Lesepfad (Start ein Jahr vorher). */
+  schoolEntryDate?: DateKey;
 }
 
 export type Member = FamilyMember | ChildProfile;
@@ -65,6 +67,8 @@ export interface RoutineDefinition {
   highlight: boolean;
   /** Optionaler Timer, z. B. 15 Minuten draußen. */
   timerPresetId?: Id;
+  /** Nur an echten Kindergartentagen zeigen (nicht in Ferien, nicht an freien Tagen). */
+  kindergartenOnly?: boolean;
   createdAt: string;
 }
 
@@ -219,6 +223,14 @@ export interface AppSettings {
   /** An Tagen ohne Kindergarten endet der Morgen hier. */
   freeDayMorningEnd: TimeOfDay;
   papaHome: TimeOfDay;
+  /** Text der Heimkehr-Zeile im Tagesablauf, z. B. "Papa kommt nach Hause". Leer = ausblenden. */
+  homeArrivalLabel: string;
+  /** An welchen Tagen die Heimkehr-Zeile erscheint. */
+  homeArrivalDays: Weekday[];
+  /** Hinweis nach dem Kindergarten im Tagesablauf. Leer = ausblenden. */
+  afterKindergartenNote: string;
+  /** Hinweis oben in der Wochenansicht. Leer = ausblenden. */
+  weekBanner: string;
   eveningStart: TimeOfDay;
   bedtime: TimeOfDay;
   /** Abweichende Schlafenszeiten, z. B. freitags später. */
@@ -239,7 +251,26 @@ export interface ParentAuth {
   iterations: number;
   failedAttempts: number;
   lockedUntil?: number;
+  /** Notfallcode zum Zurücksetzen der PIN, ebenfalls nur als PBKDF2-Hash. */
+  recoveryHash?: string;
+  recoverySalt?: string;
+  recoveryCreatedAt?: string;
   updatedAt: string;
+}
+
+/** Gerätebezogene Angaben, die nicht in Sicherungen wandern. */
+export interface DeviceMeta {
+  id: 'device';
+  lastBackupAt?: string;
+}
+
+/** Automatische Sicherheitskopie, z. B. vor einem Import. Nur auf diesem Gerät. */
+export interface SafetyCopy {
+  id: Id;
+  createdAt: string;
+  reason: 'before-import';
+  /** Vollständige Sicherung als JSON-Text. */
+  json: string;
 }
 
 // ------------------------------------------------- Phase C/D (Datenmodell vorbereitet)

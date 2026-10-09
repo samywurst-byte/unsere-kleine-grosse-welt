@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { PinPad } from '../../components/PinPad';
 import { db } from '../../database/db';
-import { setPin, verifyPin } from '../../services/pin';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { createRecoveryCode, setPin, verifyPin } from '../../services/pin';
 
 type Step = 'old' | 'new' | 'repeat' | 'done';
 
@@ -35,6 +36,30 @@ export function PinSettings() {
           : <PinPad key={step} onSubmit={submit} submitLabel={step === 'repeat' ? 'Speichern' : 'Weiter'} />}
       </div>
       <p className="small muted">Die PIN ist eine Hürde für Kinderhände, kein Ersatz für die Gerätesperre des iPads.</p>
+      <RecoveryCodeCard />
+    </div>
+  );
+}
+
+function RecoveryCodeCard() {
+  const auth = useLiveQuery(() => db.parentAuth.get('parent'), []);
+  const [code, setCode] = useState<string | null>(null);
+  const created = auth?.recoveryCreatedAt;
+  return (
+    <div className="card" style={{ maxWidth: 560 }}>
+      <h3 className="card__title">Notfallcode für eine vergessene PIN</h3>
+      <p className="small muted" style={{ marginBottom: 'var(--space-3)' }}>
+        Mit diesem Code lässt sich über „PIN vergessen?“ eine neue PIN festlegen, ohne Daten zu verlieren.
+        Der Code wird nur jetzt angezeigt. Bitte aufschreiben und nicht am iPad aufbewahren.
+      </p>
+      {code ? (
+        <p className="notice notice--ok" style={{ fontSize: 'var(--fs-l)', fontWeight: 800, letterSpacing: '0.08em' }}>{code}</p>
+      ) : (
+        <p className="small">{created ? `Ein Notfallcode existiert seit ${new Date(created).toLocaleDateString('de-DE')}.` : 'Es gibt noch keinen Notfallcode.'}</p>
+      )}
+      <button type="button" className="btn" onClick={async () => setCode(await createRecoveryCode(db))}>
+        {created || code ? 'Neuen Notfallcode erstellen (der alte wird ungültig)' : 'Notfallcode erstellen'}
+      </button>
     </div>
   );
 }

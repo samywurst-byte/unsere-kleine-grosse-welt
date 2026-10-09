@@ -11,7 +11,7 @@ export function DayOverview({ title, date, occurrences, settings, note }: {
 }) {
   const list = occurrences.filter((o) => o.date === date);
   const kg = isKindergartenDay(date, settings, isHolidayOn(occurrences, date));
-  const thursday = weekdayOf(date) === 4;
+  const homeArrival = !!settings.homeArrivalLabel && settings.homeArrivalDays.includes(weekdayOf(date));
   return (
     <div className="card">
       <h2 className="card__title">{title}: {formatWeekday(date)}</h2>
@@ -23,10 +23,10 @@ export function DayOverview({ title, date, occurrences, settings, note }: {
             <Bus size={22} aria-hidden="true" /> Kindergarten bis ca. {settings.kindergartenReturn}
           </li>
         )}
-        {kg && !thursday && (
+        {kg && homeArrival && (
           <li className="day-list__item day-list__item--soft">
             <span className="day-list__time">≈ {settings.papaHome}</span>
-            <Home size={22} aria-hidden="true" /> Papa kommt nach Hause
+            <Home size={22} aria-hidden="true" /> {settings.homeArrivalLabel}
           </li>
         )}
         {list.map((o) => <EventLine key={o.key} occ={o} />)}

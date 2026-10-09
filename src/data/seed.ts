@@ -3,6 +3,7 @@ import type {
   TimerPreset, Weekday,
 } from '../types';
 import { weekStartKey } from '../utils/dates';
+import { DEFAULT_AFTER_KINDERGARTEN_NOTE, DEFAULT_HOME_ARRIVAL_LABEL, DEFAULT_WEEK_BANNER } from '../database/migrations';
 
 /**
  * Neutrale Beispielwerte für den allerersten Start (Dexie "populate").
@@ -65,8 +66,8 @@ export function buildSeed(todayKey: string) {
     routine('morning', 'Frühstücken', 'utensils'),
     routine('morning', 'Anziehen', 'shirt'),
     routine('morning', 'Zähneputzen', 'brush'),
-    routine('morning', 'Kindergarten vorbereiten', 'backpack', { weekdays: KG_DAYS }),
-    routine('morning', 'Schuhe und Jacke anziehen', 'footprints', { weekdays: KG_DAYS }),
+    routine('morning', 'Kindergarten vorbereiten', 'backpack', { weekdays: KG_DAYS, kindergartenOnly: true }),
+    routine('morning', 'Schuhe und Jacke anziehen', 'footprints', { weekdays: KG_DAYS, kindergartenOnly: true }),
     routine('afternoon', 'Mittagessen', 'soup'),
     routine('afternoon', 'Mindestens 15 Minuten draußen', 'trees', { highlight: true, timerPresetId: IDS.timerOutdoor }),
     routine('afternoon', 'Freies Spielen', 'toy-brick'),
@@ -120,6 +121,10 @@ export function buildSeed(todayKey: string) {
     kindergartenReturn: '12:30',
     freeDayMorningEnd: '09:30',
     papaHome: '15:30',
+    homeArrivalLabel: DEFAULT_HOME_ARRIVAL_LABEL,
+    homeArrivalDays: KG_DAYS,
+    afterKindergartenNote: DEFAULT_AFTER_KINDERGARTEN_NOTE,
+    weekBanner: DEFAULT_WEEK_BANNER,
     eveningStart: '17:30',
     bedtime: '19:00',
     bedtimeOverrides: {},

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
-import { useChildren, useChoreDefinitions, useMembers, useOccurrences } from '../../hooks/useData';
+import { useChildren, useChoreDefinitions, useMembers, useOccurrences, useSettings } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import { possessive, upcomingBirthdays } from '../../services/calendar';
 import { choreDefinitionsFor } from '../../services/chores';
@@ -22,6 +22,7 @@ export function WeekPage() {
   const choreDefs = useChoreDefinitions();
   const children = useChildren();
   const members = useMembers();
+  const settings = useSettings();
   const [selected, setSelected] = useState<EventOccurrence | null>(null);
 
   const kw = getISOWeek(fromDateKey(start));
@@ -38,7 +39,7 @@ export function WeekPage() {
         <button type="button" className="btn btn--icon" onClick={() => setStart(addDaysKey(start, 7))} aria-label="Nächste Woche"><ChevronRight /></button>
       </header>
 
-      <p className="week__banner"><Trees size={22} aria-hidden="true" /> Jeden Tag mindestens 15 Minuten draußen, bei normalem Wetter auch bei Regen.</p>
+      {settings?.weekBanner && <p className="week__banner"><Trees size={22} aria-hidden="true" /> {settings.weekBanner}</p>}
 
       <div className="week">
         {days.map((d) => {
@@ -69,7 +70,7 @@ export function WeekPage() {
                   <li key={o.key}>
                     <button type="button" className={`week__event tone-${eventTone(o.event)}`} onClick={() => setSelected(o)}>
                       <span className="week__event-time">{o.startTime ?? (o.departureTime ? `ab ${o.departureTime}` : '')}</span>
-                      <span className="week__event-title"><Icon name={eventIcon(o.event)} size={16} /> {o.event.title}</span>
+                      <span className="week__event-title"><Icon name={eventIcon(o.event)} size={16} /><span className="week__event-text">{o.event.title}</span></span>
                     </button>
                   </li>
                 ))}
