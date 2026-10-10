@@ -1,0 +1,47 @@
+/* Familienarchiv */
+.ar-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.ar-year { width: auto; min-width: 140px; }
+.ar-filters { display: flex; flex-direction: column; gap: var(--space-3); }
+.ar-search { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-soft); }
+.ar-search .input { flex: 1; min-width: 0; }
+.ar-who { display: inline-flex; align-items: center; gap: 6px; }
+.ar-filters__foot { align-items: center; }
+.ar-pdf { display: inline-flex; flex-direction: column; gap: var(--space-1); }
+
+.ar-month__title { font-size: var(--fs-l); margin: var(--space-2) 0 var(--space-3); }
+.ar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-3); }
+.ar-item { display: flex; flex-direction: column; gap: var(--space-1); text-align: left; font: inherit; color: inherit; cursor: pointer; border: 0; min-width: 0; }
+.ar-item__cover { position: relative; display: block; }
+.ar-item__cover img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius-s); display: block; }
+.ar-item__count { position: absolute; right: 8px; bottom: 8px; padding: 2px 10px; border-radius: 99px; background: rgba(0,0,0,.6); color: #fff; font-size: var(--fs-s); font-weight: 700; }
+.ar-item__emoji { display: flex; align-items: center; justify-content: center; height: 84px; border-radius: var(--radius-s); background: var(--card-sunk); font-size: 2.6rem; }
+.ar-item--memory .ar-item__emoji, .ar-item--adventure .ar-item__emoji { background: var(--c-gold-soft); }
+.ar-item--project .ar-item__emoji, .ar-item--discovery .ar-item__emoji { background: var(--c-sage-soft); }
+.ar-item--explorer .ar-item__emoji, .ar-item--world .ar-item__emoji { background: var(--c-sky-soft); }
+.ar-item--learning .ar-item__emoji, .ar-item--question .ar-item__emoji { background: var(--c-lavender-soft); }
+.ar-item--ritual .ar-item__emoji, .ar-item--council .ar-item__emoji, .ar-item--money .ar-item__emoji { background: var(--c-rose-soft); }
+.ar-item__kind { font-size: var(--fs-xs); color: var(--ink-soft); }
+.ar-item__title { font-weight: 800; overflow-wrap: anywhere; }
+.ar-item__text { font-size: var(--fs-s); color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+.ar-gallery { position: relative; }
+.ar-gallery img { width: 100%; max-height: 50vh; object-fit: contain; border-radius: var(--radius-s); display: block; }
+.ar-gallery__prev, .ar-gallery__next { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.85); }
+.ar-gallery__prev { left: 8px; }
+.ar-gallery__next { right: 8px; }
+.ar-text { white-space: pre-line; }
+.ar-quote { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-2) 0; padding: var(--space-2) var(--space-3); border-left: 4px solid var(--line); background: var(--card-sunk); border-radius: var(--radius-s); }
+
+.ar-year-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.ar-counts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ar-count { padding: 6px 14px; border-radius: 99px; background: var(--card-sunk); font-weight: 700; }
+.ar-count__n { font-size: var(--fs-l); font-weight: 900; }
+.ar-collage { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--space-2); }
+.ar-collage__item { margin: 0; min-width: 0; }
+.ar-collage__item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-s); display: block; }
+.ar-collage__item figcaption { font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); }
+.ar-kids { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-4); }
+.ar-kid { display: flex; flex-direction: column; gap: var(--space-2); background: linear-gradient(180deg, var(--tone-soft) 0, var(--card) 120px); }
+.ar-kid__head { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--fs-l); color: var(--tone-ink); }
+.ar-kid__facts { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.ar-kid__label { margin: var(--space-2) 0 0; font-weight: 800; font-size: var(--fs-s); color: var(--ink-soft); }

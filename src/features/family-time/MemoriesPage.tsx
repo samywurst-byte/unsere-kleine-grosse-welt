@@ -27,6 +27,7 @@ export function MemoriesPage() {
         <Link to="/familienzeit" className="btn btn--icon btn--ghost" aria-label="Zurück zur Familienzeit"><ArrowLeft size={22} /></Link>
         <h1>Unsere Erinnerungen</h1>
         <div className="spacer" />
+        <Link to="/archiv" className="btn">🗂️ Familienarchiv</Link>
         <button type="button" className="btn btn--primary" onClick={() => setAdding(true)}><Plus size={20} aria-hidden="true" /> Neue Erinnerung</button>
       </header>
       {memories.length === 0 ? (

@@ -6,6 +6,7 @@ import { AppShell } from './AppShell';
 import { ParentSessionProvider } from './ParentSession';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ChildPickerPage } from '../features/children/ChildPickerPage';
+import { ArchivePage } from '../features/archive/ArchivePage';
 import { ChildBoardPage } from '../features/children/ChildBoardPage';
 import { WeekPage } from '../features/calendar/WeekPage';
 import { DayPage } from '../features/calendar/DayPage';
@@ -81,6 +82,7 @@ export function App() {
             <Route path="familienzeit/familienrat" element={<CouncilPage />} />
             <Route path="familienzeit/erinnerungen" element={<MemoriesPage />} />
             <Route path="familienzeit/rituale" element={<RitualsPage />} />
+            <Route path="archiv" element={<ArchivePage />} />
             <Route path="timer/:presetId" element={<TimerPage />} />
             <Route path="eltern" element={<ParentLayout />}>
               <Route index element={<ParentHome />} />

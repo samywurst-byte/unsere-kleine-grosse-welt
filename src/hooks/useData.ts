@@ -5,6 +5,7 @@ import { expandOccurrences, isHolidayOn } from '../services/calendar';
 import { choresForDate, ensureChoreOccurrences } from '../services/chores';
 import { isKindergartenDay } from '../services/dayPhase';
 import { noKindergartenForAll } from '../services/specialDay';
+import type { ArchiveSource } from '../services/archive';
 import type { ChildProfile, DateKey, EventOccurrence } from '../types';
 
 /** Live-Abfragen: Komponenten aktualisieren sich automatisch, wenn sich Daten ändern. */
@@ -220,4 +221,17 @@ export function useExplorerEntries() {
 
 export function useJarQuestions() {
   return useLiveQuery(() => db.jarQuestions.orderBy('createdAt').toArray(), []);
+}
+
+/** Alles, was das Familienarchiv braucht, in einer Abfrage. */
+export function useArchiveSource(): ArchiveSource | undefined {
+  return useLiveQuery(async () => {
+    const [members, memories, projects, explorerEntries, adventures, rituals, councilNotes, countries, unlocks, stamps, observations, savingsGoals, questions, discoveries, sessions] = await Promise.all([
+      db.members.orderBy('sortOrder').toArray(), db.familyMemories.toArray(), db.projects.toArray(), db.explorerEntries.toArray(),
+      db.weekendAdventures.toArray(), db.rituals.toArray(), db.familyCouncilNotes.toArray(), db.countries.toArray(), db.countryUnlocks.toArray(),
+      db.passportStamps.toArray(), db.learningObservations.toArray(), db.savingsGoals.toArray(), db.jarQuestions.toArray(), db.discoveries.toArray(),
+      db.familyTimeSessions.toArray(),
+    ]);
+    return { members, memories, projects, explorerEntries, adventures, rituals, councilNotes, countries, unlocks, stamps, observations, savingsGoals, questions, discoveries, sessions };
+  }, []);
 }

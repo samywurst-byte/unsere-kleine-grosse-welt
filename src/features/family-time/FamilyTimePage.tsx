@@ -216,7 +216,10 @@ function MemoriesCard() {
           ))}
         </div>
       ) : <p className="muted ft-card__lead">Hier sammeln wir schöne Momente, zum Beispiel nach einem Abenteuer.</p>}
-      <Link to="/familienzeit/erinnerungen" className="btn ft-card__more">Alle Erinnerungen <ChevronRight size={18} aria-hidden="true" /></Link>
+      <div className="row row--wrap ft-card__more">
+        <Link to="/familienzeit/erinnerungen" className="btn">Alle Erinnerungen <ChevronRight size={18} aria-hidden="true" /></Link>
+        <Link to="/archiv" className="btn">🗂️ Familienarchiv und Jahresrückblick <ChevronRight size={18} aria-hidden="true" /></Link>
+      </div>
     </section>
   );
 }
