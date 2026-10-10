@@ -26,7 +26,7 @@ const release = (childId: string, goalId: string): LearningRelease => ({ id: `${
 const statesFor = (releases: LearningRelease[]) => new Map([['k1', goalStates('k1', [], releases, today)]]);
 const pack = (letter = 'M'): LearningPack => ({
   id: 'p1', weekStart: today, letter, createdAt: '', prints: [],
-  children: [{ childId: 'k1', track: 'letters' }, { childId: 'k2', track: 'preschool' }, { childId: 'k3', track: 'toddler' }],
+  children: [{ childId: 'k1', track: 'letters', math: false }, { childId: 'k2', track: 'preschool', math: false }, { childId: 'k3', track: 'toddler' }],
 });
 const fonts = () => {
   const f = (n: string) => readFileSync(`public/fonts/${n}`);
@@ -58,8 +58,15 @@ describe('Lernpaket planen', () => {
     expect(plan.pages).toHaveLength(8);
   });
 
+  it('gibt Paketen von vor dem Rechenpfad die Rechenblätter dazu', () => {
+    const old = { ...pack(), children: [{ childId: 'k1', track: 'letters' as const }, { childId: 'k3', track: 'toddler' as const }] };
+    const plan = planPack({ pack: old, children, statesByChild: statesFor([]), today });
+    expect(pagesForScope(plan, 'child:k1').some((p) => p.spec.kind === 'math')).toBe(true);
+    expect(pagesForScope(plan, 'child:k3').some((p) => p.spec.kind === 'math')).toBe(false);
+  });
+
   it('lässt Kinder weg, die diese Woche nicht mitmachen', () => {
-    const p = { ...pack(), children: [{ childId: 'k1', track: 'letters' as const }, { childId: 'k3', track: 'skip' as const }] };
+    const p = { ...pack(), children: [{ childId: 'k1', track: 'letters' as const, math: false }, { childId: 'k3', track: 'skip' as const }] };
     const plan = planPack({ pack: p, children, statesByChild: statesFor([]) });
     expect(plan.pages.some((x) => x.childId === 'k3')).toBe(false);
     const obs = plan.pages.find((x) => x.spec.kind === 'observation')!.spec;

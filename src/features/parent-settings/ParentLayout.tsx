@@ -47,6 +47,7 @@ export function ParentLayout() {
         ))}
       </nav>
       <Outlet />
+      <p className="small muted" style={{ textAlign: 'right' }}>Version {__APP_VERSION__}</p>
     </div>
   );
 }

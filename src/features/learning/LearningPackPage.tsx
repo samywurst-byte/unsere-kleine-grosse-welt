@@ -194,6 +194,9 @@ function PackView({ pack, children, statesByChild, mathStatesByChild, today, isC
   };
 
   const sections = groupPages(plan);
+  const withoutMath = pack.children
+    .filter((c) => c.math === false && (c.track === 'letters' || c.track === 'preschool'))
+    .map((c) => children.find((k) => k.id === c.childId)?.name).filter(Boolean);
   const lastPrint = pack.prints[pack.prints.length - 1];
 
   return (
@@ -214,6 +217,9 @@ function PackView({ pack, children, statesByChild, mathStatesByChild, today, isC
           </li>
         ))}
       </ul>
+      {withoutMath.length > 0 && (
+        <p className="small muted">Ohne Rechenblätter: {withoutMath.join(', ')}. Einschalten unter „Ändern“.</p>
+      )}
       <p className="small muted">
         {plan.pages.length} Seiten insgesamt, A4 in Schwarzweiß. Nicht jedes Blatt muss fertig werden.
         {lastPrint && ` Zuletzt als PDF erstellt am ${new Date(lastPrint.at).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}.`}

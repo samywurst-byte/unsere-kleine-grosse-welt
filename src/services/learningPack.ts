@@ -279,7 +279,8 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
     if (!child || track === 'skip') continue;
     const specs = track === 'math' ? [] : childPages(child, track, letter, statesByChild.get(childId) ?? [], seed);
     const goals = observationGoals(track, letter, specs[2]);
-    if (track === 'math' || (math && track !== 'toddler')) {
+    // Pakete von vor dem Rechenpfad haben kein Feld: dann gehören Rechenblätter dazu
+    if (track === 'math' || (math !== false && track !== 'toddler')) {
       const m = childMathPages(child, mathStatesByChild?.get(childId) ?? mathStates(childId, [], [], today), today, seed);
       for (const p of m.pages) specs.push({ kind: 'math', title: p.title, math: p.spec });
       goals.push(...m.goals.map((g) => g.title));
