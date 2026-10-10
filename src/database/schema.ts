@@ -70,4 +70,10 @@ export const SCHEMA_V8 = {
   shoppingItems: 'id, section, done, createdAt',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 8;
+/** Version 9: Suppenküche und Gefriervorrat. */
+export const SCHEMA_V9 = {
+  cookSessions: 'id, date, status',
+  freezerItems: 'id, frozenAt',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 9;

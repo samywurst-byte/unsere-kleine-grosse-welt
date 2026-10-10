@@ -37,7 +37,7 @@ describe('Datenbank', () => {
 
     const upgraded = new FamilyDatabase(name);
     await upgraded.open();
-    expect(upgraded.verno).toBe(8);
+    expect(upgraded.verno).toBe(9);
     expect(await upgraded.recipes.count()).toBeGreaterThan(20);
     const settings = await upgraded.settings.get('app');
     expect(settings?.bedtime).toBe('19:15');

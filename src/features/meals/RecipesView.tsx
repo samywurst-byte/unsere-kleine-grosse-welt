@@ -100,6 +100,14 @@ function RecipeModal({ recipe, cats, onClose }: { recipe: Draft; cats: MealCateg
             {(Object.keys(SIDE_LABEL) as MealSide[]).map((s) => <button key={s} type="button" className="seg__item" aria-pressed={r.side === s} onClick={() => set({ side: s })}>{SIDE_LABEL[s]}</button>)}
           </div>
         </Field>
+        <Field label="Mengen gedacht für">
+          <div className="row meal-stepper">
+            <button type="button" className="btn btn--icon btn--small" aria-label="Weniger Personen" disabled={(r.servings ?? 5) <= 1} onClick={() => set({ servings: (r.servings ?? 5) - 1 })}><Minus size={16} /></button>
+            <strong className="meal-count">{r.servings ?? 5}</strong>
+            <button type="button" className="btn btn--icon btn--small" aria-label="Mehr Personen" onClick={() => set({ servings: (r.servings ?? 5) + 1 })}><Plus size={16} /></button>
+            <span className="muted small">Personen</span>
+          </div>
+        </Field>
         <div>
           <h3 className="ft-sub">Zutaten</h3>
           <div className="meal-ing-rows">

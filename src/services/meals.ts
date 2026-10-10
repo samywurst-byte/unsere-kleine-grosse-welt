@@ -1,7 +1,7 @@
 import type { FamilyDatabase } from '../database/db';
 import { DEFAULT_MEAL_CATEGORIES, SECTION_LABEL, SECTION_ORDER } from '../data/meals';
-import type { AppSettings, DateKey, Ingredient, MealCategory, MealPlan, MealPlanDay, MealSide, Recipe, ShoppingItem, ShopSection } from '../types';
-import { addDaysKey, weekStartKey, WEEKDAY_SHORT, weekdayOf } from '../utils/dates';
+import type { AppSettings, CookSession, DateKey, FreezerItem, SoupKitchenSettings, Weekday, Ingredient, MealCategory, MealPlan, MealPlanDay, MealSide, Recipe, ShoppingItem, ShopSection } from '../types';
+import { addDaysKey, daysBetween, weekStartKey, WEEKDAY_SHORT, weekdayOf } from '../utils/dates';
 import { newId } from '../utils/id';
 
 /**
@@ -27,11 +27,22 @@ async function loadPlan(db: FamilyDatabase, weekStart: DateKey): Promise<MealPla
   return (await db.mealPlans.get(weekStart)) ?? emptyPlan(weekStart);
 }
 
+/** Gefriervorrat anpassen, wenn ein Tag ein Gericht aus der Truhe bekommt oder wieder verliert. */
+async function moveFreezerPortion(db: FamilyDatabase, freezerId: string | undefined, delta: number): Promise<void> {
+  if (!freezerId) return;
+  await db.freezerItems.where('id').equals(freezerId).modify((f) => { f.portions = Math.max(0, f.portions + delta); });
+}
+
 /** Einen Tag setzen oder leeren. */
 export async function setPlanDay(db: FamilyDatabase, date: DateKey, day: MealPlanDay | null): Promise<void> {
   const weekStart = weekStartKey(date);
-  await db.transaction('rw', db.mealPlans, async () => {
+  await db.transaction('rw', db.mealPlans, db.freezerItems, async () => {
     const plan = await loadPlan(db, weekStart);
+    const old = plan.days.find((d) => d.date === date);
+    if (old?.freezerId !== day?.freezerId) {
+      await moveFreezerPortion(db, old?.freezerId, +1);
+      await moveFreezerPortion(db, day?.freezerId, -1);
+    }
     const days = plan.days.filter((d) => d.date !== date);
     if (day) days.push({ ...day, date });
     days.sort((a, b) => a.date.localeCompare(b.date));
@@ -57,10 +68,12 @@ export async function swapPlanDays(db: FamilyDatabase, a: DateKey, b: DateKey): 
 }
 
 export async function savePlanDays(db: FamilyDatabase, weekStart: DateKey, add: MealPlanDay[]): Promise<void> {
-  await db.transaction('rw', db.mealPlans, async () => {
+  await db.transaction('rw', db.mealPlans, db.freezerItems, async () => {
     const plan = await loadPlan(db, weekStart);
     const taken = new Set(plan.days.map((d) => d.date));
-    const days = [...plan.days, ...add.filter((d) => !taken.has(d.date))].sort((a, b) => a.date.localeCompare(b.date));
+    const fresh = add.filter((d) => !taken.has(d.date));
+    for (const d of fresh) await moveFreezerPortion(db, d.freezerId, -1);
+    const days = [...plan.days, ...fresh].sort((a, b) => a.date.localeCompare(b.date));
     await db.mealPlans.put({ ...plan, days });
   });
 }
@@ -105,10 +118,17 @@ export function rankRecipes(recipes: Recipe[], opts: { plan: MealPlan; recent: M
 }
 
 /** Vorschlag für die leeren Tage: zuerst die noch offenen Wochenziele, dann Favoriten. Nur ein Vorschlag, nichts wird gespeichert. */
-export function suggestEmptyDays(recipes: Recipe[], categories: MealCategory[], plan: MealPlan, recent: MealPlan[]): MealPlanDay[] {
+export function suggestEmptyDays(recipes: Recipe[], categories: MealCategory[], plan: MealPlan, recent: MealPlan[], freezer: FreezerItem[] = []): MealPlanDay[] {
   const empty = weekDates(plan.id).filter((d) => !plan.days.some((x) => x.date === d));
   const working: MealPlan = { ...plan, days: [...plan.days] };
   const out: MealPlanDay[] = [];
+  // Was eingefroren ist, kommt zuerst dran: eine Mahlzeit pro Woche aus dem ältesten Vorrat
+  const oldest = freezerStock(freezer)[0];
+  if (oldest && empty.length && !plan.days.some((d) => d.freezerId)) {
+    const day = dayFromFreezer(oldest, empty.shift()!, recipes);
+    out.push(day);
+    working.days.push(day);
+  }
   for (const date of empty) {
     const open = categoryProgress(working, categories).filter((p) => p.have < p.category.perWeek).map((p) => p.category.id);
     let pick: Recipe | undefined;
@@ -166,6 +186,24 @@ export interface NeededIngredient extends Ingredient {
 
 const norm = (s: string) => s.trim().toLowerCase();
 
+/** Mengen im Gericht sind für so viele Personen gedacht. */
+export const DEFAULT_SERVINGS = 5;
+export const recipeServings = (r: Pick<Recipe, 'servings'>) => (r.servings && r.servings > 0 ? r.servings : DEFAULT_SERVINGS);
+
+const fmt = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
+
+/** Menge umrechnen, z. B. für Gäste: "500 g" × 1,4 = "700 g", "3" × 1,4 = "4,5". Unklare Angaben bekommen einen Faktor dazu. */
+export function scaleAmount(amount: string, factor: number): string {
+  if (Math.abs(factor - 1) < 0.01) return amount;
+  const m = /^(\d+(?:,\d+)?)(\s*)(.*)$/.exec(amount.trim());
+  if (!m) return `${amount} (× ${fmt(factor)})`;
+  const n = Number(m[1].replace(',', '.')) * factor;
+  const unit = m[3].trim();
+  const fine = /^(g|ml)$/i.test(unit);
+  const rounded = fine ? (n >= 100 ? Math.round(n / 10) * 10 : Math.round(n)) : Math.ceil(n * 2) / 2;
+  return `${fmt(rounded)}${m[2]}${m[3]}`;
+}
+
 /** "700 g" + "500 g" = "1200 g", "1" + "1" = "2"; alles andere wird nebeneinander geschrieben. */
 export function addAmounts(a: string, b: string): string {
   const parse = (x: string) => { const m = /^(\d+(?:,\d+)?)\s*([^\d\s+]*)$/.exec(x.trim()); return m ? { n: Number(m[1].replace(',', '.')), unit: m[2] } : null; };
@@ -179,22 +217,29 @@ export function addAmounts(a: string, b: string): string {
 }
 
 /** Alle Zutaten der geplanten Tage (ab heute), gleiche Zutaten zusammengefasst. */
-export function weekIngredients(plan: MealPlan, recipes: Recipe[], fromDate: DateKey): NeededIngredient[] {
+export function weekIngredients(plan: MealPlan, recipes: Recipe[], fromDate: DateKey, cooking: CookSession[] = []): NeededIngredient[] {
   const byId = new Map(recipes.map((r) => [r.id, r]));
   const map = new Map<string, NeededIngredient>();
-  for (const day of plan.days) {
-    if (day.date < fromDate || !day.recipeId) continue;
-    const recipe = byId.get(day.recipeId);
+  const end = addDaysKey(plan.id, 6);
+  const entries = [
+    // Gerichte aus dem Gefriervorrat brauchen keine Zutaten
+    ...plan.days.filter((d) => d.date >= fromDate && d.recipeId && !d.freezerId).map((d) => ({ date: d.date, recipeId: d.recipeId!, servings: d.servings })),
+    ...cooking.filter((c) => c.status === 'planned' && c.date >= fromDate && c.date <= end).map((c) => ({ date: c.date, recipeId: c.recipeId, servings: undefined })),
+  ];
+  for (const e of entries) {
+    const recipe = byId.get(e.recipeId);
     if (!recipe) continue;
-    const src = `${recipe.title} (${WEEKDAY_SHORT[weekdayOf(day.date)]})`;
+    const factor = (e.servings ?? recipeServings(recipe)) / recipeServings(recipe);
+    const src = `${recipe.title} (${WEEKDAY_SHORT[weekdayOf(e.date)]})`;
     for (const ing of recipe.ingredients) {
       const key = norm(ing.name);
+      const amount = ing.amount ? scaleAmount(ing.amount, factor) : undefined;
       const cur = map.get(key);
       if (cur) {
         cur.sources.push(src);
-        if (ing.amount) cur.amount = cur.amount ? addAmounts(cur.amount, ing.amount) : ing.amount;
+        if (amount) cur.amount = cur.amount ? addAmounts(cur.amount, amount) : amount;
       } else {
-        map.set(key, { ...ing, key, sources: [src] });
+        map.set(key, { ...ing, ...(amount ? { amount } : {}), key, sources: [src] });
       }
     }
   }
@@ -258,4 +303,92 @@ export async function saveRecipe(db: FamilyDatabase, recipe: Omit<Recipe, 'id' |
     ingredients: recipe.ingredients.filter((i) => i.name.trim()).map((i) => ({ ...i, name: i.name.trim(), ...(i.amount?.trim() ? { amount: i.amount.trim() } : { amount: undefined }) })),
   });
   return id;
+}
+
+// ------------------------------------------------------------- Gefriervorrat
+
+/** Ab so vielen Tagen weist die App freundlich darauf hin, etwas bald aufzubrauchen. */
+export const FREEZER_OLD_DAYS = 90;
+
+export async function addFreezerItem(db: FamilyDatabase, item: Omit<FreezerItem, 'id'>): Promise<string> {
+  const id = newId('freezer');
+  await db.freezerItems.add({ ...item, id, name: item.name.trim(), portions: Math.max(0, Math.round(item.portions)) });
+  return id;
+}
+
+export async function changeFreezerPortions(db: FamilyDatabase, id: string, delta: number): Promise<void> {
+  await moveFreezerPortion(db, id, delta);
+}
+
+/** Was noch da ist, ältestes zuerst. */
+export function freezerStock(items: FreezerItem[]): FreezerItem[] {
+  return items.filter((f) => f.portions > 0).sort((a, b) => a.frozenAt.localeCompare(b.frozenAt));
+}
+
+export function dayFromFreezer(item: FreezerItem, date: DateKey, recipes: Recipe[]): MealPlanDay {
+  const recipe = item.recipeId ? recipes.find((r) => r.id === item.recipeId) : undefined;
+  return {
+    date, title: `${item.name} aus dem Vorrat`, emoji: item.emoji ?? recipe?.emoji ?? '🧊', categories: recipe ? [...recipe.categories] : [],
+    ...(recipe?.side ? { side: recipe.side } : {}), ...(recipe ? { recipeId: recipe.id } : {}), freezerId: item.id,
+  };
+}
+
+// ------------------------------------------------------------- Suppenküche
+
+export const DEFAULT_SOUP_KITCHEN: SoupKitchenSettings = { enabled: true, everyWeeks: 2, day: 0, months: [10, 11, 12, 1, 2, 3] };
+export const soupKitchenSettings = (settings: Pick<AppSettings, 'soupKitchen'>): SoupKitchenSettings => settings.soupKitchen ?? DEFAULT_SOUP_KITCHEN;
+
+/** Gerichte für die Suppenküche (Kategorie „Suppenküche“), große Brühe zuerst. */
+export function soupRecipes(recipes: Recipe[]): Recipe[] {
+  return recipes.filter((r) => r.categories.includes('soup') && !r.paused)
+    .sort((a, b) => Number(b.id === 'recipe-rinderbruehe') - Number(a.id === 'recipe-rinderbruehe') || a.title.localeCompare(b.title, 'de'));
+}
+
+export function nextWeekday(from: DateKey, day: Weekday): DateKey {
+  for (let i = 0; i < 7; i++) { const d = addDaysKey(from, i); if (weekdayOf(d) === day) return d; }
+  return from;
+}
+
+/**
+ * Ist wieder Zeit für die Suppenküche? Gibt den vorgeschlagenen Kochtag zurück oder null.
+ * Nur in der Saison, nur wenn nichts geplant ist und das letzte Kochen (oder bewusste Auslassen) lang genug her ist.
+ */
+export function soupKitchenDue(today: DateKey, sessions: CookSession[], s: SoupKitchenSettings): DateKey | null {
+  if (!s.enabled) return null;
+  if (sessions.some((c) => c.status === 'planned' && c.date >= today)) return null;
+  const date = nextWeekday(today, s.day);
+  if (!s.months.includes(Number(date.slice(5, 7)))) return null;
+  const last = sessions.filter((c) => c.date <= date).sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (last && daysBetween(last.date, date) < s.everyWeeks * 7) return null;
+  return date;
+}
+
+export async function planCookSession(db: FamilyDatabase, date: DateKey, recipe: Recipe): Promise<string> {
+  const id = `cook|${date}`;
+  await db.cookSessions.put({ id, date, recipeId: recipe.id, title: recipe.title, emoji: recipe.emoji, status: 'planned', createdAt: new Date().toISOString() });
+  return id;
+}
+
+/** Diesmal nicht: zählt wie ein Termin, damit die Erinnerung erst im nächsten Rhythmus wiederkommt. */
+export async function skipCookSession(db: FamilyDatabase, date: DateKey, recipe?: Recipe): Promise<void> {
+  const id = `cook|${date}`;
+  const old = await db.cookSessions.get(id);
+  await db.cookSessions.put({
+    ...(old ?? { id, date, recipeId: recipe?.id ?? 'recipe-rinderbruehe', title: recipe?.title ?? 'Suppenküche', emoji: recipe?.emoji ?? '🍲', createdAt: new Date().toISOString() }),
+    status: 'skipped',
+  });
+}
+
+/** Gekocht: die eingefrorenen Portionen kommen in den Gefriervorrat. */
+export async function finishCookSession(db: FamilyDatabase, id: string, portions: number, frozenAt: DateKey): Promise<void> {
+  await db.transaction('rw', db.cookSessions, db.freezerItems, async () => {
+    const c = await db.cookSessions.get(id);
+    if (!c || c.status === 'done') return;
+    await db.cookSessions.put({ ...c, status: 'done', portions });
+    if (portions > 0) {
+      await db.freezerItems.add({
+        id: newId('freezer'), name: c.title.replace(/\s*\(große Menge\)\s*/i, '').trim(), emoji: c.emoji, recipeId: c.recipeId, portions, frozenAt,
+      });
+    }
+  });
 }

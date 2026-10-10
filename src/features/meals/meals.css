@@ -52,3 +52,9 @@
   .meal-item__src { margin-left: 0; width: 100%; }
   .meal-ing-rows .row { flex-wrap: wrap; }
 }
+.meal-soup { display: grid; gap: var(--space-2); background: var(--c-terracotta-soft); }
+.meal-soup__row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.meal-stepper { align-items: center; gap: var(--space-2); }
+.meal-stepper__value { min-width: 7em; text-align: center; font-size: var(--fs-l); }
+.meal-servings { gap: 4px; }
+.meal-old { color: var(--c-terracotta-ink); font-weight: 700; }

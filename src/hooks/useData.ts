@@ -169,3 +169,11 @@ export function useMealPlans() {
 export function useShoppingItems() {
   return useLiveQuery(() => db.shoppingItems.orderBy('createdAt').toArray(), []);
 }
+
+export function useCookSessions() {
+  return useLiveQuery(() => db.cookSessions.toArray(), []);
+}
+
+export function useFreezerItems() {
+  return useLiveQuery(() => db.freezerItems.toArray(), []);
+}

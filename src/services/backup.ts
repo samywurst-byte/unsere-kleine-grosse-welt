@@ -78,6 +78,8 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   recipes: (r) => (!isStr(r.title) || !Array.isArray(r.categories) || !Array.isArray(r.ingredients) ? 'Gericht ungültig' : null),
   mealPlans: (r) => (!isValidDateKey(r.id) || !Array.isArray(r.days) || !Array.isArray(r.wishes) ? 'Essensplan ungültig' : null),
   shoppingItems: (r) => (!isStr(r.name) || typeof r.done !== 'boolean' ? 'Einkaufsliste ungültig' : null),
+  cookSessions: (r) => (!isValidDateKey(r.date) || !isStr(r.recipeId) ? 'Suppenküche ungültig' : null),
+  freezerItems: (r) => (!isStr(r.name) || typeof r.portions !== 'number' || r.portions < 0 || !isValidDateKey(r.frozenAt) ? 'Gefriervorrat ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),
   missions: (r) => (!isStr(r.title) || typeof r.stars !== 'number' || r.stars < 1 || !Array.isArray(r.assignedTo) ? 'Zusatzmission ungültig' : null),

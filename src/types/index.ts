@@ -256,6 +256,8 @@ export interface AppSettings {
   icsExportedAt?: string;
   /** Wochenziele des Essensplans. Fehlt = die sieben Standardkategorien. */
   mealCategories?: MealCategory[];
+  /** Suppenküche im Winter. Fehlt = an, alle 2 Wochen sonntags, Oktober bis März. */
+  soupKitchen?: SoupKitchenSettings;
   createdAt: string;
 }
 
@@ -563,6 +565,8 @@ export interface Recipe {
   side?: MealSide;
   ingredients: Ingredient[];
   note?: string;
+  /** Für wie viele Personen die Mengen gedacht sind. Fehlt = 5 (2 Erwachsene, 3 Kinder). */
+  servings?: number;
   favorite?: boolean;
   /** Mag die Familie gerade nicht: wird nicht vorgeschlagen. */
   paused?: boolean;
@@ -580,6 +584,10 @@ export interface MealPlanDay {
   side?: MealSide;
   /** Wunsch eines Kindes aus dem Familienrat. */
   wishedBy?: Id;
+  /** Für wie viele Personen gekocht wird (z. B. mit Gästen). Fehlt = wie im Gericht. */
+  servings?: number;
+  /** Kommt aus dem Gefriervorrat: eine Portion wurde dafür abgebucht. */
+  freezerId?: Id;
 }
 
 /** Wochenplan. Id = Montag der Woche. */
@@ -602,4 +610,39 @@ export interface ShoppingItem {
   source?: string;
   createdAt: string;
   doneAt?: string;
+}
+
+export interface SoupKitchenSettings {
+  enabled: boolean;
+  /** Alle n Wochen eine größere Menge kochen. */
+  everyWeeks: number;
+  /** Bevorzugter Kochtag. */
+  day: Weekday;
+  /** Monate (1 bis 12), in denen die Suppenküche vorschlägt. */
+  months: number[];
+}
+
+/** Großes Kochen für den Vorrat, z. B. Rinderknochenbrühe. Elternaufgabe, keine Sterne. */
+export interface CookSession {
+  id: Id;
+  date: DateKey;
+  recipeId: Id;
+  title: string;
+  emoji: string;
+  status: 'planned' | 'done' | 'skipped';
+  /** Eingefrorene Portionen nach dem Kochen. */
+  portions?: number;
+  createdAt: string;
+}
+
+/** Gefriervorrat: was ihr wirklich eingefroren habt, mit Datum und Menge. Nichts wird geschätzt. */
+export interface FreezerItem {
+  id: Id;
+  name: string;
+  emoji?: string;
+  recipeId?: Id;
+  /** Portionen; eine Portion reicht für eine Familienmahlzeit. */
+  portions: number;
+  frozenAt: DateKey;
+  note?: string;
 }

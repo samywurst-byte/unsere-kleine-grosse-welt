@@ -1,4 +1,4 @@
-import { ArrowLeftRight, ChevronLeft, ChevronRight, ShoppingCart, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import { ArrowLeftRight, ChevronLeft, ChevronRight, Minus, Plus, ShoppingCart, Sparkles, Trash2, Users, Wand2 } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
@@ -6,19 +6,20 @@ import { Segmented } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { SIDE_LABEL } from '../../data/meals';
 import { db } from '../../database/db';
-import { useChildren, useMealPlans, useRecipes, useSettings } from '../../hooks/useData';
+import { useChildren, useCookSessions, useFreezerItems, useMealPlans, useRecipes, useSettings } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import {
-  addIngredientsToList, categoryProgress, dayFromRecipe, emptyPlan, mealCategories, rankRecipes, savePlanDays, setPlanDay, sideCounts,
-  suggestEmptyDays, swapPlanDays, weekDates, weekIngredients, type NeededIngredient,
+  addIngredientsToList, categoryProgress, dayFromFreezer, dayFromRecipe, emptyPlan, freezerStock, mealCategories, rankRecipes, recipeServings, savePlanDays,
+  setPlanDay, sideCounts, suggestEmptyDays, swapPlanDays, weekDates, weekIngredients, type NeededIngredient,
 } from '../../services/meals';
-import type { MealCategory, MealPlan, MealPlanDay, MealSide, Recipe } from '../../types';
+import type { CookSession, FreezerItem, MealCategory, MealPlan, MealPlanDay, MealSide, Recipe } from '../../types';
 import { addDaysKey, formatDayMonth, formatWeekday, toDateKey, weekdayOf, weekStartKey } from '../../utils/dates';
 import { RecipesView } from './RecipesView';
 import { ShoppingView } from './ShoppingView';
+import { SoupKitchenCard, StockView } from './StockView';
 import './meals.css';
 
-type Tab = 'plan' | 'list' | 'recipes';
+type Tab = 'plan' | 'list' | 'stock' | 'recipes';
 
 /** Essen im Elternbereich: Wochenplan, Einkaufsliste und eure Gerichte. */
 export function MealsPage() {
@@ -29,10 +30,11 @@ export function MealsPage() {
       <div className="parent-section__head">
         <h2>Essen</h2>
         <Segmented<Tab> label="Bereich" value={tab} onChange={(t) => setParams({ tab: t }, { replace: true })}
-          options={[{ value: 'plan', label: 'Wochenplan' }, { value: 'list', label: 'Einkaufsliste' }, { value: 'recipes', label: 'Gerichte' }]} />
+          options={[{ value: 'plan', label: 'Wochenplan' }, { value: 'list', label: 'Einkaufsliste' }, { value: 'stock', label: 'Vorrat' }, { value: 'recipes', label: 'Gerichte' }]} />
       </div>
       {tab === 'plan' && <PlanView />}
       {tab === 'list' && <ShoppingView />}
+      {tab === 'stock' && <StockView />}
       {tab === 'recipes' && <RecipesView />}
     </div>
   );
@@ -52,11 +54,14 @@ function PlanView() {
   const plans = useMealPlans();
   const settings = useSettings();
   const children = useChildren();
+  const freezer = useFreezerItems();
+  const cooking = useCookSessions();
   const [picking, setPicking] = useState<string | null>(null);
+  const [servingsFor, setServingsFor] = useState<MealPlanDay | null>(null);
   const [swapFrom, setSwapFrom] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<MealPlanDay[] | null>(null);
   const [checking, setChecking] = useState(false);
-  if (!recipes || !plans || !settings || !children) return null;
+  if (!recipes || !plans || !settings || !children || !freezer || !cooking) return null;
 
   const plan = plans.find((p) => p.id === week) ?? emptyPlan(week);
   const recent = plans.filter((p) => p.id < week && p.id >= addDaysKey(week, -21));
@@ -113,6 +118,8 @@ function PlanView() {
         </div>
       )}
 
+      <SoupKitchenCard today={today} week={week} />
+
       <ol className="meal-days">
         {weekDates(week).map((date) => {
           const d = plan.days.find((x) => x.date === date);
@@ -129,12 +136,18 @@ function PlanView() {
                       {d.categories.map((c) => catById.get(c)).filter((c): c is MealCategory => !!c).map((c) => <span key={c.id} className="chip">{c.emoji} {c.label}</span>)}
                       {d.side && <span className="chip">{SIDE_LABEL[d.side]}</span>}
                       {wisher && <span className="chip">Wunsch von {wisher.name}</span>}
+                      {d.freezerId && <span className="chip">🧊 aus dem Vorrat</span>}
                     </span>
                   </>
                 ) : <span className="muted">{swapFrom ? 'Hierher tauschen' : 'Noch frei · antippen'}</span>}
               </button>
               {d && !swapFrom && (
                 <>
+                  {d.recipeId && !d.freezerId && (
+                    <button type="button" className="btn btn--small btn--ghost meal-servings" aria-label={`Personen am ${formatWeekday(date)}`} onClick={() => setServingsFor(d)}>
+                      <Users size={16} aria-hidden="true" /> {d.servings ?? recipeServings(byId.get(d.recipeId) ?? {})}
+                    </button>
+                  )}
                   <button type="button" className="btn btn--icon btn--ghost" aria-label={`${formatWeekday(date)} tauschen`} onClick={() => setSwapFrom(date)}><ArrowLeftRight size={18} /></button>
                   <button type="button" className="btn btn--icon btn--ghost" aria-label={`${formatWeekday(date)} leeren`} onClick={() => void setPlanDay(db, date, null)}><Trash2 size={18} /></button>
                 </>
@@ -146,16 +159,17 @@ function PlanView() {
       {swapFrom && <p className="notice notice--info">Jetzt den Tag antippen, mit dem getauscht werden soll. <button type="button" className="btn btn--small btn--ghost" onClick={() => setSwapFrom(null)}>Abbrechen</button></p>}
 
       <div className="row row--wrap">
-        <button type="button" className="btn btn--sky" disabled={!freeDays.length} onClick={() => setSuggestion(suggestEmptyDays(recipes, cats, plan, recent))}>
+        <button type="button" className="btn btn--sky" disabled={!freeDays.length} onClick={() => setSuggestion(suggestEmptyDays(recipes, cats, plan, recent, freezer))}>
           <Wand2 size={18} aria-hidden="true" /> Freie Tage vorschlagen
         </button>
-        <button type="button" className="btn btn--sage" disabled={!plan.days.some((d) => d.recipeId)} onClick={() => setChecking(true)}>
+        <button type="button" className="btn btn--sage" disabled={!plan.days.some((d) => d.recipeId) && !cooking.some((c) => c.status === 'planned' && c.date >= week && c.date <= addDaysKey(week, 6))} onClick={() => setChecking(true)}>
           <ShoppingCart size={18} aria-hidden="true" /> Zutaten prüfen
         </button>
         {plan.ingredientsCheckedAt && <span className="small muted">Zutaten zuletzt geprüft am {formatDayMonth(toDateKey(new Date(plan.ingredientsCheckedAt)))}</span>}
       </div>
 
-      {picking && <PickModal date={picking} recipes={recipes} cats={cats} plan={plan} recent={recent} onClose={() => setPicking(null)} />}
+      {picking && <PickModal date={picking} recipes={recipes} cats={cats} plan={plan} recent={recent} freezer={freezer} onClose={() => setPicking(null)} />}
+      {servingsFor && <ServingsModal day={servingsFor} recipe={servingsFor.recipeId ? byId.get(servingsFor.recipeId) : undefined} onClose={() => setServingsFor(null)} />}
       {suggestion && (
         <Modal title="Vorschlag für die freien Tage" onClose={() => setSuggestion(null)}
           actions={<><button type="button" className="btn" onClick={() => setSuggestion(null)}>Lieber nicht</button>
@@ -175,14 +189,16 @@ function PlanView() {
           <p className="small muted">Danach lässt sich jeder Tag einzeln ändern oder tauschen.</p>
         </Modal>
       )}
-      {checking && <IngredientsModal plan={plan} recipes={recipes} today={today} onClose={() => setChecking(false)} />}
+      {checking && <IngredientsModal plan={plan} recipes={recipes} cooking={cooking} today={today} onClose={() => setChecking(false)} />}
     </div>
   );
 }
 
-function PickModal({ date, recipes, cats, plan, recent, onClose }: {
-  date: string; recipes: Recipe[]; cats: MealCategory[]; plan: MealPlan; recent: MealPlan[]; onClose: () => void;
+function PickModal({ date, recipes, cats, plan, recent, freezer, onClose }: {
+  date: string; recipes: Recipe[]; cats: MealCategory[]; plan: MealPlan; recent: MealPlan[]; freezer: FreezerItem[]; onClose: () => void;
 }) {
+  const stock = freezerStock(freezer);
+  const current = plan.days.find((d) => d.date === date);
   const open = categoryProgress(plan, cats).find((p) => p.have < p.category.perWeek)?.category.id ?? '';
   const [cat, setCat] = useState(open);
   const [free, setFree] = useState('');
@@ -191,6 +207,19 @@ function PickModal({ date, recipes, cats, plan, recent, onClose }: {
   return (
     <Modal title={`${formatWeekday(date)}, ${formatDayMonth(date)}: Was gibt es?`} onClose={onClose} wide>
       <div className="stack">
+        {stock.length > 0 && (
+          <div>
+            <h3 className="card__eyebrow">Aus dem Gefriervorrat</h3>
+            <div className="row row--wrap">
+              {stock.map((f) => (
+                <button key={f.id} type="button" className="btn btn--sky" disabled={current?.freezerId === f.id}
+                  onClick={() => void setPlanDay(db, date, dayFromFreezer(f, date, recipes)).then(onClose)}>
+                  {f.emoji ?? '🧊'} {f.name} <span className="small">({f.portions})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="seg" role="group" aria-label="Kategorie">
           <button type="button" className="seg__item" aria-pressed={!cat} onClick={() => setCat('')}>Alle</button>
           {cats.map((c) => <button key={c.id} type="button" className="seg__item" aria-pressed={cat === c.id} onClick={() => setCat(c.id)}>{c.emoji} {c.label}</button>)}
@@ -208,6 +237,7 @@ function PickModal({ date, recipes, cats, plan, recent, onClose }: {
         <div className="row">
           <input className="input" value={free} onChange={(e) => setFree(e.target.value)} placeholder="Etwas anderes, z. B. Reste oder Essen bei Oma" aria-label="Freier Eintrag" />
           <button type="button" className="btn" disabled={!free.trim()} onClick={() => void setPlanDay(db, date, { date, title: free.trim(), emoji: '🍽️', categories: [] }).then(onClose)}>Eintragen</button>
+          <button type="button" className="btn btn--sage" onClick={() => void setPlanDay(db, date, { date, title: 'Reste aufbrauchen', emoji: '♻️', categories: [] }).then(onClose)}>♻️ Reste</button>
         </div>
       </div>
     </Modal>
@@ -215,8 +245,8 @@ function PickModal({ date, recipes, cats, plan, recent, onClose }: {
 }
 
 /** Zutaten prüfen: nichts wird ungefragt eingekauft. Was ihr habt, bleibt von der Liste. */
-function IngredientsModal({ plan, recipes, today, onClose }: { plan: MealPlan; recipes: Recipe[]; today: string; onClose: () => void }) {
-  const items = weekIngredients(plan, recipes, plan.id > today ? plan.id : today);
+function IngredientsModal({ plan, recipes, cooking, today, onClose }: { plan: MealPlan; recipes: Recipe[]; cooking: CookSession[]; today: string; onClose: () => void }) {
+  const items = weekIngredients(plan, recipes, plan.id > today ? plan.id : today, cooking);
   const [have, setHave] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<number | null>(null);
   const toggle = (k: string) => { const n = new Set(have); if (n.has(k)) n.delete(k); else n.add(k); setHave(n); };
@@ -244,6 +274,25 @@ function IngredientsModal({ plan, recipes, today, onClose }: { plan: MealPlan; r
           </div>
         </>
       ) : <p className="muted">Für die kommenden Tage sind keine Gerichte mit Zutaten geplant.</p>}
+    </Modal>
+  );
+}
+
+/** Für wie viele kocht ihr an diesem Tag? Die Mengen auf der Einkaufsliste rechnen sich mit. */
+function ServingsModal({ day, recipe, onClose }: { day: MealPlanDay; recipe?: Recipe; onClose: () => void }) {
+  const base = recipe ? recipeServings(recipe) : 5;
+  const [n, setN] = useState(day.servings ?? base);
+  const save = () => void setPlanDay(db, day.date, { ...day, ...(n === base ? { servings: undefined } : { servings: n }) }).then(onClose);
+  return (
+    <Modal title={`${day.emoji ?? ''} ${day.title}`} onClose={onClose}
+      actions={<><button type="button" className="btn" onClick={onClose}>Abbrechen</button><button type="button" className="btn btn--primary" onClick={save}>Speichern</button></>}>
+      <p className="muted">Für wie viele Personen kocht ihr am {formatWeekday(day.date)}? Zum Beispiel mit Gästen oder für Reste am nächsten Tag.</p>
+      <div className="row meal-stepper">
+        <button type="button" className="btn btn--icon" aria-label="Weniger" disabled={n <= 1} onClick={() => setN(n - 1)}><Minus size={20} /></button>
+        <strong className="meal-stepper__value">{n} Personen</strong>
+        <button type="button" className="btn btn--icon" aria-label="Mehr" disabled={n >= 30} onClick={() => setN(n + 1)}><Plus size={20} /></button>
+      </div>
+      {n !== base && <p className="small muted">Das Gericht ist für {base} gedacht; die Zutaten werden mit {String(Math.round((n / base) * 100) / 100).replace('.', ',')} malgenommen.</p>}
     </Modal>
   );
 }
