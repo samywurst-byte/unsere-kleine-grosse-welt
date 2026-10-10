@@ -6,7 +6,7 @@ import { db } from '../../database/db';
 import { useChildren, useChoreDefinitions, useChores, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions, useSpecialDay } from '../../hooks/useData';
 import { tasksHiddenFor } from '../../services/specialDay';
 import { completeChore, reopenChore } from '../../services/chores';
-import { routinesForChild, setRoutineDone } from '../../services/routines';
+import { isSchoolChildOn, routinesForChild, setRoutineDone } from '../../services/routines';
 import type { ChildProfile, RoutineDefinition } from '../../types';
 
 /** "Heute schaffen wir das!": was heute für alle dazugehört. Ohne Sterne, ohne Wertung. */
@@ -21,7 +21,7 @@ export function TodayEssentials({ date }: { date: string }) {
   if (!children || !defs || !completions || !chores || !choreDefs || kindergartenDay === undefined || special === undefined) return null;
   const opts = { kindergartenDay, special: special ?? undefined };
 
-  const highlighted = defs.filter((d) => d.highlight && children.some((c) => routinesForChild([d], c.id, date, opts).length));
+  const highlighted = defs.filter((d) => d.highlight && children.some((c) => routinesForChild([d], c.id, date, { ...opts, schoolChild: isSchoolChildOn(c, date) }).length));
   const doneSet = new Set(completions.map((c) => `${c.definitionId}|${c.childId}`));
   const choreDefMap = new Map(choreDefs.map((d) => [d.id, d]));
   const visibleChores = chores.filter((c) => c.status !== 'skipped' && choreDefMap.has(c.definitionId) && !tasksHiddenFor(opts.special, c.childId));
@@ -42,7 +42,7 @@ export function TodayEssentials({ date }: { date: string }) {
               <Link to={`/timer/${def.timerPresetId}`} className="btn btn--small btn--sage"><Timer size={18} aria-hidden="true" /> Timer</Link>
             )}
             <span className="essentials__kids">
-              {children.filter((c) => routinesForChild([def], c.id, date, opts).length).map((c) => {
+              {children.filter((c) => routinesForChild([def], c.id, date, { ...opts, schoolChild: isSchoolChildOn(c, date) }).length).map((c) => {
                 const done = doneSet.has(`${def.id}|${c.id}`);
                 return (
                   <button

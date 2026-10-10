@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { Icon } from '../../components/Icon';
 import { useChildren, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions, useSpecialDay } from '../../hooks/useData';
-import { routinesForChild } from '../../services/routines';
+import { isSchoolChildOn, routinesForChild } from '../../services/routines';
 import type { DateKey, RoutinePhase } from '../../types';
 
 const TITLE: Record<RoutinePhase, string> = {
@@ -19,7 +19,7 @@ export function CurrentRoutine({ date, phase }: { date: DateKey; phase: RoutineP
 
   const items = defs
     .filter((d) => d.phase === phase)
-    .map((d) => ({ def: d, kids: children.filter((c) => routinesForChild([d], c.id, date, { kindergartenDay, special: special ?? undefined }).length) }))
+    .map((d) => ({ def: d, kids: children.filter((c) => routinesForChild([d], c.id, date, { kindergartenDay, special: special ?? undefined, schoolChild: isSchoolChildOn(c, date) }).length) }))
     .filter((x) => x.kids.length);
   if (!items.length) return null;
 

@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarPlus, Check, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Check, HardDriveDownload, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
@@ -6,7 +6,9 @@ import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { DEFAULT_COUNCIL_AGENDA } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useCouncilNote, useMembers, useOccurrences, useSettings, useWeekendAdventures } from '../../hooks/useData';
+import { useCouncilNote, useDeviceMeta, useMembers, useOccurrences, useSettings, useWeekendAdventures } from '../../hooks/useData';
+import { backupIsDue } from '../../services/backup';
+import { exportBackupFile } from '../../services/backupExport';
 import { useNow } from '../../hooks/useNow';
 import {
   addDecision, councilAgenda, councilDate, decisionToEvent, draftAdventure, saveAdventure, saveCouncilAgenda, suggestIdeas, updateCouncil, weekendOf,
@@ -75,6 +77,8 @@ export function CouncilPage() {
       </ol>
 
       <Decisions note={current} date={date} change={change} />
+
+      <BackupRound />
 
       {editAgenda && <AgendaModal agenda={agenda} onClose={() => setEditAgenda(false)} />}
     </div>
@@ -230,5 +234,28 @@ function AgendaModal({ agenda, onClose }: { agenda: string[]; onClose: () => voi
         <textarea className="input" rows={8} value={text} onChange={(e) => setText(e.target.value)} />
       </Field>
     </Modal>
+  );
+}
+
+/** Zum Schluss der Runde: einmal die Sicherung exportieren, damit Fotos und Lernstände nicht nur auf dem iPad liegen. */
+function BackupRound() {
+  const meta = useDeviceMeta();
+  const [message, setMessage] = useState<string | null>(null);
+  if (meta === undefined) return null;
+  const last = meta?.lastBackupAt;
+  const due = backupIsDue(last);
+  return (
+    <section className={`card ft-backup ${due ? 'ft-backup--due' : ''}`}>
+      <h2 className="card__title"><HardDriveDownload size={24} aria-hidden="true" /> Zum Schluss: Sicherung</h2>
+      <p className="muted ft-card__lead">
+        {last ? `Letzte Sicherung: ${new Date(last).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}.` : 'Von diesem iPad gibt es noch keine Sicherung.'}
+        {' '}Am besten in „Dateien“ (iCloud Drive) ablegen.
+      </p>
+      <button type="button" className={`btn ${due ? 'btn--primary' : ''}`}
+        onClick={() => void exportBackupFile(db).then((r) => r !== 'cancelled' && setMessage('Danke! Die Sicherung ist erstellt.')).catch((e) => setMessage(`Hat nicht geklappt: ${e instanceof Error ? e.message : String(e)}`))}>
+        <HardDriveDownload size={18} aria-hidden="true" /> Sicherung exportieren
+      </button>
+      {message && <p className="notice notice--ok">{message}</p>}
+    </section>
   );
 }

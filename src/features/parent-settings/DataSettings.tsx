@@ -6,9 +6,10 @@ import { PinPad } from '../../components/PinPad';
 import { db } from '../../database/db';
 import { useDeviceMeta } from '../../hooks/useData';
 import {
-  backupFileName, backupIsDue, exportData, importData, markBackedUp, restoreSafetyCopy, validateBackup, type BackupFile,
+  backupFileName, backupIsDue, importData, restoreSafetyCopy, validateBackup, type BackupFile,
 } from '../../services/backup';
 import type { SafetyCopy } from '../../types';
+import { exportBackupFile } from '../../services/backupExport';
 import { verifyPin } from '../../services/pin';
 import { isStandalone, isStoragePersisted, requestPersistentStorage, saveFile } from '../../services/platform';
 
@@ -27,9 +28,7 @@ export function DataSettings() {
 
   const doExport = async () => {
     try {
-      const data = await exportData(db);
-      const res = await saveFile(backupFileName(), JSON.stringify(data, null, 2));
-      if (res !== 'cancelled') await markBackedUp(db);
+      const res = await exportBackupFile(db);
       if (res !== 'cancelled') setMessage({ kind: 'ok', text: res === 'shared' ? 'Sicherung übergeben. Am besten „In Dateien sichern“ wählen.' : 'Sicherung wurde heruntergeladen.' });
     } catch (e) {
       setMessage({ kind: 'error', text: `Export fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}` });

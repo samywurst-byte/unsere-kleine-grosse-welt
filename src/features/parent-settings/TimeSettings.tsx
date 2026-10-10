@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Field, Toggle, WeekdayPicker } from '../../components/FormControls';
 import { db } from '../../database/db';
 import { useSettings } from '../../hooks/useData';
+import { papaTimeSettings } from '../../services/familyTime';
 import type { AppSettings, Weekday } from '../../types';
 import { isValidTime, WEEKDAY_LONG, WEEKDAY_ORDER } from '../../utils/dates';
 
@@ -86,6 +87,23 @@ export function TimeSettings() {
               <input className="input" type="time" value={draft.bedtimeOverrides[d] ?? ''} onChange={(e) => setOverride(d, e.target.value)} />
             </Field>
           ))}
+        </div>
+      </div>
+      <div className="card">
+        <h3 className="card__title">Papa-Zeit</h3>
+        <p className="small muted" style={{ marginBottom: 'var(--space-3)' }}>Exklusive Zeit von Papa mit jedem Kind, in der Familienzeit. Seltener als Mama-Zeit, weil Papa arbeitet. Keine Sterne.</p>
+        <div className="form-grid">
+          <Field label="Wie oft pro Woche und Kind?">
+            <div className="seg" role="group" aria-label="Wie oft pro Woche">
+              {[0, 1, 2, 3].map((n) => (
+                <button key={n} type="button" className="seg__item" aria-pressed={papaTimeSettings(draft).perWeek === n}
+                  onClick={() => set({ papaTime: { ...papaTimeSettings(draft), perWeek: n } })}>{n === 0 ? 'aus' : `${n}×`}</button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Vorgeschlagen an">
+            <WeekdayPicker value={papaTimeSettings(draft).days} onChange={(days) => set({ papaTime: { ...papaTimeSettings(draft), days } })} />
+          </Field>
         </div>
       </div>
       <div className="card">

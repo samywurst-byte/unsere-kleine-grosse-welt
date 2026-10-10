@@ -1,4 +1,5 @@
-import type { CalendarEvent, DateKey, EventException, EventOccurrence, Member, Weekday } from '../types';
+import type { CalendarEvent, DateKey, EventException, EventOccurrence, HolidayRegion, Member, Weekday } from '../types';
+import { HOLIDAY_ID_PREFIX, publicHolidayEvents } from './holidays';
 import { addDaysKey, atTime, daysBetween, fromDateKey, toDateKey, weekdayOf, weekStartKey } from '../utils/dates';
 
 /**
@@ -95,9 +96,12 @@ export function expandOccurrences(params: {
   members?: Member[];
   from: DateKey;
   to: DateKey;
+  /** Gesetzliche Feiertage einblenden. Fehlt = keine (z. B. in Tests). */
+  holidayRegion?: HolidayRegion;
 }): EventOccurrence[] {
   const { events, exceptions, from, to } = params;
-  const all = [...events, ...birthdayEvents(params.members ?? [])];
+  const holidays = publicHolidayEvents(params.holidayRegion ?? 'none', from, to);
+  const all = [...events, ...birthdayEvents(params.members ?? []), ...holidays];
   const byId = new Map(all.map((e) => [e.id, e]));
   const exMap = new Map(exceptions.map((x) => [`${x.eventId}|${x.originalDate}`, x]));
   const out: EventOccurrence[] = [];
@@ -111,7 +115,8 @@ export function expandOccurrences(params: {
         event, date, originalDate: date,
         startTime: event.startTime, endTime: event.endTime, departureTime: event.departureTime,
         isMoved: false,
-        generated: event.category === 'birthday' && event.id.startsWith('birthday-') ? 'birthday' : undefined,
+        generated: event.category === 'birthday' && event.id.startsWith('birthday-') ? 'birthday'
+          : event.id.startsWith(HOLIDAY_ID_PREFIX) ? 'public-holiday' : undefined,
       });
     }
   }

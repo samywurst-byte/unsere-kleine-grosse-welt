@@ -26,6 +26,7 @@ export function DashboardPage() {
   const tomorrow = addDaysKey(today, 1);
   const occurrences = useOccurrences(today, addDaysKey(today, 7));
   const holiday = occurrences ? isHolidayOn(occurrences, today) : false;
+  const publicHoliday = occurrences?.find((o) => o.date === today && o.generated === 'public-holiday');
   const info = settings ? getDayPhase(now, today, settings, holiday) : undefined;
 
   if (!settings || !info || !occurrences) return null;
@@ -45,7 +46,7 @@ export function DashboardPage() {
           </div>
           <p className="dash__time">{time}</p>
           {settings.clockLearningMode && <p className="dash__words">Es ist {timeInWords(now.getHours(), now.getMinutes())}.</p>}
-          <p className="chip dash__phase">{info.title}{holiday ? ' · Ferien' : ''}</p>
+          <p className="chip dash__phase">{info.title}{publicHoliday ? ` · ${publicHoliday.event.title}` : holiday ? ' · Ferien' : ''}</p>
         </div>
         <NextEventCard occurrences={occurrences} now={now} />
       </section>

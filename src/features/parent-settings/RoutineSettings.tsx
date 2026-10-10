@@ -1,14 +1,18 @@
 import { ArrowDown, ArrowUp, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Field, Segmented, Toggle, WeekdayPicker } from '../../components/FormControls';
+import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
 import { IconPicker } from '../../components/IconPicker';
 import { Modal } from '../../components/Modal';
+import { SCHOOL_ROUTINES } from '../../data/schoolRoutines';
 import { db } from '../../database/db';
 import { useChildren, useRoutineDefinitions, useTimerPresets } from '../../hooks/useData';
+import { useNow } from '../../hooks/useNow';
+import { prepareSchoolRoutines, schoolRoutineId } from '../../services/routines';
 import { ROUTINE_PHASE_LABEL } from '../../services/dayPhase';
-import type { RoutineDefinition, RoutinePhase } from '../../types';
-import { WEEKDAY_ORDER, WEEKDAY_SHORT } from '../../utils/dates';
+import type { ChildProfile, RoutineDefinition, RoutinePhase, RoutineStage } from '../../types';
+import { formatLong, toDateKey, WEEKDAY_ORDER, WEEKDAY_SHORT } from '../../utils/dates';
 import { newId } from '../../utils/id';
 import { MemberSelect } from './MemberSelect';
 
@@ -51,7 +55,7 @@ export function RoutineSettings() {
               <li key={d.id} className="list-item" style={{ opacity: d.active ? 1 : 0.5 }}>
                 <Icon name={d.icon} size={28} />
                 <div className="list-item__main">
-                  <p className="list-item__title">{d.title}{d.highlight && <span className="chip" style={{ marginLeft: 8 }}>Startseite</span>}{d.kindergartenOnly && <span className="chip" style={{ marginLeft: 8 }}>Kindergarten</span>}{!d.active && ' (pausiert)'}</p>
+                  <p className="list-item__title">{d.title}{d.highlight && <span className="chip" style={{ marginLeft: 8 }}>Startseite</span>}{d.kindergartenOnly && <span className="chip" style={{ marginLeft: 8 }}>{d.stage === 'school' ? 'Schultage' : 'Kindergarten'}</span>}{d.stage && <span className="chip" style={{ marginLeft: 8 }}>{d.stage === 'school' ? 'ab Schulbeginn' : 'bis Schulbeginn'}</span>}{!d.active && ' (pausiert)'}</p>
                   <p className="list-item__meta">
                     {d.weekdays.length === 7 ? 'täglich' : WEEKDAY_ORDER.filter((w) => d.weekdays.includes(w)).map((w) => WEEKDAY_SHORT[w]).join(', ')}
                     {' · '}{children.filter((c) => d.assignedTo.includes(c.id)).map((c) => c.name).join(', ') || 'niemand'}
@@ -65,8 +69,44 @@ export function RoutineSettings() {
           </ul>
         </section>
       ))}
+      <SchoolPrep children={children} defs={defs} />
       {editing && <RoutineEditor def={editing} onClose={() => setEditing(null)} />}
     </div>
+  );
+}
+
+/** Schulkind-Routinen rechtzeitig vorbereiten. Sie erscheinen automatisch ab dem Einschulungsdatum aus dem Profil. */
+function SchoolPrep({ children, defs }: { children: ChildProfile[]; defs: RoutineDefinition[] }) {
+  const today = toDateKey(useNow(60_000));
+  const upcoming = children.filter((c) => c.schoolEntryDate && c.schoolEntryDate > today).sort((a, b) => a.schoolEntryDate!.localeCompare(b.schoolEntryDate!));
+  if (!upcoming.length) return null;
+  return (
+    <section className="phase-group">
+      <div className="parent-section__head"><h3>Bald Schulkind</h3></div>
+      <p className="small muted">
+        Schulweg, Ranzen packen, Hausaufgaben: Diese Routinen lassen sich jetzt anlegen und erscheinen erst ab dem Einschulungsdatum.
+        Routinen, die nur in den Kindergarten gehören, beim Bearbeiten auf „Nur Kindergartenkinder“ stellen; sie verschwinden dann am ersten Schultag.
+      </p>
+      <ul className="list">
+        {upcoming.map((c) => {
+          const prepared = SCHOOL_ROUTINES.filter((t) => defs.some((d) => d.id === schoolRoutineId(t.id, c.id))).length;
+          return (
+            <li key={c.id} className="list-item">
+              <Avatar avatar={c.avatar} color={c.color} size={40} />
+              <div className="list-item__main">
+                <p className="list-item__title">{c.name}</p>
+                <p className="list-item__meta">Schulbeginn {formatLong(c.schoolEntryDate!)}{prepared ? ` · ${prepared} Schulroutinen vorbereitet` : ''}</p>
+              </div>
+              {prepared < SCHOOL_ROUTINES.length && (
+                <button type="button" className="btn btn--small btn--sky" onClick={() => void prepareSchoolRoutines(db, c)}>
+                  <Plus size={16} aria-hidden="true" /> Schulroutinen vorbereiten
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -119,9 +159,16 @@ function RoutineEditor({ def, onClose }: { def: RoutineDefinition; onClose: () =
         </Field>
         <Toggle label="Auf der Startseite zeigen" checked={d.highlight} onChange={(highlight) => set({ highlight })} />
         <Toggle
-          label="Nur an Kindergartentagen (nicht in Ferien und an freien Tagen)"
+          label="Nur an Kindergarten- bzw. Schultagen (nicht in Ferien, an Feiertagen und freien Tagen)"
           checked={!!d.kindergartenOnly} onChange={(kindergartenOnly) => set({ kindergartenOnly })}
         />
+        <Field label="Für Kindergarten- oder Schulkinder?" className="span-2">
+          <Segmented
+            label="Kindergarten oder Schule" value={d.stage ?? ''}
+            options={[{ value: '', label: 'Für alle' }, { value: 'kindergarten', label: 'Nur Kindergartenkinder' }, { value: 'school', label: 'Nur Schulkinder' }]}
+            onChange={(v) => set({ stage: (v || undefined) as RoutineStage | undefined })}
+          />
+        </Field>
         <Toggle label="Aktiv" checked={d.active} onChange={(active) => set({ active })} />
       </div>
     </Modal>

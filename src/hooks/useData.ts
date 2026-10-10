@@ -51,10 +51,12 @@ export function useOccurrences(from: DateKey, to: DateKey): EventOccurrence[] | 
   const events = useLiveQuery(() => db.events.toArray(), []);
   const exceptions = useLiveQuery(() => db.eventExceptions.toArray(), []);
   const members = useMembers();
+  const settings = useSettings();
+  const region = settings ? settings.holidayRegion ?? 'BW' : undefined;
   return useMemo(() => {
-    if (!events || !exceptions || !members) return undefined;
-    return expandOccurrences({ events, exceptions, members, from, to });
-  }, [events, exceptions, members, from, to]);
+    if (!events || !exceptions || !members || !region) return undefined;
+    return expandOccurrences({ events, exceptions, members, from, to, holidayRegion: region });
+  }, [events, exceptions, members, from, to, region]);
 }
 
 export function useIsHoliday(date: DateKey): boolean {
@@ -137,6 +139,10 @@ export function useLearningPacks() {
 
 export function useFamilyTimeSessions(date: DateKey) {
   return useLiveQuery(() => db.familyTimeSessions.where('date').equals(date).toArray(), [date]);
+}
+
+export function useFamilyTimeSessionsBetween(from: DateKey, to: DateKey) {
+  return useLiveQuery(() => db.familyTimeSessions.where('date').between(from, to, true, true).toArray(), [from, to]);
 }
 
 export function useWeekendAdventures() {

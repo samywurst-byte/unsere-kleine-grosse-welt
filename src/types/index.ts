@@ -71,8 +71,12 @@ export interface RoutineDefinition {
   timerPresetId?: Id;
   /** Nur an echten Kindergartentagen zeigen (nicht in Ferien, nicht an freien Tagen). */
   kindergartenOnly?: boolean;
+  /** Nur für Kindergartenkinder bzw. nur für Schulkinder (ab Einschulungsdatum). Fehlt = für alle. */
+  stage?: RoutineStage;
   createdAt: string;
 }
+
+export type RoutineStage = 'kindergarten' | 'school';
 
 /**
  * Eine Erledigung. Der Primärschlüssel ist deterministisch
@@ -179,7 +183,7 @@ export interface EventOccurrence {
   isMoved: boolean;
   exception?: EventException;
   /** Automatisch aus Profilen erzeugte Geburtstage. */
-  generated?: 'birthday';
+  generated?: 'birthday' | 'public-holiday';
 }
 
 // ---------------------------------------------------------------- Timer
@@ -244,7 +248,22 @@ export interface AppSettings {
   starsPerCountry: number;
   /** Tagesordnung des Familienrats. Fehlt = Standard. */
   councilAgenda?: string[];
+  /** Gesetzliche Feiertage. Fehlt = Baden-Württemberg. */
+  holidayRegion?: HolidayRegion;
+  /** Papa-Zeit: wie oft pro Woche und Kind, an welchen Tagen, wie lange. Fehlt = einmal pro Woche am Wochenende. */
+  papaTime?: PapaTimeSettings;
+  /** Letzter Kalenderexport fürs Handy. */
+  icsExportedAt?: string;
   createdAt: string;
+}
+
+export type HolidayRegion = 'BW' | 'none';
+
+export interface PapaTimeSettings {
+  /** Wie oft pro Woche und Kind. 0 = Papa-Zeit ausgeblendet. */
+  perWeek: number;
+  /** An diesen Tagen wird Papa-Zeit vorgeschlagen. */
+  days: Weekday[];
 }
 
 export interface ParentAuth {
@@ -319,6 +338,8 @@ export interface FamilyTimeSession {
   activity: string;
   startedAt?: string;
   minutes?: number;
+  /** Mit wem. Fehlt = Mama. */
+  parent?: 'papa';
 }
 
 /** Familienrat am Sonntag. Id = Datum des Sonntags. */

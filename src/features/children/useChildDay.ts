@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useChoreDefinitions, useChores, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions, useSpecialDay } from '../../hooks/useData';
 import { tasksHiddenFor } from '../../services/specialDay';
-import { routinesForChild } from '../../services/routines';
+import { isSchoolChildOn, routinesForChild } from '../../services/routines';
 import type { ChildProfile, ChoreDefinition, ChoreOccurrence, DateKey, RoutineDefinition, RoutinePhase } from '../../types';
 
 export interface RoutineItem { kind: 'routine'; def: RoutineDefinition; done: boolean }
@@ -26,7 +26,7 @@ export function useChildDay(child: ChildProfile | undefined, date: DateKey): Chi
     const byPhase: ChildDay['byPhase'] = { morning: [], afternoon: [], evening: [] };
     if (!child || !defs || !completions || !choreOcc || !choreDefs || kindergartenDay === undefined || special === undefined) return { byPhase, chores: [], loaded: false };
     const done = new Set(completions.filter((c) => c.childId === child.id).map((c) => c.definitionId));
-    for (const def of routinesForChild(defs, child.id, date, { kindergartenDay, special: special ?? undefined })) {
+    for (const def of routinesForChild(defs, child.id, date, { kindergartenDay, special: special ?? undefined, schoolChild: isSchoolChildOn(child, date) })) {
       byPhase[def.phase].push({ kind: 'routine', def, done: done.has(def.id) });
     }
     const defMap = new Map(choreDefs.map((d) => [d.id, d]));

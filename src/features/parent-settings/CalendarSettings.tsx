@@ -1,9 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Pencil, Plus } from 'lucide-react';
+import { CalendarPlus, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '../../database/db';
-import { useMembers } from '../../hooks/useData';
+import { Toggle } from '../../components/FormControls';
+import { useMembers, useSettings } from '../../hooks/useData';
+import { publicHolidays } from '../../services/holidays';
+import { buildIcs } from '../../services/ics';
+import { saveFile } from '../../services/platform';
 import { useNow } from '../../hooks/useNow';
 import type { CalendarEvent } from '../../types';
 import { formatLong, toDateKey, WEEKDAY_SHORT } from '../../utils/dates';
@@ -74,8 +78,63 @@ export function CalendarSettings() {
         </details>
       )}
 
+      <PhoneExport today={today} />
+
       {(creating || newDate) && <EventEditor members={members} initialDate={newDate ?? today} onClose={close} />}
       {editing && <EventEditor members={members} event={editing} occurrenceDate={occurrenceDate} initialDate={today} onClose={close} />}
     </div>
+  );
+}
+
+/** Termine aufs Handy (.ics) und gesetzliche Feiertage. */
+function PhoneExport({ today }: { today: string }) {
+  const settings = useSettings();
+  const members = useMembers();
+  const events = useLiveQuery(() => db.events.toArray(), []);
+  const exceptions = useLiveQuery(() => db.eventExceptions.toArray(), []);
+  const [message, setMessage] = useState<string | null>(null);
+  if (!settings || !members || !events || !exceptions) return null;
+  const region = settings.holidayRegion ?? 'BW';
+  const since = settings.icsExportedAt;
+  const changed = since ? events.filter((e) => e.updatedAt > since).length : 0;
+  const nextHolidays = [...publicHolidays(region, Number(today.slice(0, 4))), ...publicHolidays(region, Number(today.slice(0, 4)) + 1)]
+    .filter((h) => h.date >= today).slice(0, 3);
+
+  const doExport = async (onlyChanged: boolean) => {
+    const { content, count } = buildIcs({ events, exceptions, members, today, includeBirthdays: true, changedSince: onlyChanged ? since : undefined });
+    if (!count) { setMessage('Seit dem letzten Export gibt es nichts Neues.'); return; }
+    const res = await saveFile(`familie-termine-${today}.ics`, content, 'text/calendar');
+    if (res === 'cancelled') return;
+    await db.settings.update('app', { icsExportedAt: new Date().toISOString() });
+    setMessage(`${count} ${count === 1 ? 'Termin' : 'Termine'} exportiert. Auf dem iPhone öffnen und „Alle hinzufügen“ tippen.`);
+  };
+
+  return (
+    <>
+      <h3 className="card__eyebrow" style={{ marginTop: 'var(--space-5)' }}>Termine aufs Handy</h3>
+      <div className="card stack">
+        <p className="small">
+          Erstellt eine Kalenderdatei mit allen kommenden Terminen, Serien und Geburtstagen, samt Erinnerung.
+          Am einfachsten per AirDrop aufs iPhone schicken und dort öffnen. Das Handy erinnert dann selbst.
+          Es ist ein Schnappschuss: Neue Termine kommen nicht von allein aufs Handy, dafür später „Nur Neues“ exportieren.
+        </p>
+        <div className="row row--wrap">
+          <button type="button" className="btn btn--sky" onClick={() => void doExport(false)}><CalendarPlus size={18} aria-hidden="true" /> Alle Termine exportieren</button>
+          {since && (
+            <button type="button" className="btn" disabled={!changed} onClick={() => void doExport(true)}>
+              Nur Neues seit {formatLong(toDateKey(new Date(since)))} ({changed})
+            </button>
+          )}
+        </div>
+        {message && <p className="notice notice--ok">{message}</p>}
+      </div>
+
+      <h3 className="card__eyebrow" style={{ marginTop: 'var(--space-5)' }}>Feiertage</h3>
+      <div className="card stack">
+        <Toggle label="Feiertage in Baden-Württemberg (dann kein Kindergarten)" checked={region === 'BW'}
+          onChange={(v) => void db.settings.update('app', { holidayRegion: v ? 'BW' : 'none' })} />
+        {region === 'BW' && <p className="small muted">Als Nächstes: {nextHolidays.map((h) => `${h.name} (${formatLong(h.date)})`).join(', ')}</p>}
+      </div>
+    </>
   );
 }

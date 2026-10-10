@@ -105,3 +105,6 @@
 .ft-jar-mini { display: flex; align-items: center; gap: var(--space-3); }
 .ft-jar-mini__bar { flex: 1; height: 18px; border-radius: 99px; background: var(--card); border: 2px solid var(--c-gold-ink); overflow: hidden; }
 .ft-jar-mini__bar > span { display: block; height: 100%; background: var(--c-gold); }
+.ft-backup { margin-top: var(--space-4); }
+.ft-backup--due { border: 2px solid var(--c-gold-ink); background: var(--c-gold-soft); }
+.ft-pick { hyphens: auto; overflow-wrap: anywhere; }

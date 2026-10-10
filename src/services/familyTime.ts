@@ -2,7 +2,7 @@ import type { FamilyDatabase } from '../database/db';
 import { ADVENTURE_IDEAS, DEFAULT_COUNCIL_AGENDA, type AdventureIdea } from '../data/familyTime';
 import type {
   AdventureStatus, AppSettings, CalendarEvent, CouncilDecision, DateKey, FamilyCouncilNote, FamilyMemory, FamilyTimeSession,
-  TimeOfDay, WeekendAdventure,
+  PapaTimeSettings, TimeOfDay, WeekendAdventure, Weekday,
 } from '../types';
 import { addDaysKey, fromDateKey, minutesOfDay, nowMinutes, toDateKey, weekStartKey, weekdayOf } from '../utils/dates';
 import { newId } from '../utils/id';
@@ -30,6 +30,47 @@ export async function recordMamaTime(db: FamilyDatabase, childId: string, date: 
 
 export async function removeMamaTime(db: FamilyDatabase, childId: string, date: DateKey): Promise<void> {
   await db.familyTimeSessions.delete(mamaTimeId(childId, date));
+}
+
+export const isMamaTime = (s: FamilyTimeSession) => s.parent !== 'papa';
+
+// ------------------------------------------------------------- Papa-Zeit
+
+/** Papa arbeitet: Papa-Zeit ist seltener als Mama-Zeit, standardmäßig einmal pro Woche am Wochenende. */
+export const DEFAULT_PAPA_TIME: PapaTimeSettings = { perWeek: 1, days: [6, 0] };
+export const papaTimeSettings = (settings: Pick<AppSettings, 'papaTime'>): PapaTimeSettings => settings.papaTime ?? DEFAULT_PAPA_TIME;
+export const papaTimeId = (childId: string, date: DateKey) => `papa|${childId}|${date}`;
+
+export async function recordPapaTime(db: FamilyDatabase, childId: string, date: DateKey, activity: string, minutes?: number): Promise<FamilyTimeSession> {
+  const id = papaTimeId(childId, date);
+  const old = await db.familyTimeSessions.get(id);
+  const session: FamilyTimeSession = {
+    id, childId, date, activity, parent: 'papa', startedAt: old?.startedAt ?? new Date().toISOString(),
+    ...(minutes ?? old?.minutes ? { minutes: minutes ?? old?.minutes } : {}),
+  };
+  await db.familyTimeSessions.put(session);
+  return session;
+}
+
+export async function removePapaTime(db: FamilyDatabase, childId: string, date: DateKey): Promise<void> {
+  await db.familyTimeSessions.delete(papaTimeId(childId, date));
+}
+
+/** Papa-Zeit dieser Woche (Montag bis Sonntag) je Kind. */
+export function papaTimeThisWeek(sessions: FamilyTimeSession[], childId: string, today: DateKey): FamilyTimeSession[] {
+  const from = weekStartKey(today);
+  const to = addDaysKey(from, 6);
+  return sessions.filter((s) => s.parent === 'papa' && s.childId === childId && s.date >= from && s.date <= to);
+}
+
+/** Nächster Papa-Tag ab heute (heute eingeschlossen). */
+export function nextPapaDay(today: DateKey, days: Weekday[]): DateKey | undefined {
+  if (!days.length) return undefined;
+  for (let i = 0; i < 7; i++) {
+    const d = addDaysKey(today, i);
+    if (days.includes(weekdayOf(d))) return d;
+  }
+  return undefined;
 }
 
 // ------------------------------------------------------------- Wochenendabenteuer

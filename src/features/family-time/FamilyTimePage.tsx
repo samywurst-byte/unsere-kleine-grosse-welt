@@ -6,11 +6,13 @@ import { Modal } from '../../components/Modal';
 import { IDS } from '../../data/seed';
 import { MAMA_ACTIVITIES, MAMA_ACTIVITY_BY_ID, type MamaActivity } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useChildren, useCouncilNote, useFamilyMemories, useFamilyTimeSessions, useRitualFavorites, useRituals, useSettings, useStarTransactions, useTimerPresets, useWeekendAdventures, useWorld } from '../../hooks/useData';
+import { useChildren, useCouncilNote, useFamilyMemories, useFamilyTimeSessions, useFamilyTimeSessionsBetween, useRitualFavorites, useRituals, useSettings, useStarTransactions, useTimerPresets, useWeekendAdventures, useWorld } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
-import { councilAgenda, councilDate, memoryPhotos, recordMamaTime, removeMamaTime, weekendOf } from '../../services/familyTime';
+import {
+  councilAgenda, councilDate, isMamaTime, memoryPhotos, nextPapaDay, papaTimeSettings, papaTimeThisWeek, recordMamaTime, recordPapaTime, removeMamaTime, removePapaTime, weekendOf,
+} from '../../services/familyTime';
 import type { ChildProfile } from '../../types';
-import { formatDayMonth, toDateKey, weekdayOf } from '../../utils/dates';
+import { addDaysKey, formatDayMonth, formatWeekday, toDateKey, weekStartKey, weekdayOf } from '../../utils/dates';
 import { VisualTimer } from '../timers/VisualTimer';
 import { preparationDue, seasonalRituals } from '../../services/rituals';
 import { nextCountry, starBalance } from '../../services/stars';
@@ -30,6 +32,7 @@ export function FamilyTimePage() {
       <header className="page-head"><h1>Familienzeit</h1></header>
       <div className="ft-hub">
         <MamaTimeCard today={today} />
+        <PapaTimeCard today={today} />
         <AdventureCard now={now} />
         <CouncilCard today={today} />
         <MemoriesCard />
@@ -42,9 +45,10 @@ export function FamilyTimePage() {
 
 function MamaTimeCard({ today }: { today: string }) {
   const children = useChildren();
-  const sessions = useFamilyTimeSessions(today);
+  const all = useFamilyTimeSessions(today);
   const [child, setChild] = useState<ChildProfile | null>(null);
-  if (!children || !sessions) return null;
+  if (!children || !all) return null;
+  const sessions = all.filter(isMamaTime);
   return (
     <section className="card ft-card tone-rose">
       <h2 className="card__title"><Heart size={26} aria-hidden="true" /> Meine Zeit mit Mama</h2>
@@ -62,38 +66,84 @@ function MamaTimeCard({ today }: { today: string }) {
           );
         })}
       </div>
-      {child && <MamaTimeModal child={child} today={today} onClose={() => setChild(null)} />}
+      {child && <TogetherModal who="mama" child={child} today={today} onClose={() => setChild(null)} />}
     </section>
   );
 }
 
-function MamaTimeModal({ child, today, onClose }: { child: ChildProfile; today: string; onClose: () => void }) {
+function PapaTimeCard({ today }: { today: string }) {
+  const children = useChildren();
+  const settings = useSettings();
+  const from = weekStartKey(today);
+  const sessions = useFamilyTimeSessionsBetween(from, addDaysKey(from, 6));
+  const [child, setChild] = useState<ChildProfile | null>(null);
+  if (!children || !settings || !sessions) return null;
+  const papa = papaTimeSettings(settings);
+  if (papa.perWeek <= 0) return null;
+  const next = nextPapaDay(today, papa.days);
+  const isDay = next === today;
+  return (
+    <section className="card ft-card tone-sky">
+      <h2 className="card__title"><Heart size={26} aria-hidden="true" /> Meine Zeit mit Papa</h2>
+      <p className="muted ft-card__lead">
+        {papa.perWeek === 1 ? 'Einmal pro Woche' : `${papa.perWeek}-mal pro Woche`} gehört Papa jedem Kind allein.
+        {isDay ? ' Heute ist ein guter Tag dafür.' : next ? ` Nächster Papa-Tag: ${formatWeekday(next)}.` : ''}
+      </p>
+      <div className="ft-kids">
+        {children.map((c) => {
+          const week = papaTimeThisWeek(sessions, c.id, today);
+          const todays = week.find((s) => s.date === today);
+          const act = todays ? MAMA_ACTIVITY_BY_ID.get(todays.activity) : undefined;
+          const done = week.length >= papa.perWeek;
+          return (
+            <button key={c.id} type="button" className={`ft-kid tone-${c.color} ${done ? 'ft-kid--done' : ''}`} onClick={() => setChild(c)}>
+              <Avatar avatar={c.avatar} color={c.color} size={88} />
+              <span className="ft-kid__name">{c.name}</span>
+              <span className="ft-kid__state">
+                {act ? <><span aria-hidden="true">{act.emoji}</span> {act.label}</> : done ? 'Diese Woche geschafft' : week.length ? `${week.length} von ${papa.perWeek} diese Woche` : 'Diese Woche noch offen'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {child && <TogetherModal who="papa" child={child} today={today} onClose={() => setChild(null)} />}
+    </section>
+  );
+}
+
+/** Exklusive Zeit mit Mama oder Papa: Aktivität wählen, optional Timer, fertig. Keine Sterne. */
+function TogetherModal({ who, child, today, onClose }: { who: 'mama' | 'papa'; child: ChildProfile; today: string; onClose: () => void }) {
   const presets = useTimerPresets();
   const sessions = useFamilyTimeSessions(today);
-  const done = sessions?.find((s) => s.childId === child.id);
+  const done = sessions?.find((s) => s.childId === child.id && (who === 'papa' ? s.parent === 'papa' : isMamaTime(s)));
   const [activity, setActivity] = useState<MamaActivity | null>(null);
-  const mama = presets?.find((p) => p.id === IDS.timerMamaTime) ?? presets?.find((p) => p.label.includes('Mama'));
+  const name = who === 'papa' ? 'Papa' : 'Mama';
+  const timer = who === 'mama'
+    ? presets?.find((p) => p.id === IDS.timerMamaTime) ?? presets?.find((p) => p.label.includes('Mama'))
+    : presets?.find((p) => p.label.includes('Papa'));
 
   const finish = async () => {
     if (!activity) return;
-    await recordMamaTime(db, child.id, today, activity.id, mama?.minutes);
+    await (who === 'papa' ? recordPapaTime : recordMamaTime)(db, child.id, today, activity.id, timer?.minutes);
     onClose();
   };
 
   return (
-    <Modal title={activity ? `${activity.emoji} ${activity.label} mit Mama` : `Was möchtest du mit Mama machen, ${child.name}?`} onClose={onClose} wide
+    <Modal title={activity ? `${activity.emoji} ${activity.label} mit ${name}` : `Was möchtest du mit ${name} machen, ${child.name}?`} onClose={onClose} wide
       actions={activity ? (
         <>
           <button type="button" className="btn" onClick={() => setActivity(null)}>Etwas anderes</button>
           <button type="button" className="btn btn--primary" onClick={() => void finish()}><Heart size={18} aria-hidden="true" /> Fertig, war schön</button>
         </>
       ) : done ? (
-        <button type="button" className="btn btn--ghost" onClick={() => void removeMamaTime(db, child.id, today).then(onClose)}>Doch noch nicht gemacht</button>
+        <button type="button" className="btn btn--ghost" onClick={() => void (who === 'papa' ? removePapaTime : removeMamaTime)(db, child.id, today).then(onClose)}>Doch noch nicht gemacht</button>
       ) : undefined}
     >
       {activity ? (
         <div className="ft-timer">
-          {mama ? <VisualTimer preset={mama} size={260} /> : <p className="muted">Kein Mama-Zeit-Timer vorhanden. Im Elternbereich unter Timer anlegen.</p>}
+          {timer ? <VisualTimer preset={timer} size={260} />
+            : who === 'mama' ? <p className="muted">Kein Mama-Zeit-Timer vorhanden. Im Elternbereich unter Timer anlegen.</p>
+            : <p className="muted">Viel Spaß zusammen! (Wer mag, legt im Elternbereich einen Timer „Papa-Zeit“ an.)</p>}
           <p className="muted">Die Zeit darf gern länger dauern.</p>
         </div>
       ) : (
