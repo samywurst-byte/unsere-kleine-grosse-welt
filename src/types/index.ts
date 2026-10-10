@@ -507,7 +507,7 @@ export interface LearningObservation {
 export type LearningMood = 'fun' | 'ok' | 'reluctant';
 
 /** Was ein Kind im Wochenpaket bekommt. */
-export type PackTrack = 'letters' | 'preschool' | 'toddler' | 'math' | 'skip';
+export type PackTrack = 'letters' | 'reading' | 'preschool' | 'toddler' | 'math' | 'skip';
 
 /** Lernpaket einer Woche: ein gemeinsames Thema, passende Blätter je Kind. */
 export interface LearningPack {

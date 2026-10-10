@@ -9,6 +9,7 @@ import type { LetterInfo } from '../data/readingCurriculum';
 import { fromDateKey } from '../utils/dates';
 import type { PackPlan, PageSpec, PlannedPage } from './learningPack';
 import type { MathSpec, TaskPart } from './mathSheets';
+import { plain, type ReadingSpec } from './reading';
 
 /**
  * Echte A4-PDFs für die Lernpakete: Vektorgrafik und eingebettete Schriften, druckerfreundliches Schwarzweiß.
@@ -51,8 +52,12 @@ const Y = (top: number) => H - top;
 
 // ------------------------------------------------------------- Grundbausteine
 
-function text(c: Ctx, s: string, x: number, top: number, size: number, opts: { font?: PDFFont; color?: RGB; align?: 'left' | 'center' | 'right' } = {}) {
+/** Die Schriften haben kein echtes Minuszeichen (U+2212); der Halbgeviertstrich sieht gleich aus. */
+const glyphs = (s: string) => s.replace(/\u2212/g, '\u2013');
+
+function text(c: Ctx, raw: string, x: number, top: number, size: number, opts: { font?: PDFFont; color?: RGB; align?: 'left' | 'center' | 'right' } = {}) {
   const font = opts.font ?? c.regular;
+  const s = glyphs(raw);
   const width = font.widthOfTextAtSize(s, size);
   const dx = opts.align === 'center' ? -width / 2 : opts.align === 'right' ? -width : 0;
   c.page.drawText(s, { x: x + dx, y: Y(top), size, font, color: opts.color ?? BLACK });
@@ -367,6 +372,7 @@ const PLAYER_HINT: Record<string, string> = {
   toddler: 'sucht gleiche Bilder',
   preschool: 'klatscht die Silben',
   letters: 'sagt den Anfangslaut',
+  reading: 'liest das Wort vor',
 };
 
 function memory(c: Ctx, spec: Extract<PageSpec, { kind: 'memory' }>) {
@@ -447,6 +453,7 @@ function renderPage(c: Ctx, spec: PageSpec) {
     case 'memory': return memory(c, spec);
     case 'observation': return observation(c, spec);
     case 'math': return mathPage(c, spec.title, spec.math);
+    case 'reading': return readingPage(c, spec.title, spec.reading);
     case 'math-memory': return mathMemory(c, spec.heading, spec.cards);
   }
 }
@@ -490,11 +497,12 @@ function taskRow(c: Ctx, parts: TaskPart[], x: number, baselineTop: number, size
   const boxW = size * 2;
   const boxH = size * 1.5;
   let cx = x;
-  for (const p of parts) {
-    if (p === null) {
+  for (const part of parts) {
+    if (part === null) {
       if (draw) c.page.drawRectangle({ x: cx, y: Y(baselineTop + size * 0.38), width: boxW, height: boxH, borderColor: BLACK, borderWidth: 0.9 });
       cx += boxW + size * 0.35;
     } else {
+      const p = glyphs(part);
       const w = c.regular.widthOfTextAtSize(p, size);
       if (draw) c.page.drawText(p, { x: cx, y: Y(baselineTop), size, font: c.regular, color: BLACK });
       cx += w + size * 0.35;
@@ -512,6 +520,11 @@ function mathPage(c: Ctx, title: string, spec: MathSpec) {
     case 'packets': return packetsPage(c, spec);
     case 'number-wall': return numberWalls(c, title, spec);
     case 'times-row': return timesRow(c, title, spec);
+    case 'story': return storyPage(c, title, spec);
+    case 'task-family': return taskFamilyPage(c, title, spec);
+    case 'neighbors': return neighborsPage(c, title, spec);
+    case 'hundred-chart': return hundredChartPage(c, title, spec);
+    case 'dot-draw': return dotDrawPage(c, title, spec);
   }
 }
 
@@ -699,6 +712,241 @@ function mathMemory(c: Ctx, heading: string, cards: string[]) {
       text(c, card, x + cw / 2, t + ch / 2 + size * 0.35, size, { font: c.bold, align: 'center' });
     }
   });
+}
+
+function storyPage(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'story' }>) {
+  const top0 = header(c, title, 'Lies die Geschichte oder lass sie dir vorlesen. Male oder lege sie nach. Schreibe dann die Rechnung und die Antwort.', true) + 8;
+  const blockH = (H - 50 - top0) / spec.stories.length;
+  spec.stories.forEach((st, i) => {
+    const top = top0 + i * blockH;
+    roundRect(c, M, top, CW, blockH - 10, { color: LINE, border: 0.8 });
+    const after = paragraph(c, st.text, M + 12, top + 22, 13.5, CW - 24);
+    const rowTop = Math.max(after + 30, top + blockH - 70);
+    text(c, 'Rechnung:', M + 12, rowTop, 12, { color: MUTED });
+    taskRow(c, [null, st.op, null, '=', null], M + 80, rowTop, 16);
+    text(c, 'Antwort:', M + 12, rowTop + 36, 12, { color: MUTED });
+    hline(c, M + 70, W - M - 12, rowTop + 38, { color: LINE });
+  });
+}
+
+function taskFamilyPage(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'task-family' }>) {
+  header(c, title, 'Mit drei Zahlen kannst du vier Aufgaben bilden: zwei Plusaufgaben und zwei Minusaufgaben.', true);
+  spec.triples.forEach(([a, b, sum], i) => {
+    const x = M + (i % 2) * (CW / 2);
+    const top = 128 + Math.floor(i / 2) * 330;
+    roundRect(c, x, top, CW / 2 - 12, 310, { color: LINE, border: 0.8 });
+    [a, b, sum].forEach((n, k) => {
+      const cx = x + 50 + k * 70;
+      c.page.drawCircle({ x: cx, y: Y(top + 46), size: 24, borderColor: BLACK, borderWidth: 1.2 });
+      text(c, String(n), cx, top + 54, 22, { font: c.bold, align: 'center' });
+    });
+    (['+', '+', '−', '−'] as const).forEach((op, k) => taskRow(c, [null, op, null, '=', null], x + 18, top + 120 + k * 48, 18));
+  });
+}
+
+function neighborsPage(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'neighbors' }>) {
+  header(c, title, 'Schreibe die Zahl davor und die Zahl danach. Das sind die Nachbarzahlen.', true);
+  const size = spec.max > 20 ? 17 : 19;
+  const rows = Math.ceil(spec.numbers.length / 3);
+  spec.numbers.forEach((n, i) => {
+    const col = Math.floor(i / rows);
+    const row = i % rows;
+    taskRow(c, [null, String(n), null], M + col * (CW / 3), 150 + row * 62, size);
+  });
+  const top = 150 + rows * 62 + 10;
+  text(c, `Zahlenstrahl bis ${spec.max}:`, M, top, 13, { font: c.bold });
+  const step = spec.max <= 10 ? 1 : spec.max <= 20 ? 1 : 10;
+  const marks = spec.max / step;
+  const x0 = M + 10;
+  const len = CW - 20;
+  hline(c, x0, x0 + len, top + 40, { thickness: 1.4 });
+  for (let k = 0; k <= marks; k++) {
+    const x = x0 + (len * k) / marks;
+    c.page.drawLine({ start: { x, y: Y(top + 32) }, end: { x, y: Y(top + 48) }, thickness: k % 5 === 0 ? 1.4 : 0.8, color: BLACK });
+    if (k === 0 || k === marks || (spec.max <= 20 ? k % 5 === 0 : true)) text(c, String(k * step), x, top + 64, 10, { align: 'center' });
+  }
+}
+
+function hundredChartPage(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'hundred-chart' }>) {
+  header(c, title, 'Fülle die leeren Felder aus. Tipp: In jeder Zeile wird es um 1 mehr, in jeder Spalte um 10.', true);
+  const cell = CW / 10;
+  const top = 128;
+  spec.shown.forEach((shown, i) => {
+    const x = M + (i % 10) * cell;
+    const t = top + Math.floor(i / 10) * cell;
+    c.page.drawRectangle({ x, y: Y(t + cell), width: cell, height: cell, borderColor: BLACK, borderWidth: 0.8, color: shown ? BAND : undefined });
+    if (shown) text(c, String(i + 1), x + cell / 2, t + cell * 0.64, 16, { align: 'center' });
+  });
+}
+
+function dotDrawPage(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'dot-draw' }>) {
+  header(c, title, 'Male so viele Punkte, Kreise oder Dinge, wie die Zahl sagt. Danach zählt ihr gemeinsam nach.', true);
+  const cols = 2;
+  const rows = Math.ceil(spec.numbers.length / cols);
+  const h = (H - 60 - 128) / rows;
+  spec.numbers.forEach((n, i) => {
+    const x = M + (i % cols) * (CW / 2);
+    const t = 128 + Math.floor(i / cols) * h;
+    roundRect(c, x, t, CW / 2 - 12, h - 12, { color: LINE, border: 0.8 });
+    text(c, String(n), x + 16, t + 46, 40, { font: c.bold });
+  });
+}
+
+// ------------------------------------------------------------- Lese- und Schreibblätter
+
+/**
+ * Text mit Silbenbögen setzen (Silben mit "-" getrennt). Bricht nach Breite um und gibt die Unterkante zurück.
+ * Ohne Bögen ist es einfacher Fließtext mit derselben Silbentrennung.
+ */
+function syllableText(c: Ctx, hyphenated: string, x: number, top: number, width: number, size: number, opts: { font?: PDFFont; arcs?: boolean; lineH?: number } = {}): number {
+  const font = opts.font ?? c.regular;
+  const lineH = opts.lineH ?? size * (opts.arcs ? 2 : 1.45);
+  const space = font.widthOfTextAtSize(' ', size);
+  let cx = x;
+  let base = top + size;
+  for (const token of hyphenated.split(/\s+/).filter(Boolean)) {
+    const w = font.widthOfTextAtSize(plain(token), size);
+    if (cx > x && cx + w > x + width) { cx = x; base += lineH; }
+    for (const syl of token.split('-')) {
+      const sw = font.widthOfTextAtSize(syl, size);
+      c.page.drawText(syl, { x: cx, y: Y(base), size, font, color: BLACK });
+      const letters = syl.replace(/[.,!?:;„“"…]+$/g, '').replace(/^[„"]/, '');
+      if (opts.arcs && /[\p{L}\d]/u.test(letters)) {
+        const lead = syl.startsWith('„') ? font.widthOfTextAtSize('„', size) : 0;
+        const lw = font.widthOfTextAtSize(letters, size);
+        const drop = size * 0.32;
+        c.page.drawSvgPath(`M 0 0 Q ${lw / 2} ${drop * 2} ${lw} 0`, { x: cx + lead + 1, y: Y(base + size * 0.2), borderColor: BLACK, borderWidth: 0.9 });
+      }
+      cx += sw;
+    }
+    cx += space;
+  }
+  return base + size * 0.6;
+}
+
+function star(c: Ctx, cx: number, centerTop: number, r: number) {
+  const pts: string[] = [];
+  for (let k = 0; k < 10; k++) {
+    const rr = k % 2 === 0 ? r : r * 0.45;
+    const a = -Math.PI / 2 + (k * Math.PI) / 5;
+    pts.push(`${(rr * Math.cos(a)).toFixed(2)} ${(rr * Math.sin(a)).toFixed(2)}`);
+  }
+  c.page.drawSvgPath(`M ${pts.join(' L ')} Z`, { x: cx, y: Y(centerTop), borderColor: BLACK, borderWidth: 1.4 });
+}
+
+function readingPage(c: Ctx, title: string, spec: ReadingSpec) {
+  switch (spec.kind) {
+    case 'read-draw': {
+      header(c, title, 'Lies das Wort. Die Bögen zeigen dir die Silben. Male dann ein Bild dazu.', true);
+      const cols = 2;
+      const rows = Math.ceil(spec.words.length / cols);
+      const h = (H - 50 - 122) / rows;
+      spec.words.forEach((w, i) => {
+        const x = M + (i % cols) * (CW / 2);
+        const t = 122 + Math.floor(i / cols) * h;
+        roundRect(c, x, t, CW / 2 - 12, h - 12, { color: LINE, border: 0.8 });
+        syllableText(c, w, x + 16, t + 8, CW / 2 - 40, 30, { font: c.school, arcs: true });
+      });
+      return;
+    }
+    case 'word-copy': {
+      header(c, title, 'Lies das Wort. Schreibe es daneben ab, so schön du kannst. Vergleiche danach Buchstabe für Buchstabe.', true);
+      spec.words.forEach((w, i) => traceRow(c, [{ text: plain(w), style: 'model' }], M, 190 + i * 104, CW, 30));
+      return;
+    }
+    case 'sound-boxes': {
+      header(c, title, 'Sprich das Wort langsam wie in Zeitlupe. Für jeden Laut gibt es ein Kästchen. Schreibe in jedes Kästchen einen Buchstaben.', true);
+      const rows = Math.ceil(spec.items.length / 2);
+      const h = (H - 76 - 128) / rows;
+      spec.items.forEach((it, i) => {
+        const x = M + (i % 2) * (CW / 2);
+        const t = 128 + Math.floor(i / 2) * h;
+        roundRect(c, x, t, CW / 2 - 12, h - 12, { color: LINE, border: 0.8 });
+        const size = Math.min(110, h - 70);
+        illustration(c, it.ill, x + (CW / 2 - 12 - size) / 2, t + 8, size, 1.8);
+        const bs = Math.min(36, (CW / 2 - 40) / it.sounds - 4);
+        const total = it.sounds * (bs + 4) - 4;
+        for (let k = 0; k < it.sounds; k++) box(c, x + (CW / 2 - 12 - total) / 2 + k * (bs + 4), t + h - 12 - bs - 14, bs);
+      });
+      text(c, `Für Eltern, zum Vorsprechen: ${spec.items.map((x) => x.word).join(', ')}`, M, H - 52, 9.5, { color: MUTED });
+      return;
+    }
+    case 'sentence-check': {
+      header(c, title, 'Lies den Satz. Stimmt das? Kreuze ja oder nein an.', true);
+      const rowH = spec.sightWords ? 54 : 70;
+      spec.items.forEach((it, i) => {
+        const t = 120 + i * rowH;
+        syllableText(c, it.s, M, t, CW - 150, 19, { arcs: true });
+        box(c, W - M - 130, t + 4, 20); text(c, 'ja', W - M - 104, t + 20, 14);
+        box(c, W - M - 66, t + 4, 20); text(c, 'nein', W - M - 40, t + 20, 14);
+        hline(c, M, W - M, t + rowH - 8, { color: LINE, thickness: 0.4 });
+      });
+      if (spec.sightWords) {
+        const t = 120 + spec.items.length * rowH + 14;
+        text(c, 'Blitzwörter: Lies so schnell du kannst.', M, t, 14, { font: c.bold });
+        const w = CW / 5;
+        spec.sightWords.forEach((sw, k) => {
+          const x = M + (k % 5) * w;
+          const tt = t + 14 + Math.floor(k / 5) * 52;
+          roundRect(c, x + 4, tt, w - 8, 44, { color: LINE, border: 0.8 });
+          text(c, sw, x + w / 2, tt + 30, 22, { font: c.school, align: 'center' });
+        });
+      }
+      return;
+    }
+    case 'sentence-draw': {
+      const top = header(c, title, 'Lies den Satz. Male ein Bild dazu, auf dem man alles aus dem Satz sieht.', true) + 6;
+      const h = (H - 50 - top) / spec.sentences.length;
+      spec.sentences.forEach((s, i) => {
+        const t = top + i * h;
+        const bottom = syllableText(c, s, M, t, CW, 22, { arcs: true });
+        roundRect(c, M, bottom + 8, CW, t + h - bottom - 22, { color: LINE, border: 0.8 });
+      });
+      return;
+    }
+    case 'sentence-write': {
+      header(c, title, 'Lies den Satz und schreibe ihn ab. Denk an den großen Anfang und den Punkt am Ende.', true);
+      syllableText(c, spec.model, M, 118, CW, 22, { arcs: true });
+      traceRow(c, [], M, 230, CW, 26);
+      traceRow(c, [], M, 300, CW, 26);
+      text(c, 'Mein eigener Satz: Male ein Bild und schreibe einen Satz dazu.', M, 352, 14, { font: c.bold });
+      roundRect(c, M, 364, CW, 250, { color: LINE, border: 0.8 });
+      traceRow(c, [], M, 680, CW, 26);
+      traceRow(c, [], M, 750, CW, 26);
+      return;
+    }
+    case 'read-aloud': {
+      header(c, title, 'Lies den Text an drei verschiedenen Tagen vor. Die Bögen zeigen die Silben. Male nach jedem Mal einen Stern an. Beim dritten Mal klingt es schon viel flüssiger!', true);
+      text(c, spec.text.title, M, 150, 20, { font: c.bold });
+      const bottom = syllableText(c, spec.text.text, M, 162, CW, 21, { arcs: true });
+      const t = Math.max(bottom + 40, 560);
+      ['1. Mal', '2. Mal', '3. Mal'].forEach((label, k) => {
+        const cx = M + 70 + k * 170;
+        star(c, cx, t + 40, 34);
+        text(c, label, cx, t + 100, 13, { align: 'center' });
+        text(c, 'Datum:', cx - 60, t + 128, 10, { color: MUTED });
+        hline(c, cx - 22, cx + 60, t + 130, { color: LINE });
+      });
+      text(c, 'Wem habe ich vorgelesen?', M, t + 170, 13, { font: c.bold });
+      hline(c, M + 170, W - M, t + 172, { color: LINE });
+      return;
+    }
+    case 'text-questions': {
+      header(c, title, 'Lies den Text. Kreuze bei jeder Frage die richtige Antwort an.', true);
+      text(c, spec.text.title, M, 142, 18, { font: c.bold });
+      let t = syllableText(c, spec.text.text, M, 152, CW, 16.5, { lineH: 25 }) + 22;
+      for (const q of spec.questions) {
+        text(c, q.q, M, t, 14.5, { font: c.bold });
+        t += 12;
+        q.options.forEach((o, k) => {
+          box(c, M + 6, t + 8 + k * 30, 16);
+          text(c, o, M + 32, t + 22 + k * 30, 14);
+        });
+        t += q.options.length * 30 + 22;
+      }
+      return;
+    }
+  }
 }
 
 export async function renderWorksheets(plan: PackPlan, pages: PlannedPage[], fonts: WorksheetFonts): Promise<Uint8Array> {

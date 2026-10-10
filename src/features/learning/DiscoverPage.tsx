@@ -5,7 +5,9 @@ import { Avatar } from '../../components/Avatar';
 import { LETTER_ORDER } from '../../data/readingCurriculum';
 import { useChildren, useLearning } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
-import { goalStates, pathPhase, todaysLetter } from '../../services/learning';
+import { goalStates, pathPhase, todaysLetter, type GoalState } from '../../services/learning';
+import { seededRandom } from '../../services/learningPack';
+import { readingBox, syllablesOf } from '../../services/reading';
 import { toDateKey } from '../../utils/dates';
 import '../children/children.css';
 import './learning.css';
@@ -92,6 +94,7 @@ export function DiscoverPage() {
               </div>
               <p className="small muted" style={{ marginTop: 'var(--space-3)' }}>{done.size} von {current.goal.activities.length} ausprobiert</p>
             </div>
+            <ReadingBox states={states} seed={`${child.id}|${today}`} />
             {found.length > 0 && (
               <div className="card">
                 <h2 className="card__title">Schon entdeckt</h2>
@@ -101,6 +104,47 @@ export function DiscoverPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Lesekiste: Wörter und Sätze, die das Kind mit seinen sicheren Buchstaben schon lesen kann.
+ * Silben abwechselnd blau und rot. Das Kind liest Mama oder Papa vor, die App liest nichts vor.
+ */
+function ReadingBox({ states, seed }: { states: GoalState[]; seed: string }) {
+  const box = useMemo(() => readingBox(states), [states]);
+  const [mode, setMode] = useState<'words' | 'sentences'>('words');
+  const [index, setIndex] = useState(0);
+  const order = useMemo(() => {
+    const list = box ? (mode === 'words' ? box.words : box.sentences) : [];
+    const rnd = seededRandom(`${seed}|${mode}`);
+    return list.map((x) => ({ x, k: rnd() })).sort((a, b) => a.k - b.k).map((e) => e.x);
+  }, [box, mode, seed]);
+  if (!box || box.words.length === 0) return null;
+  const item = order[index % Math.max(1, order.length)];
+  return (
+    <div className="card reading-box">
+      <div className="row">
+        <h2 className="card__title" style={{ margin: 0, flex: 1 }}>📖 Lesekiste</h2>
+        {box.showSentences && box.sentences.length > 0 && (
+          <div className="seg" role="group" aria-label="Was lesen wir?">
+            <button type="button" className="seg__item" aria-pressed={mode === 'words'} onClick={() => { setMode('words'); setIndex(0); }}>Wörter</button>
+            <button type="button" className="seg__item" aria-pressed={mode === 'sentences'} onClick={() => { setMode('sentences'); setIndex(0); }}>Sätze</button>
+          </div>
+        )}
+      </div>
+      <p className={`reading-box__item ${mode === 'sentences' ? 'reading-box__item--sentence' : ''}`} aria-live="polite">
+        {item?.split(' ').map((word, w) => (
+          <span key={w} className="reading-box__word">
+            {syllablesOf(word).map((syl, i) => <span key={i} className={i % 2 ? 'syl-b' : 'syl-a'}>{syl}</span>)}
+          </span>
+        ))}
+      </p>
+      <div className="row">
+        <span className="small muted" style={{ flex: 1 }}>Lies es Mama oder Papa vor.</span>
+        <button type="button" className="btn btn--sky" onClick={() => setIndex((i) => i + 1)}>{mode === 'words' ? 'Nächstes Wort' : 'Nächster Satz'}</button>
+      </div>
     </div>
   );
 }

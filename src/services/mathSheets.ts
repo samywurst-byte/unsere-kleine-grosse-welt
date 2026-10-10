@@ -16,7 +16,12 @@ export type MathSpec =
   | { kind: 'number-house'; houses: { top: number; rows: [number | null, number | null][] }[] }
   | { kind: 'packets'; heading: string; instruction: string; tasks: TaskPart[][]; help?: 'ten' | 'twenty' }
   | { kind: 'number-wall'; walls: (number | null)[][][]; max: number }
-  | { kind: 'times-row'; n: number; withDiv: boolean; skip: (number | null)[] };
+  | { kind: 'times-row'; n: number; withDiv: boolean; skip: (number | null)[] }
+  | { kind: 'story'; stories: { text: string; op: '+' | '−' | '·' | ':' }[] }
+  | { kind: 'task-family'; triples: [number, number, number][] }
+  | { kind: 'neighbors'; numbers: number[]; max: number }
+  | { kind: 'hundred-chart'; shown: boolean[] }
+  | { kind: 'dot-draw'; numbers: number[] };
 
 export interface MathPage {
   title: string;
@@ -202,3 +207,117 @@ export function mathMemoryPairs(goals: LearningGoal[], rnd: Rnd): { heading: str
   return { heading: 'Einmaleins-Memory', pairs };
 }
 
+
+// ------------------------------------------------------------- Abwechslung
+
+type Story = { op: '+' | '−' | '·' | ':'; text: (a: number, b: number) => string };
+
+/** Rechengeschichten. Zahlen immer mindestens 2, damit die Mehrzahl stimmt. */
+const ADD_STORIES: Story[] = [
+  { op: '+', text: (a, b) => `Auf dem Teller liegen ${a} Äpfel. Mama legt noch ${b} dazu. Wie viele Äpfel sind es jetzt?` },
+  { op: '+', text: (a, b) => `Im Bus sitzen ${a} Kinder. An der Haltestelle steigen ${b} Kinder ein. Wie viele Kinder sind jetzt im Bus?` },
+  { op: '+', text: (a, b) => `Leo hat ${a} Murmeln. Er bekommt ${b} Murmeln geschenkt. Wie viele Murmeln hat er jetzt?` },
+  { op: '+', text: (a, b) => `Auf der Wiese stehen ${a} Schafe. Dann kommen noch ${b} Schafe dazu. Wie viele Schafe sind es jetzt?` },
+  { op: '+', text: (a, b) => `Mila findet am Montag ${a} Muscheln und am Dienstag ${b} Muscheln. Wie viele Muscheln sind es zusammen?` },
+];
+const SUB_STORIES: Story[] = [
+  { op: '−', text: (a, b) => `Auf dem Baum sitzen ${a} Vögel. ${b} Vögel fliegen weg. Wie viele Vögel sitzen noch auf dem Baum?` },
+  { op: '−', text: (a, b) => `In der Dose sind ${a} Kekse. Die Kinder essen ${b} Kekse. Wie viele Kekse sind noch in der Dose?` },
+  { op: '−', text: (a, b) => `Ole hat ${a} Luftballons. ${b} Luftballons platzen. Wie viele Luftballons hat er noch?` },
+  { op: '−', text: (a, b) => `Im Teich schwimmen ${a} Enten. ${b} Enten watscheln an Land. Wie viele Enten schwimmen noch?` },
+  { op: '−', text: (a, b) => `Mila hat ${a} Sticker. Sie schenkt Leo ${b} Sticker. Wie viele Sticker hat Mila noch?` },
+];
+const ADD100_STORIES: Story[] = [
+  { op: '+', text: (a, b) => `Ein Buch kostet ${a} Euro, ein Spiel kostet ${b} Euro. Wie viel kosten beide zusammen?` },
+  { op: '+', text: (a, b) => `Die Klasse sammelt ${a} Kastanien, die Nachbarklasse ${b} Kastanien. Wie viele Kastanien sind es zusammen?` },
+  { op: '+', text: (a, b) => `Lena ist ${a} cm groß. Ihr Turm aus Bausteinen ist ${b} cm höher als sie. Wie hoch ist der Turm?` },
+];
+const SUB100_STORIES: Story[] = [
+  { op: '−', text: (a, b) => `Lena hat ${a} Euro gespart. Sie kauft ein Spiel für ${b} Euro. Wie viel Geld hat sie noch?` },
+  { op: '−', text: (a, b) => `Ein Zug hat ${a} Sitzplätze. ${b} Plätze sind besetzt. Wie viele Plätze sind noch frei?` },
+  { op: '−', text: (a, b) => `Ein Buch hat ${a} Seiten. Ben hat schon ${b} Seiten gelesen. Wie viele Seiten fehlen noch?` },
+];
+/** a = Anzahl der Gruppen, b = Anzahl je Gruppe */
+const TIMES_STORIES: Story[] = [
+  { op: '·', text: (a, b) => `${a} Kinder haben je ${b} Murmeln. Wie viele Murmeln haben sie zusammen?` },
+  { op: '·', text: (a, b) => `In einer Packung sind ${b} Stifte. Papa kauft ${a} Packungen. Wie viele Stifte sind es?` },
+  { op: '·', text: (a, b) => `Auf jedem Teller liegen ${b} Kekse. Es gibt ${a} Teller. Wie viele Kekse sind es?` },
+  { op: '·', text: (a, b) => `Ein Regal hat ${a} Bretter. Auf jedem Brett stehen ${b} Bücher. Wie viele Bücher sind es?` },
+];
+/** a = Gesamtzahl, b = Teiler */
+const DIV_STORIES: Story[] = [
+  { op: ':', text: (a, b) => `${a} Kekse werden gerecht auf ${b} Teller verteilt. Wie viele Kekse liegen auf jedem Teller?` },
+  { op: ':', text: (a, b) => `${a} Kinder bilden Gruppen mit je ${b} Kindern. Wie viele Gruppen gibt es?` },
+  { op: ':', text: (a, b) => `${a} Euro werden gerecht unter ${b} Kindern geteilt. Wie viel bekommt jedes Kind?` },
+];
+
+function stories(stage: number, row: number | undefined, rnd: Rnd): MathSpec {
+  const out: { text: string; op: Story['op'] }[] = [];
+  // Jede Geschichte höchstens einmal pro Blatt
+  const used = new Set<Story>();
+  const add = (list: Story[], a: number, b: number) => {
+    const free = list.filter((x) => !used.has(x));
+    const s = (free.length ? free : list)[int(rnd, 0, (free.length || list.length) - 1)];
+    used.add(s);
+    out.push({ op: s.op, text: s.text(a, b) });
+  };
+  while (out.length < 4) {
+    if (stage <= 5) {
+      const max = stage === 4 ? 10 : 20;
+      if (out.length % 2 === 0) { const a = int(rnd, 2, max - 2); const b = int(rnd, 2, max - a); add(ADD_STORIES, a, b); } else { const a = int(rnd, 4, max); const b = int(rnd, 2, a - 1); add(SUB_STORIES, a, b); }
+    } else if (stage === 6) {
+      if (out.length % 2 === 0) { const a = int(rnd, 12, 70); const b = int(rnd, 5, 99 - a); add(ADD100_STORIES, a, b); } else { const a = int(rnd, 30, 99); const b = int(rnd, 5, a - 5); add(SUB100_STORIES, a, b); }
+    } else if (stage === 7) {
+      add(TIMES_STORIES, int(rnd, 2, 10), row && row > 1 ? row : int(rnd, 2, 10));
+    } else {
+      const d = row && row > 1 ? row : int(rnd, 2, 9); const q = int(rnd, 2, 10); add(DIV_STORIES, d * q, d);
+    }
+  }
+  return { kind: 'story', stories: out };
+}
+
+function taskFamilies(max: number, rnd: Rnd): MathSpec {
+  const triples: [number, number, number][] = [];
+  for (let guard = 0; triples.length < 4 && guard < 200; guard++) {
+    const a = int(rnd, 1, max - 2); const b = int(rnd, 1, max - a);
+    if (a === b || triples.some(([x, y]) => (x === a && y === b) || (x === b && y === a))) continue;
+    triples.push([a, b, a + b]);
+  }
+  return { kind: 'task-family', triples };
+}
+
+function neighbors(max: number, rnd: Rnd): MathSpec {
+  const pool = shuffle(Array.from({ length: max - 1 }, (_, i) => i + 1), rnd);
+  return { kind: 'neighbors', numbers: pool.slice(0, Math.min(15, pool.length)), max };
+}
+
+function hundredChart(rnd: Rnd): MathSpec {
+  // Die erste Spalte und die Zehnerzahlen bleiben stehen, damit die Ordnung sichtbar ist
+  return { kind: 'hundred-chart', shown: Array.from({ length: 100 }, (_, i) => i % 10 === 0 || (i + 1) % 10 === 0 || rnd() < 0.45) };
+}
+
+const timesRowOf = (id: string) => Number(/^math\.(?:times|div)\.(\d+)$/.exec(id)?.[1]) || undefined;
+
+/**
+ * Zweites Blatt, wenn ein Kind nur an einem Lernziel rechnet: im Wechsel Rechengeschichten,
+ * Aufgabenfamilien, Nachbarzahlen, Hundertertafel oder Rechenmauern im selben Zahlenraum.
+ */
+export function extraMathPage(goal: LearningGoal, rnd: Rnd): MathPage | null {
+  const page = (title: string, spec: MathSpec): MathPage => ({ title, goalTitle: goal.title, spec });
+  const story = () => page('Rechengeschichten', stories(goal.stage, timesRowOf(goal.id), rnd));
+  const wall = () => numberWallPage(goal, rnd);
+  const options: (() => MathPage | null)[] = (() => {
+    switch (goal.stage) {
+      case 1: return [() => page('Male so viele', { kind: 'dot-draw', numbers: shuffle([1, 2, 3, 4, 5], rnd) })];
+      case 2: return [() => page('Male so viele', { kind: 'dot-draw', numbers: shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rnd).slice(0, 6) }), () => page('Nachbarzahlen', neighbors(10, rnd))];
+      case 3: return [() => page('Nachbarzahlen', neighbors(10, rnd))];
+      case 4: return [story, () => page('Aufgabenfamilien', taskFamilies(10, rnd)), wall];
+      case 5: return [story, () => page('Aufgabenfamilien', taskFamilies(20, rnd)), () => page('Nachbarzahlen', neighbors(20, rnd)), wall];
+      case 6: return [story, () => page('Die Hundertertafel', hundredChart(rnd)), () => page('Nachbarzahlen', neighbors(100, rnd)), wall];
+      case 7: case 8: return [story];
+      default: return [];
+    }
+  })();
+  if (!options.length) return null;
+  return options[Math.floor(rnd() * options.length)]();
+}

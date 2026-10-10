@@ -93,3 +93,11 @@
 .sheet__box--on { background: var(--c-sage-ink); border-color: var(--c-sage-ink); }
 .sheet__mood { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
 .sheet__child > .input { width: 100%; }
+
+/* Lesekiste: Silben abwechselnd blau und rot wie in vielen Fibeln */
+.reading-box__item { margin: var(--space-4) 0; font-size: 3.4rem; font-weight: 700; line-height: 1.3; text-align: center; min-height: 1.3em; overflow-wrap: anywhere; }
+.reading-box__item--sentence { font-size: 2.2rem; }
+.reading-box__word { display: inline-block; margin: 0 .25em; }
+.syl-a { color: #1f5fa8; }
+.syl-b { color: #b3261e; }
+.reading-box .row { flex-wrap: wrap; gap: var(--space-2); }

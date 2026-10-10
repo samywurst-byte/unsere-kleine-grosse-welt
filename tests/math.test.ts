@@ -130,7 +130,8 @@ describe('Rechenblätter im Lernpaket', () => {
     const mathStatesByChild = new Map([['k1', mathStates('k1', [], [release('math.add10')], today)]]);
     const plan = planPack({ pack, children, statesByChild: new Map(), mathStatesByChild, today });
     const k1 = pagesForScope(plan, 'child:k1').map((p) => p.title);
-    expect(k1).toEqual(['Das M', 'Finde das M', 'Wörter schreiben', 'Plus bis 10', 'Rechenmauern']);
+    expect(k1.slice(0, 4)).toEqual(['Das M', 'Finde das M', 'Wörter schreiben', 'Plus bis 10']);
+    expect(['Rechengeschichten', 'Aufgabenfamilien', 'Rechenmauern']).toContain(k1[4]);
     expect(pagesForScope(plan, 'child:k2')).toHaveLength(2);
     expect(pagesForScope(plan, 'game').map((p) => p.title)).toEqual(['Memory für alle', 'Rechen-Memory']);
     const o = pagesForScope(plan, 'observation')[0].spec;

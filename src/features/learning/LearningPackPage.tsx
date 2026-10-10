@@ -19,7 +19,7 @@ import { formatDayMonth, fromDateKey, toDateKey, weekStartKey } from '../../util
 import { ObservationSheetEntry } from './ObservationSheetEntry';
 import './learning.css';
 
-const TRACKS: PackTrack[] = ['letters', 'preschool', 'toddler', 'math', 'skip'];
+const TRACKS: PackTrack[] = ['letters', 'reading', 'preschool', 'toddler', 'math', 'skip'];
 
 /** Elternbereich › Lernpaket: ein Thema für alle, passende A4-Blätter je Kind, als PDF zum Drucken. */
 export function LearningPackPage() {
@@ -133,7 +133,7 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
             <span className="pack-child__name"><Avatar avatar={c.avatar} color={c.color} size={40} /> {c.name}</span>
             <Segmented label={`Blätter für ${c.name}`} value={tracks[c.id]} options={TRACKS.map((t) => ({ value: t, label: TRACK_LABEL[t] }))}
               onChange={(t) => setTracks((s) => ({ ...s, [c.id]: t }))} />
-            {(tracks[c.id] === 'letters' || tracks[c.id] === 'preschool') && (
+            {(tracks[c.id] === 'letters' || tracks[c.id] === 'reading' || tracks[c.id] === 'preschool') && (
               <Toggle label="Rechenblätter dazu" checked={math[c.id] ?? false} onChange={(v) => setMath((s) => ({ ...s, [c.id]: v }))} />
             )}
           </div>
@@ -202,7 +202,7 @@ function PackView({ pack, children, statesByChild, mathStatesByChild, today, obs
 
   const sections = groupPages(plan);
   const withoutMath = pack.children
-    .filter((c) => c.math === false && (c.track === 'letters' || c.track === 'preschool'))
+    .filter((c) => c.math === false && (c.track === 'letters' || c.track === 'reading' || c.track === 'preschool'))
     .map((c) => children.find((k) => k.id === c.childId)?.name).filter(Boolean);
   const lastPrint = pack.prints[pack.prints.length - 1];
 

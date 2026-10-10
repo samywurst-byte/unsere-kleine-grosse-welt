@@ -6,8 +6,9 @@ import { ageInYears } from '../utils/dates';
 import { newId } from '../utils/id';
 import { pathPhase, todaysLetter, suggestions, type GoalState } from './learning';
 import { currentMathGoals, mathStates } from './math';
-import { mathMemoryPairs, mathPageFor, numberWallPage, type MathPage, type MathSpec } from './mathSheets';
+import { extraMathPage, mathMemoryPairs, mathPageFor, type MathPage, type MathSpec } from './mathSheets';
 import type { LearningGoal } from '../data/readingCurriculum';
+import { readingPages, readsWords, type ReadingSpec } from './reading';
 
 /**
  * Lernpaket der Woche: ein gemeinsames Thema (Buchstabe mit Bildwort), passende Blätter für jedes Kind,
@@ -17,6 +18,7 @@ import type { LearningGoal } from '../data/readingCurriculum';
 
 export const TRACK_LABEL: Record<PackTrack, string> = {
   letters: 'Buchstaben und Laute',
+  reading: 'Lesen und Schreiben',
   preschool: 'Zählen, Silben, Anfangslaute',
   toddler: 'Malen und Kleben',
   math: 'Nur Rechnen (Schule)',
@@ -37,6 +39,7 @@ export type PageSpec =
   | { kind: 'coloring'; illustration: string }
   | { kind: 'memory'; cards: string[]; players: { name: string; track: PackTrack }[] }
   | { kind: 'math'; title: string; math: MathSpec }
+  | { kind: 'reading'; title: string; reading: ReadingSpec }
   | { kind: 'math-memory'; heading: string; cards: string[] }
   | { kind: 'observation'; rows: SheetChild[] };
 
@@ -114,7 +117,7 @@ export function themeTitle(letter: LetterInfo): string {
 export function defaultTrack(child: ChildProfile, today: DateKey, states: GoalState[]): PackTrack {
   const phase = pathPhase(child, today).kind;
   // Schulkinder machen ihre Hausaufgaben; Übungsblätter zum Unterricht nur, wenn eingeschaltet
-  if (phase === 'in-school') return child.schoolPractice ? 'math' : 'skip';
+  if (phase === 'in-school') return child.schoolPractice ? (readsWords(states) ? 'reading' : 'math') : 'skip';
   if (phase === 'active' || states.some((s) => s.released)) return 'letters';
   const age = child.birthDate ? ageInYears(child.birthDate, today) : child.ageStage === 'small' ? 2 : 4;
   return age >= 3 ? 'preschool' : 'toddler';
@@ -186,6 +189,26 @@ export function syllablesFor(letter: LetterInfo, knownUppers: string[]): string[
   return out.slice(0, 5);
 }
 
+const READING_TITLE: Record<ReadingSpec['kind'], string> = {
+  'read-draw': 'Lesen und malen',
+  'word-copy': 'Wörter abschreiben',
+  'sound-boxes': 'Schreib, was du hörst',
+  'sentence-check': 'Stimmt das?',
+  'sentence-draw': 'Lesen und malen',
+  'sentence-write': 'Einen Satz schreiben',
+  'read-aloud': 'Lesen wie ein Profi',
+  'text-questions': 'Lesen und ankreuzen',
+};
+
+/** Lese- und Schreibblätter ab Stufe 6 mit ihren Zeilen für den Beobachtungsbogen. */
+function readingSpecs(states: GoalState[], rnd: () => number, fallback: boolean): { specs: PageSpec[]; goals: SheetRow[] } {
+  const pages = readingPages(states, rnd, fallback);
+  return {
+    specs: pages.map((p) => ({ kind: 'reading', title: READING_TITLE[p.spec.kind], reading: p.spec })),
+    goals: pages.flatMap((p) => p.goals.map((g) => ({ label: g.label, goalId: g.goalId }))),
+  };
+}
+
 function childPages(child: ChildProfile, track: PackTrack, letter: LetterInfo, states: GoalState[], seed: string): PageSpec[] {
   const rnd = seededRandom(`${seed}|${child.id}`);
   const theme = themeIllustration(letter);
@@ -202,8 +225,11 @@ function childPages(child: ChildProfile, track: PackTrack, letter: LetterInfo, s
       pages.push(syllables.length >= 2
         ? { kind: 'syllables', letter, syllables }
         : { kind: 'word-trace', letter, illustration: theme, name: child.name });
+      pages.push(...readingSpecs(states, seededRandom(`${seed}|${child.id}|reading`), false).specs);
       return pages;
     }
+    case 'reading':
+      return readingSpecs(states, seededRandom(`${seed}|${child.id}|reading`), true).specs;
     case 'preschool': {
       const counting = [theme, ...illustrationsStartingWith(letter.upper).map((i) => i.id)].filter((x): x is string => !!x);
       const pool = counting.length ? counting : ['ball', 'sonne', 'herz'];
@@ -230,9 +256,11 @@ function memoryCards(letter: LetterInfo, rnd: () => number): string[] {
   return shuffle([...six, ...six], rnd);
 }
 
-function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec | undefined): SheetRow[] {
+function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec | undefined, readingRows: SheetRow[]): SheetRow[] {
   const letterGoal = letterGoalId(letter.upper);
   switch (track) {
+    case 'reading':
+      return readingRows;
     case 'letters':
       return [
         { label: `${letter.upper} und ${letter.lower} unter anderen Buchstaben finden`, goalId: letterGoal },
@@ -241,6 +269,7 @@ function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec 
         page3?.kind === 'syllables'
           ? { label: `Silben mit ${letter.upper} lesen`, goalId: 'read.syllable-reading' }
           : { label: 'Den eigenen Namen schreiben', goalId: 'free.own-name' },
+        ...readingRows,
       ];
     case 'preschool':
       return [
@@ -273,10 +302,17 @@ export interface PlanInput {
 function childMathPages(child: ChildProfile, states: GoalState[], today: DateKey, seed: string): { pages: MathPage[]; goals: LearningGoal[] } {
   const rnd = seededRandom(`${seed}|${child.id}|math`);
   const goals = currentMathGoals(states, child, today).map((s) => s.goal);
-  const pages = goals.map((g) => mathPageFor(g, rnd)).filter((p): p is MathPage => !!p);
+  const pages: MathPage[] = [];
+  for (const g of goals) {
+    const p = mathPageFor(g, rnd);
+    // Zwei Ziele mit demselben Blatt (z. B. Würfelbilder): beim zweiten ein anderes Blatt nehmen
+    const same = p && pages.some((x) => x.title === p.title);
+    const page = same ? extraMathPage(g, rnd) : p;
+    if (page && !pages.some((x) => x.title === page.title)) pages.push(page);
+  }
   if (pages.length === 1 && goals.length === 1) {
-    const wall = numberWallPage(goals[0], rnd);
-    if (wall) pages.push(wall);
+    const extra = extraMathPage(goals[0], rnd);
+    if (extra) pages.push(extra);
   }
   return { pages, goals };
 }
@@ -292,7 +328,11 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
     const child = children.find((c) => c.id === childId);
     if (!child || track === 'skip') continue;
     const specs = track === 'math' ? [] : childPages(child, track, letter, statesByChild.get(childId) ?? [], seed);
-    const goals = observationGoals(track, letter, specs[2]);
+    // Dieselben Zufallszahlen wie in childPages, damit Blätter und Bogen zusammenpassen
+    const readingRows = track === 'letters' || track === 'reading'
+      ? readingSpecs(statesByChild.get(childId) ?? [], seededRandom(`${seed}|${childId}|reading`), track === 'reading').goals
+      : [];
+    const goals = observationGoals(track, letter, specs[2], readingRows);
     // Pakete von vor dem Rechenpfad haben kein Feld: dann gehören Rechenblätter dazu
     if (track === 'math' || (math !== false && track !== 'toddler')) {
       const m = childMathPages(child, mathStatesByChild?.get(childId) ?? mathStates(childId, [], [], today), today, seed);
@@ -336,6 +376,7 @@ export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
     case 'coloring': return `Ausmalbild: ${ILLUSTRATIONS.get(spec.illustration)?.word ?? 'Bild'}`;
     case 'memory': return 'Memory für alle';
     case 'math': return spec.title;
+    case 'reading': return spec.title;
     case 'math-memory': return 'Rechen-Memory';
     case 'observation': return 'Beobachtungsbogen';
   }
