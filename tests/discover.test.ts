@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { PDFDocument } from 'pdf-lib';
+import { EXPLORER_MODULES } from '../src/data/explorerModules';
 import { describe, expect, it } from 'vitest';
 import { DISCOVER_TOPICS, DISCOVER_TOPIC_BY_ID, TIMELINE } from '../src/data/discover';
 import { PROJECT_IDEA_BY_ID } from '../src/data/projects';
@@ -49,6 +50,16 @@ describe('Entdeckerbibliothek: Forschen', () => {
   it('zeigt nur Wörter aus sicheren Buchstaben', () => {
     expect(readableWords(['MOND', 'STERN', 'SONNE', 'ERDE', 'MARS'], ['M', 'O', 'N', 'D', 'S', 'E'])).toEqual(['MOND', 'SONNE']);
   });
+
+  it('erzeugt für jedes Thema ein Forscherblatt, und jeder Entdeckersonntag verweist auf ein vorhandenes Thema', async () => {
+    const f = (n: string) => readFileSync(`public/fonts/${n}`);
+    const fonts = { regular: f('andika-regular.ttf'), bold: f('andika-bold.ttf'), school: f('grundschrift.ttf') };
+    for (const t of DISCOVER_TOPICS) {
+      const bytes = await renderTopicSheet(t, undefined, t.words.slice(0, 2), fonts);
+      expect((await PDFDocument.load(bytes)).getPageCount(), t.id).toBeGreaterThanOrEqual(2);
+    }
+    for (const m of EXPLORER_MODULES) if (m.topicId) expect(DISCOVER_TOPIC_BY_ID.has(m.topicId), m.id).toBe(true);
+  }, 30_000);
 
   it('erzeugt ein Forscherblatt mit zwei Seiten', async () => {
     const f = (n: string) => readFileSync(`public/fonts/${n}`);
