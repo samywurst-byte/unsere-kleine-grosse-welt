@@ -397,7 +397,7 @@ function memory(c: Ctx, spec: Extract<PageSpec, { kind: 'memory' }>) {
 const LEVEL_COLUMNS = [['selbst-', 'ständig'], ['mit wenig', 'Hilfe'], ['mit viel', 'Hilfe'], ['noch', 'nicht'], ['nicht', 'beurteilt']];
 
 function observation(c: Ctx, spec: Extract<PageSpec, { kind: 'observation' }>) {
-  let top = header(c, 'Beobachtungsbogen', 'Nach dem Lernen kurz ankreuzen und danach in der App eintragen: Eltern › Lesepfad oder Rechenpfad. Ein einzelnes Blatt entscheidet nichts, erst mehrere Beobachtungen an verschiedenen Tagen.', false);
+  let top = header(c, 'Beobachtungsbogen', 'Nach dem Lernen kurz ankreuzen und danach in der App eintragen: Eltern › Lernpaket › Bogen eintragen. Ein einzelnes Blatt entscheidet nichts, erst mehrere Beobachtungen an verschiedenen Tagen.', false);
   text(c, 'Datum:', M, top + 16, 12, { color: MUTED });
   hline(c, M + 44, M + 180, top + 18, { color: LINE });
   top += 40;
@@ -412,7 +412,7 @@ function observation(c: Ctx, spec: Extract<PageSpec, { kind: 'observation' }>) {
       text(c, b, cx, top + 20, 8.5, { color: MUTED, align: 'center' });
     });
     top += 26;
-    for (const goal of row.goals) {
+    for (const { label: goal } of row.goals) {
       hline(c, M, W - M, top, { color: LINE, thickness: 0.4 });
       const lines = wrap(goal, c.regular, 10.5, goalW - 8);
       lines.forEach((l, i) => text(c, l, M, top + 15 + i * 12, 10.5));

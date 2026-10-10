@@ -134,7 +134,7 @@ describe('Rechenblätter im Lernpaket', () => {
     expect(pagesForScope(plan, 'child:k2')).toHaveLength(2);
     expect(pagesForScope(plan, 'game').map((p) => p.title)).toEqual(['Memory für alle', 'Rechen-Memory']);
     const o = pagesForScope(plan, 'observation')[0].spec;
-    expect(o.kind === 'observation' && o.rows[0].goals).toContain('Plus bis 10');
+    expect(o.kind === 'observation' && o.rows[0].goals.map((g) => g.label)).toContain('Plus bis 10');
   });
 
   it('nimmt ohne Freigabe das erste passende Ziel und rendert alles als PDF', async () => {

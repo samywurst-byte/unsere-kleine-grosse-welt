@@ -76,3 +76,20 @@
 .pack-print { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
 .pack-result { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
 .pack-result > span { flex: 1; min-width: 180px; font-weight: 700; }
+
+/* Beobachtungsbogen eintragen */
+.pack-sheet { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.pack-sheet > span { flex: 1; min-width: 200px; }
+.sheet { margin-top: var(--space-3); }
+.sheet__child { margin-top: var(--space-4); }
+.sheet__name { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-size: var(--fs-l); }
+.sheet__grid { display: flex; flex-direction: column; }
+.sheet__row { display: grid; grid-template-columns: minmax(180px, 1fr) repeat(5, 76px); align-items: center; border-top: 1px solid var(--line); min-height: 56px; }
+.sheet__row--head { border-top: 0; min-height: 0; padding-bottom: var(--space-1); }
+.sheet__col { text-align: center; font-size: var(--fs-s); color: var(--ink-soft); line-height: 1.15; }
+.sheet__label { padding-right: var(--space-2); }
+.sheet__cell { display: flex; justify-content: center; }
+.sheet__box { width: 44px; height: 44px; border-radius: 10px; border: 2px solid var(--ink-soft); background: var(--card); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.sheet__box--on { background: var(--c-sage-ink); border-color: var(--c-sage-ink); }
+.sheet__mood { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0; }
+.sheet__child > .input { width: 100%; }

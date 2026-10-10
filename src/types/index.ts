@@ -395,6 +395,8 @@ export interface LearningObservation {
   note?: string;
   /** Stimmung beim Lernen (Interesse und Motivation). */
   mood?: LearningMood;
+  /** Zeile aus dem Beobachtungsbogen, z. B. "M und m nachspuren und schreiben". */
+  sheetRow?: string;
   /** Lernpaket der Woche, zu dem die Beobachtung gehört. */
   packId?: Id;
   createdAt: string;

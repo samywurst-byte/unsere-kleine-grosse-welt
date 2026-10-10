@@ -1,6 +1,6 @@
 import type { FamilyDatabase } from '../database/db';
 import { ALL_ILLUSTRATIONS, ILLUSTRATIONS, THEME_ILLUSTRATION, illustrationsStartingWith, type Illustration } from '../data/illustrations';
-import { LETTERS, type LetterInfo } from '../data/readingCurriculum';
+import { LETTERS, letterGoalId, type LetterInfo } from '../data/readingCurriculum';
 import type { ChildProfile, DateKey, LearningPack, LearningRelease, PackTrack } from '../types';
 import { ageInYears } from '../utils/dates';
 import { newId } from '../utils/id';
@@ -38,7 +38,11 @@ export type PageSpec =
   | { kind: 'memory'; cards: string[]; players: { name: string; track: PackTrack }[] }
   | { kind: 'math'; title: string; math: MathSpec }
   | { kind: 'math-memory'; heading: string; cards: string[] }
-  | { kind: 'observation'; rows: { name: string; goals: string[] }[] };
+  | { kind: 'observation'; rows: SheetChild[] };
+
+/** Eine Zeile im Beobachtungsbogen. Ohne Lernziel ("free.…") wird sie nur für euch festgehalten. */
+export interface SheetRow { label: string; goalId: string }
+export interface SheetChild { childId: string; name: string; goals: SheetRow[] }
 
 export type PageSection = 'child' | 'game' | 'observation';
 
@@ -226,19 +230,29 @@ function memoryCards(letter: LetterInfo, rnd: () => number): string[] {
   return shuffle([...six, ...six], rnd);
 }
 
-function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec | undefined): string[] {
+function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec | undefined): SheetRow[] {
+  const letterGoal = letterGoalId(letter.upper);
   switch (track) {
     case 'letters':
       return [
-        `${letter.upper} und ${letter.lower} unter anderen Buchstaben finden`,
-        `Den Laut von ${letter.upper} hören (wie in ${letter.word})`,
-        `${letter.upper} und ${letter.lower} nachspuren und schreiben`,
-        page3?.kind === 'syllables' ? `Silben mit ${letter.upper} lesen` : 'Den eigenen Namen schreiben',
+        { label: `${letter.upper} und ${letter.lower} unter anderen Buchstaben finden`, goalId: letterGoal },
+        { label: `Den Laut von ${letter.upper} hören (wie in ${letter.word})`, goalId: letterGoal },
+        { label: `${letter.upper} und ${letter.lower} nachspuren und schreiben`, goalId: letterGoal },
+        page3?.kind === 'syllables'
+          ? { label: `Silben mit ${letter.upper} lesen`, goalId: 'read.syllable-reading' }
+          : { label: 'Den eigenen Namen schreiben', goalId: 'free.own-name' },
       ];
     case 'preschool':
-      return ['Bis 5 zählen', 'Silben klatschen', `Anfangslaut ${letter.upper} hören`];
+      return [
+        { label: 'Bis 5 zählen', goalId: 'math.count10' },
+        { label: 'Silben klatschen', goalId: 'read.syllables' },
+        { label: `Anfangslaut ${letter.upper} hören`, goalId: 'read.onset' },
+      ];
     case 'toddler':
-      return ['Malen oder kleben', 'Das Bild zeigen und benennen'];
+      return [
+        { label: 'Malen oder kleben', goalId: 'free.craft' },
+        { label: 'Das Bild zeigen und benennen', goalId: 'free.naming' },
+      ];
     default:
       return [];
   }
@@ -271,7 +285,7 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
   const letter = letterInfo(pack.letter);
   const seed = `${pack.weekStart}|${pack.letter}`;
   const pages: PlannedPage[] = [];
-  const observationRows: { name: string; goals: string[] }[] = [];
+  const observationRows: SheetChild[] = [];
   const mathGoals: LearningGoal[] = [];
 
   for (const { childId, track, math } of pack.children) {
@@ -283,13 +297,13 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
     if (track === 'math' || (math !== false && track !== 'toddler')) {
       const m = childMathPages(child, mathStatesByChild?.get(childId) ?? mathStates(childId, [], [], today), today, seed);
       for (const p of m.pages) specs.push({ kind: 'math', title: p.title, math: p.spec });
-      goals.push(...m.goals.map((g) => g.title));
+      goals.push(...m.goals.filter((g) => !goals.some((x) => x.goalId === g.id)).map((g) => ({ label: g.title, goalId: g.id })));
       mathGoals.push(...m.goals);
     }
     specs.forEach((spec, i) => pages.push({
       id: `${childId}-${i + 1}`, section: 'child', childId, childName: child.name, title: pageTitle(spec, letter), spec,
     }));
-    if (specs.length) observationRows.push({ name: child.name, goals });
+    if (specs.length) observationRows.push({ childId, name: child.name, goals });
   }
 
   const players = pack.children

@@ -1,4 +1,4 @@
-import { Download, FileText, Pencil, Printer, Share2 } from 'lucide-react';
+import { ClipboardCheck, Download, FileText, Pencil, Printer, Share2 } from 'lucide-react';
 import { getISOWeek } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -14,8 +14,9 @@ import {
   defaultLetter, defaultTrack, packForWeek, pagesForScope, planPack, recordPrint, savePack, themeTitle, TRACK_LABEL,
   type PackPlan, type PrintScope,
 } from '../../services/learningPack';
-import type { ChildProfile, LearningPack, PackTrack } from '../../types';
+import type { ChildProfile, LearningObservation, LearningPack, PackTrack } from '../../types';
 import { formatDayMonth, fromDateKey, toDateKey, weekStartKey } from '../../utils/dates';
+import { ObservationSheetEntry } from './ObservationSheetEntry';
 import './learning.css';
 
 const TRACKS: PackTrack[] = ['letters', 'preschool', 'toddler', 'math', 'skip'];
@@ -68,7 +69,7 @@ export function LearningPackPage() {
 
       {viewed && !(editing && viewed.id === current?.id) && (
         <PackView
-          key={viewed.id} pack={viewed} children={children} statesByChild={statesByChild} mathStatesByChild={mathStatesByChild} today={today}
+          key={viewed.id} pack={viewed} children={children} statesByChild={statesByChild} mathStatesByChild={mathStatesByChild} today={today} observations={learning.observations}
           isCurrent={viewed.id === current?.id}
           onEdit={() => { setViewId(null); setEditing(true); }}
           onBack={viewId ? () => setViewId(null) : undefined}
@@ -148,8 +149,9 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
 
 interface PdfResult { scope: PrintScope; url: string; file: File; pages: number }
 
-function PackView({ pack, children, statesByChild, mathStatesByChild, today, isCurrent, onEdit, onBack }: {
+function PackView({ pack, children, statesByChild, mathStatesByChild, today, observations, isCurrent, onEdit, onBack }: {
   pack: LearningPack; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>; mathStatesByChild: Map<string, GoalState[]>; today: string;
+  observations: LearningObservation[];
   isCurrent: boolean; onEdit: () => void; onBack?: () => void;
 }) {
   const plan = useMemo(
@@ -157,6 +159,11 @@ function PackView({ pack, children, statesByChild, mathStatesByChild, today, isC
     [pack, children, statesByChild, mathStatesByChild, today],
   );
   const [busy, setBusy] = useState<PrintScope | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const sheetRows = useMemo(() => {
+    const page = plan.pages.find((p) => p.spec.kind === 'observation');
+    return page?.spec.kind === 'observation' ? page.spec.rows : [];
+  }, [plan]);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PdfResult | null>(null);
   useEffect(() => () => { if (result) URL.revokeObjectURL(result.url); }, [result]);
@@ -232,6 +239,19 @@ function PackView({ pack, children, statesByChild, mathStatesByChild, today, isC
           </button>
         ))}
       </div>
+
+      {sheetRows.length > 0 && !sheetOpen && (
+        <div className="notice pack-sheet">
+          <span>Nach dem Lernen: den angekreuzten Beobachtungsbogen hier übertragen.</span>
+          <button type="button" className="btn btn--sage" onClick={() => setSheetOpen(true)}><ClipboardCheck size={18} aria-hidden="true" /> Bogen eintragen</button>
+        </div>
+      )}
+      {sheetOpen && (
+        <ObservationSheetEntry
+          packId={pack.id} rows={sheetRows} children={children} observations={observations}
+          today={today < pack.weekStart ? pack.weekStart : today} onClose={() => setSheetOpen(false)}
+        />
+      )}
 
       {error && <p className="notice notice--error">{error}</p>}
       {result && (

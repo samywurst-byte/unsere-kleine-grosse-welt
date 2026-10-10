@@ -230,7 +230,7 @@ export function GoalModal({ state, child, today, onClose }: { state: GoalState; 
                 <li key={o.id} className="list-item">
                   <div className="list-item__main">
                     <p className="list-item__title">{LEVEL_LABEL[o.level]}</p>
-                    <p className="list-item__meta">{formatLong(o.date)}{o.mood ? ` · ${MOOD_LABEL[o.mood]}` : ''}{o.packId ? ' · Lernpaket' : ''}{o.note ? ` · ${o.note}` : ''}</p>
+                    <p className="list-item__meta">{formatLong(o.date)}{o.mood ? ` · ${MOOD_LABEL[o.mood]}` : ''}{o.sheetRow ? ` · Bogen: ${o.sheetRow}` : o.packId ? ' · Lernpaket' : ''}{o.note ? ` · ${o.note}` : ''}</p>
                   </div>
                   <button type="button" className="btn btn--icon btn--ghost" aria-label="Beobachtung löschen" onClick={() => void deleteObservation(db, o.id)}><Trash2 size={18} /></button>
                 </li>
