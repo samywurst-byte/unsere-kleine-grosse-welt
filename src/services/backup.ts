@@ -95,6 +95,11 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || !['open', 'done', 'declined'].includes(String(r.status)) ? 'Geldwunsch ungültig' : null),
   simDepots: (r) => (typeof r.startCents !== 'number' || !Array.isArray(r.changes) ? 'Musterdepot ungültig' : null),
   depotValuations: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || typeof r.cents !== 'number' || r.cents < 0 ? 'Depotwert ungültig' : null),
+  explorerSundays: (r) => (!isStr(r.moduleId) || (r.kind !== 'home' && r.kind !== 'trip') || !['open', 'done', 'skipped'].includes(String(r.status))
+    || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Entdeckersonntag ungültig' : null),
+  explorerEntries: (r) => (!isStr(r.moduleId) || !isValidDateKey(r.date) || !Array.isArray(r.sentences)
+    || !(Array.isArray(r.photos) && r.photos.every(isImageData)) ? 'Entdeckerbuch-Seite ungültig' : null),
+  jarQuestions: (r) => (!isStr(r.question) ? 'Frageglas-Zettel ungültig' : null),
   discoveries: (r) => (!isStr(r.topicId) || !isStr(r.missionId) || !isValidDateKey(r.date) ? 'Forscherauftrag ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),

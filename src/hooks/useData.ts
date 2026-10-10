@@ -209,3 +209,15 @@ export function useSimDepots() {
 export function useDepotValuations() {
   return useLiveQuery(() => db.depotValuations.toArray(), []);
 }
+
+export function useExplorerSundays() {
+  return useLiveQuery(() => db.explorerSundays.toArray(), []);
+}
+
+export function useExplorerEntries() {
+  return useLiveQuery(() => db.explorerEntries.orderBy('date').toArray(), []);
+}
+
+export function useJarQuestions() {
+  return useLiveQuery(() => db.jarQuestions.orderBy('createdAt').toArray(), []);
+}

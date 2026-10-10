@@ -1,0 +1,76 @@
+/* Entdeckersonntage */
+.ex-now { display: flex; flex-direction: column; gap: var(--space-2); text-decoration: none; color: inherit; background: var(--c-sky-soft); }
+.ex-now .card__eyebrow { margin: 0; }
+.ex-now__title { margin: 0; font-size: 1.7rem; line-height: 1.2; }
+.ex-now__days { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ex-now__more { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: var(--c-sky-ink); align-self: flex-end; }
+.ex-chip { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-m);
+  background: var(--card); border: 2px solid var(--line); min-width: 0; }
+.ex-chip > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.ex-chip--done { border-color: var(--c-sage-ink); background: var(--c-sage-soft); }
+.ex-chip--skipped { opacity: .65; }
+.ex-chip.is-past { border-color: var(--c-gold-ink); }
+
+.ex-year { border-top: 1px solid var(--line); padding: var(--space-2) 0; }
+.ex-year:first-of-type { border-top: 0; }
+.ex-year summary { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; cursor: pointer; min-height: 44px; }
+.ex-year__label { font-weight: 800; padding: 2px 8px; border-radius: var(--radius-s); background: var(--c-gold-soft); color: var(--c-gold-ink); }
+.ex-year__title { font-weight: 800; flex: 1; min-width: 0; }
+.ex-modules { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ex-module { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border-radius: var(--radius-s); text-decoration: none; color: inherit; min-height: 52px; }
+.ex-module:hover, .ex-module:focus-visible { background: var(--c-sky-soft); }
+.ex-module__month { width: 120px; flex-shrink: 0; font-size: var(--fs-s); color: var(--ink-soft); }
+.ex-module__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ex-module__marks { display: flex; gap: 4px; flex-shrink: 0; }
+.ex-module__marks span { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: .9rem; border: 2px solid var(--line); }
+.ex-module__marks span.is-on { background: var(--c-sage-soft); border-color: var(--c-sage-ink); color: var(--c-sage-ink); }
+
+.ex-jar { background: var(--c-gold-soft); }
+.ex-jar__drawn { font-size: var(--fs-l); font-weight: 800; margin: var(--space-2) 0; }
+.ex-handbook-link { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: inherit; }
+.ex-handbook-link p { margin: 0; }
+
+/* Themenseite */
+.ex-control { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-m); background: var(--c-sky-soft); }
+.ex-control__date { display: flex; flex-direction: column; gap: 2px; }
+.ex-control__date .input { width: 180px; }
+.ex-control .btn.is-on { border-color: var(--c-gold-ink); }
+.ex-h3 { font-size: var(--fs-m); margin: var(--space-2) 0 var(--space-1); }
+.ex-prep, .ex-steps { margin: 0 0 var(--space-2); padding-left: 1.3em; }
+.ex-prep li, .ex-steps li { margin: 2px 0; }
+.ex-ideas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.ex-ideas li { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-m); background: var(--c-gold-soft); font-size: var(--fs-m); font-weight: 700; }
+.ex-ideas li > span { flex: 1; }
+.ex-levels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.ex-level { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-2); border-radius: var(--radius-m); background: var(--tone-soft, var(--c-sky-soft)); }
+.ex-details { border-top: 1px solid var(--line); padding-top: var(--space-2); }
+.ex-details summary { cursor: pointer; font-weight: 800; min-height: 40px; display: flex; align-items: center; }
+.ex-details ul { margin: 0; padding-left: 1.3em; }
+.ex-trip { background: var(--c-sage-soft); }
+.ex-trip .ex-control { background: var(--card); }
+
+.ex-entries { display: flex; flex-direction: column; gap: var(--space-2); }
+.ex-entry { display: flex; gap: var(--space-3); align-items: flex-start; text-align: left; font: inherit; color: inherit; padding: var(--space-2);
+  border-radius: var(--radius-m); border: 2px solid var(--line); background: var(--card); cursor: pointer; width: 100%; }
+.ex-entry__photo { width: 96px; height: 96px; object-fit: cover; border-radius: var(--radius-s); flex-shrink: 0; }
+.ex-entry__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ex-ask { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ex-sentence { display: flex; align-items: center; gap: var(--space-2); }
+.ex-sentence .input { flex: 1; min-width: 0; }
+.ex-yearend { background: var(--c-gold-soft); }
+.ex-yearphotos { display: flex; flex-wrap: wrap; gap: 6px; margin: var(--space-2) 0; }
+.ex-yearphotos img { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-s); }
+
+/* Frageglas */
+.ex-question { align-items: flex-start; }
+.ex-answer { margin: 4px 0 0; padding: var(--space-2); border-radius: var(--radius-s); background: var(--c-sage-soft); }
+
+/* Handbuch */
+.ex-worlds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.ex-worlds li { display: flex; gap: var(--space-3); align-items: flex-start; }
+.ex-worlds li > span { font-size: 1.8rem; line-height: 1; }
+.ex-epochs { margin: 0 0 var(--space-2); padding-left: 1.4em; columns: 2; }
+.ex-gear { list-style: none; margin: 0; padding: 0; }
+.ex-gear li { display: flex; align-items: center; gap: var(--space-2); justify-content: space-between; border-bottom: 1px solid var(--line); padding: 4px 0; }
+.ex-places { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); }
+.ex-place__name { margin: 0 0 4px; font-size: var(--fs-l); }

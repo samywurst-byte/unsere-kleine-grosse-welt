@@ -96,4 +96,11 @@ export const SCHEMA_V12 = {
   depotValuations: 'id, childId, date',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 12;
+/** Version 13: Entdeckersonntage (Stand je Sonntag, Entdeckerbuch, Frageglas). */
+export const SCHEMA_V13 = {
+  explorerSundays: 'id, moduleId',
+  explorerEntries: 'id, moduleId, date',
+  jarQuestions: 'id, createdAt',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 13;

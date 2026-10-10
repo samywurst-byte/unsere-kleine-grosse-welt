@@ -41,6 +41,10 @@ import { MoneyPage } from '../features/money/MoneyPage';
 import { ChildMoneyPage } from '../features/money/ChildMoneyPage';
 import { TravelPage, TripPage } from '../features/money/TravelPage';
 import { MoneySettings } from '../features/money/MoneySettings';
+import { SundaysPage } from '../features/explorer/SundaysPage';
+import { ModulePage } from '../features/explorer/ModulePage';
+import { JarPage } from '../features/explorer/JarPage';
+import { HandbookPage } from '../features/explorer/HandbookPage';
 
 export function App() {
   const pinCount = useLiveQuery(() => db.parentAuth.count(), []);
@@ -61,6 +65,10 @@ export function App() {
             <Route path="woche/:date" element={<DayPage />} />
             <Route path="weltreise" element={<WorldPage />} />
             <Route path="entdecken" element={<LibraryPage />} />
+            <Route path="entdecken/sonntage" element={<SundaysPage />} />
+            <Route path="entdecken/sonntage/:moduleId" element={<ModulePage />} />
+            <Route path="entdecken/frageglas" element={<JarPage />} />
+            <Route path="entdecken/handbuch" element={<HandbookPage />} />
             <Route path="entdecken/:topicId" element={<TopicPage />} />
             <Route path="projekte" element={<ProjectsPage />} />
             <Route path="projekte/:projectId" element={<ProjectPage />} />

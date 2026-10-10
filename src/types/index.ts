@@ -403,7 +403,7 @@ export interface FamilyMemory {
   /** Ältere Erinnerungen (Version 0.7.0) hatten nur ein Foto. */
   photo?: string;
   memberIds: Id[];
-  source?: { kind: 'adventure' | 'council' | 'mama-time' | 'project'; id: Id };
+  source?: { kind: 'adventure' | 'council' | 'mama-time' | 'project' | 'explorer'; id: Id };
   createdAt: string;
 }
 
@@ -827,4 +827,70 @@ export interface DepotValuation {
   date: DateKey;
   cents: number;
   note?: string;
+}
+
+// ---------------------------------------------------------------- Entdeckersonntage (Familienhandbuch 2026–2033)
+
+/** Ein Themenmonat aus dem Handbuch: ein Zuhause-Sonntag und ein Ausflugssonntag. Id: "2026-10". */
+export interface ExplorerModule {
+  id: string;
+  /** "2026/27" */
+  year: string;
+  yearTitle: string;
+  title: string;
+  /** Vorgeschlagene Termine aus dem Handbuch. */
+  homeDate: DateKey;
+  tripDate: DateKey;
+  prep: string[];
+  steps: string[];
+  ideas: string[];
+  /** Was ins Entdeckerbuch kommt. */
+  book: string;
+  trip: { place: string; description: string };
+  /** Passendes Thema der Entdeckerbibliothek. */
+  topicId?: string;
+  order: number;
+}
+
+/** Stand eines einzelnen Sonntags. Id: `${moduleId}|home` oder `${moduleId}|trip`. */
+export interface ExplorerSunday {
+  id: string;
+  moduleId: string;
+  kind: 'home' | 'trip';
+  /** Eigener Termin, falls verschoben. */
+  date?: DateKey;
+  status: 'open' | 'done' | 'skipped';
+  eventId?: Id;
+  doneAt?: DateKey;
+}
+
+/** Eine Seite im Entdeckerbuch: dokumentiert, bewertet nicht. */
+export interface ExplorerEntry {
+  id: Id;
+  moduleId: string;
+  kind: 'home' | 'trip';
+  date: DateKey;
+  photos: string[];
+  /** Der Satz jedes Kindes, wortwörtlich. */
+  sentences: { childId: Id; text: string }[];
+  favorite?: string;
+  remember?: string;
+  question?: string;
+  mapMarked?: boolean;
+  timeline?: string;
+  memoryId?: Id;
+  createdAt: string;
+}
+
+/** Frageglas "Das weiß ich noch nicht". */
+export interface JarQuestion {
+  id: Id;
+  childId?: Id;
+  question: string;
+  guess?: string;
+  answer?: string;
+  source?: string;
+  moduleId?: string;
+  createdAt: string;
+  answeredAt?: DateKey;
 }
