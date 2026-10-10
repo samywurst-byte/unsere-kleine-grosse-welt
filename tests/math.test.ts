@@ -34,10 +34,26 @@ describe('Lehrplan Rechnen', () => {
 });
 
 describe('Rechenpfad-Vorschläge', () => {
-  it('beginnt mit Mengen und schlägt höchstens zwei Ziele gleichzeitig vor', () => {
+  it('beginnt bei jüngeren Kindern mit Mengen und schlägt höchstens zwei Ziele gleichzeitig vor', () => {
+    const young = kid({ schoolEntryDate: '2029-09-01' });
     const states = mathStates('k1', [], [], today);
-    const s = mathSuggestions(states, [], kid(), today).filter((x) => x.kind === 'release').map((x) => x.goal.id);
+    const s = mathSuggestions(states, [], young, today).filter((x) => x.kind === 'release').map((x) => x.goal.id);
     expect(s).toEqual(['math.subitize', 'math.compare']);
+  });
+
+  it('beginnt im Jahr vor der Einschulung bei Stufe 3, für jedes Kind automatisch', () => {
+    const states = mathStates('k1', [], [], today);
+    const ids = (c: ChildProfile, d: string) => mathSuggestions(mathStates('k1', [], [], d), [], c, d).filter((x) => x.kind === 'release').map((x) => x.goal.id);
+    expect(ids(kid(), today)).toEqual(['math.five', 'math.decompose10']);
+    const younger = kid({ schoolEntryDate: '2029-09-01' });
+    expect(ids(younger, today)).toEqual(['math.subitize', 'math.compare']);
+    expect(ids(younger, '2028-10-02')).toEqual(['math.five', 'math.decompose10']);
+    expect(states.length).toBeGreaterThan(0);
+  });
+
+  it('nimmt bewusst freigegebene leichtere Ziele trotzdem ernst', () => {
+    const states = mathStates('k1', [], [release('math.subitize')], today);
+    expect(mathSuggestions(states, [], kid(), today).filter((x) => x.kind === 'release').map((x) => x.goal.id)).toEqual(['math.decompose10']);
   });
 
   it('schlägt vor der Schule nichts über Stufe 4 vor', () => {
@@ -123,7 +139,7 @@ describe('Rechenblätter im Lernpaket', () => {
 
   it('nimmt ohne Freigabe das erste passende Ziel und rendert alles als PDF', async () => {
     const plan = planPack({ pack, children, statesByChild: new Map(), mathStatesByChild: new Map(), today });
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toContain('Würfelbilder');
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das M', 'Finde das M', 'Wörter schreiben', 'Das Zehnerfeld', 'Zahlenhäuser']);
     const f = (n: string) => readFileSync(`public/fonts/${n}`);
     const bytes = await renderWorksheets(plan, plan.pages, { regular: f('andika-regular.ttf'), bold: f('andika-bold.ttf'), school: f('grundschrift.ttf') });
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(plan.pages.length);

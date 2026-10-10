@@ -8,7 +8,7 @@ import { MATH_STAGES } from '../../data/mathCurriculum';
 import { useChildren, useLearning } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import { postponeGoal, releaseGoal, STATUS_LABEL, type GoalStatus } from '../../services/learning';
-import { mathPhase, mathStates, mathSuggestions } from '../../services/math';
+import { mathPhase, mathStartStage, mathStates, mathSuggestions } from '../../services/math';
 import { formatMonthYear } from '../../services/school';
 import type { ChildProfile } from '../../types';
 import { toDateKey } from '../../utils/dates';
@@ -60,6 +60,7 @@ function ChildMath({ child }: { child: ChildProfile }) {
               <p>
                 {child.schoolEntryDate ? `Vor der Einschulung im ${formatMonthYear(child.schoolEntryDate)}` : 'Vor der Schule'} geht es um Zahlverständnis:
                 Mengen sehen, Zahlen bis 10, Zahlen zerlegen. Plus und Minus bis 10 nur spielerisch. Die App schlägt bis Stufe 4 vor, freigeben könnt ihr alles.
+                {mathStartStage(child, today) > 1 && ` Im Jahr vor der Einschulung beginnt der Rechenpfad bei Stufe ${mathStartStage(child, today)}. Die Stufen davor gelten als vorausgesetzt; wenn ihr sie doch üben wollt, gebt sie einfach frei.`}
               </p>
             )}
             {phase === 'school-practice' && <p>{child.name} geht zur Schule. Der Rechenpfad begleitet, was gerade im Unterricht dran ist. Gebt am besten nur frei, was in der Klasse schon eingeführt wurde.</p>}
