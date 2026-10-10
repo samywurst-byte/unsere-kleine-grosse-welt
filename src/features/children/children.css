@@ -35,3 +35,18 @@
   border: 0; border-radius: 99px; background: var(--done-soft); color: var(--c-sage-ink); font-weight: 700; cursor: pointer;
 }
 .confirm-help { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; color: var(--c-rose-ink); }
+
+/* Sondermodus und Zusatzmissionen */
+.board__hint--special { background: var(--c-lavender-soft); color: var(--c-lavender-ink); }
+.board__missions { margin-top: var(--space-5); }
+.missions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.mission { flex: 0 1 200px; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1);
+  padding: var(--space-3); border-radius: var(--radius-m); border: 2px dashed var(--c-gold); background: var(--card); color: var(--ink);
+  font: inherit; font-weight: 700; cursor: pointer; text-align: center; }
+.mission__title { font-size: var(--fs-s); }
+.mission__stars { display: inline-flex; gap: 2px; color: var(--c-gold); }
+.mission__state { font-size: var(--fs-s); color: var(--ink-soft); }
+.mission--open .mission__state { color: var(--c-gold-ink); }
+.mission--pending { border-style: solid; background: var(--c-gold-soft); }
+.mission--confirmed { border-style: solid; border-color: var(--c-sage); background: var(--c-sage-soft); cursor: default; }
+.mission--confirmed .mission__state { color: var(--c-sage-ink); }

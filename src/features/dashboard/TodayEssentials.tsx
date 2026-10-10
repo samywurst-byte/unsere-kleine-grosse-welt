@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
 import { db } from '../../database/db';
-import { useChildren, useChoreDefinitions, useChores, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions } from '../../hooks/useData';
+import { useChildren, useChoreDefinitions, useChores, useKindergartenDay, useRoutineCompletions, useRoutineDefinitions, useSpecialDay } from '../../hooks/useData';
+import { tasksHiddenFor } from '../../services/specialDay';
 import { completeChore, reopenChore } from '../../services/chores';
 import { routinesForChild, setRoutineDone } from '../../services/routines';
 import type { ChildProfile, RoutineDefinition } from '../../types';
@@ -16,12 +17,14 @@ export function TodayEssentials({ date }: { date: string }) {
   const chores = useChores(date);
   const choreDefs = useChoreDefinitions();
   const kindergartenDay = useKindergartenDay(date);
-  if (!children || !defs || !completions || !chores || !choreDefs || kindergartenDay === undefined) return null;
+  const special = useSpecialDay(date);
+  if (!children || !defs || !completions || !chores || !choreDefs || kindergartenDay === undefined || special === undefined) return null;
+  const opts = { kindergartenDay, special: special ?? undefined };
 
-  const highlighted = defs.filter((d) => d.highlight && children.some((c) => routinesForChild([d], c.id, date, { kindergartenDay }).length));
+  const highlighted = defs.filter((d) => d.highlight && children.some((c) => routinesForChild([d], c.id, date, opts).length));
   const doneSet = new Set(completions.map((c) => `${c.definitionId}|${c.childId}`));
   const choreDefMap = new Map(choreDefs.map((d) => [d.id, d]));
-  const visibleChores = chores.filter((c) => c.status !== 'skipped' && choreDefMap.has(c.definitionId));
+  const visibleChores = chores.filter((c) => c.status !== 'skipped' && choreDefMap.has(c.definitionId) && !tasksHiddenFor(opts.special, c.childId));
 
   const toggleRoutine = (def: RoutineDefinition, child: ChildProfile) =>
     setRoutineDone(db, def, child, date, !doneSet.has(`${def.id}|${child.id}`));
@@ -39,7 +42,7 @@ export function TodayEssentials({ date }: { date: string }) {
               <Link to={`/timer/${def.timerPresetId}`} className="btn btn--small btn--sage"><Timer size={18} aria-hidden="true" /> Timer</Link>
             )}
             <span className="essentials__kids">
-              {children.filter((c) => routinesForChild([def], c.id, date, { kindergartenDay }).length).map((c) => {
+              {children.filter((c) => routinesForChild([def], c.id, date, opts).length).map((c) => {
                 const done = doneSet.has(`${def.id}|${c.id}`);
                 return (
                   <button

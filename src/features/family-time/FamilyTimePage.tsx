@@ -1,4 +1,4 @@
-import { BookHeart, CalendarHeart, ChevronRight, Heart, Users } from 'lucide-react';
+import { BookHeart, CalendarHeart, ChevronRight, Heart, Leaf, Star, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
@@ -6,13 +6,16 @@ import { Modal } from '../../components/Modal';
 import { IDS } from '../../data/seed';
 import { MAMA_ACTIVITIES, MAMA_ACTIVITY_BY_ID, type MamaActivity } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useChildren, useCouncilNote, useFamilyMemories, useFamilyTimeSessions, useSettings, useTimerPresets, useWeekendAdventures } from '../../hooks/useData';
+import { useChildren, useCouncilNote, useFamilyMemories, useFamilyTimeSessions, useRitualFavorites, useRituals, useSettings, useStarTransactions, useTimerPresets, useWeekendAdventures, useWorld } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import { councilAgenda, councilDate, memoryPhotos, recordMamaTime, removeMamaTime, weekendOf } from '../../services/familyTime';
 import type { ChildProfile } from '../../types';
 import { formatDayMonth, toDateKey, weekdayOf } from '../../utils/dates';
 import { VisualTimer } from '../timers/VisualTimer';
+import { preparationDue, seasonalRituals } from '../../services/rituals';
+import { nextCountry, starBalance } from '../../services/stars';
 import { AdventureSummary } from './AdventureSummary';
+import { ritualLeadDays } from './RitualsPage';
 import './familyTime.css';
 
 /**
@@ -30,6 +33,8 @@ export function FamilyTimePage() {
         <AdventureCard now={now} />
         <CouncilCard today={today} />
         <MemoriesCard />
+        <StarsCard />
+        <RitualsCard today={today} />
       </div>
     </div>
   );
@@ -162,6 +167,50 @@ function MemoriesCard() {
         </div>
       ) : <p className="muted ft-card__lead">Hier sammeln wir schöne Momente, zum Beispiel nach einem Abenteuer.</p>}
       <Link to="/familienzeit/erinnerungen" className="btn ft-card__more">Alle Erinnerungen <ChevronRight size={18} aria-hidden="true" /></Link>
+    </section>
+  );
+}
+
+/** Familiensterne: nur aus freiwilligen Zusatzmissionen, ein gemeinsames Glas für die Weltreise. */
+function StarsCard() {
+  const stars = useStarTransactions();
+  const world = useWorld();
+  const settings = useSettings();
+  if (!stars || !world || !settings) return null;
+  const balance = starBalance(stars);
+  const next = nextCountry(world.countries, world.unlocks);
+  const cost = settings.starsPerCountry;
+  return (
+    <section className="card ft-card tone-sky">
+      <h2 className="card__title"><Star size={26} aria-hidden="true" /> Unsere Familiensterne</h2>
+      <div className="ft-jar-mini">
+        <strong>{balance}</strong>
+        <span className="ft-jar-mini__bar" aria-hidden="true"><span style={{ width: `${Math.min(100, (balance / cost) * 100)}%` }} /></span>
+        {next && <span aria-hidden="true">{next.flagEmoji}</span>}
+      </div>
+      <p className="muted ft-card__lead">
+        {next ? (balance >= cost ? `Genug Sterne für ${next.nameDe}! Zusammen freischalten.` : `Noch ${cost - balance} bis ${next.nameDe}. Sterne gibt es für freiwillige Zusatzmissionen.`) : 'Alle Länder sind besucht.'}
+      </p>
+      <Link to="/weltreise" className="btn btn--sky ft-card__more">Zur Weltreise <ChevronRight size={18} aria-hidden="true" /></Link>
+    </section>
+  );
+}
+
+function RitualsCard({ today }: { today: string }) {
+  const rituals = useRituals();
+  const favorites = useRitualFavorites();
+  if (!rituals || !favorites) return null;
+  const planned = rituals.filter((r) => r.status === 'planned');
+  const due = preparationDue(rituals, today, ritualLeadDays);
+  const ideas = seasonalRituals(today, favorites).slice(0, 3);
+  return (
+    <section className="card ft-card tone-sage">
+      <h2 className="card__title"><Leaf size={26} aria-hidden="true" /> Jahreszeitenrituale</h2>
+      {due.length > 0 && <p className="notice notice--info">Material besorgen für: {due.map((r) => `${r.emoji} ${r.title}`).join(', ')}</p>}
+      {planned.length > 0
+        ? <p className="ft-card__lead">Vorgemerkt: {planned.map((r) => `${r.emoji} ${r.title}`).join(', ')}</p>
+        : <p className="muted ft-card__lead">Passt gerade: {ideas.map((i) => `${i.emoji} ${i.title}`).join(', ')}</p>}
+      <Link to="/familienzeit/rituale" className="btn btn--sage ft-card__more">Rituale ansehen <ChevronRight size={18} aria-hidden="true" /></Link>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { db } from '../database/db';
 import { expandOccurrences, isHolidayOn } from '../services/calendar';
 import { choresForDate, ensureChoreOccurrences } from '../services/chores';
 import { isKindergartenDay } from '../services/dayPhase';
+import { noKindergartenForAll } from '../services/specialDay';
 import type { ChildProfile, DateKey, EventOccurrence } from '../types';
 
 /** Live-Abfragen: Komponenten aktualisieren sich automatisch, wenn sich Daten ändern. */
@@ -65,7 +66,46 @@ export function useIsHoliday(date: DateKey): boolean {
 export function useKindergartenDay(date: DateKey): boolean | undefined {
   const settings = useSettings();
   const holiday = useIsHoliday(date);
-  return settings ? isKindergartenDay(date, settings, holiday) : undefined;
+  const special = useSpecialDay(date);
+  const children = useChildren();
+  if (!settings || special === undefined || !children) return undefined;
+  return isKindergartenDay(date, settings, holiday || noKindergartenForAll(special ?? undefined, children.map((c) => c.id)));
+}
+
+/** Sondermodus für diesen Tag; null = keiner. */
+export function useSpecialDay(date: DateKey) {
+  return useLiveQuery(async () => (await db.specialDays.get(date)) ?? null, [date]);
+}
+
+export function useSpecialDays(from: DateKey) {
+  return useLiveQuery(() => db.specialDays.where('date').aboveOrEqual(from).toArray(), [from]);
+}
+
+export function useMissions() {
+  return useLiveQuery(() => db.missions.toArray(), []);
+}
+
+export function useMissionCompletions(date?: DateKey) {
+  return useLiveQuery(() => (date ? db.missionCompletions.where('date').equals(date).toArray() : db.missionCompletions.toArray()), [date]);
+}
+
+export function useStarTransactions() {
+  return useLiveQuery(() => db.starTransactions.toArray(), []);
+}
+
+export function useWorld() {
+  return useLiveQuery(async () => {
+    const [countries, unlocks, stamps] = await Promise.all([db.countries.orderBy('order').toArray(), db.countryUnlocks.toArray(), db.passportStamps.toArray()]);
+    return { countries, unlocks, stamps };
+  }, []);
+}
+
+export function useRituals() {
+  return useLiveQuery(() => db.rituals.toArray(), []);
+}
+
+export function useRitualFavorites() {
+  return useLiveQuery(() => db.ritualFavorites.toArray(), []);
 }
 
 export function useDeviceMeta() {

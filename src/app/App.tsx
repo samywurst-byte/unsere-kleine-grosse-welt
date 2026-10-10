@@ -25,6 +25,9 @@ import { TimeSettings } from '../features/parent-settings/TimeSettings';
 import { TimerSettings } from '../features/parent-settings/TimerSettings';
 import { DataSettings } from '../features/parent-settings/DataSettings';
 import { PinSettings } from '../features/parent-settings/PinSettings';
+import { MissionSettings } from '../features/parent-settings/MissionSettings';
+import { SpecialDaySettings } from '../features/parent-settings/SpecialDaySettings';
+import { RitualsPage } from '../features/family-time/RitualsPage';
 import { LearningSettings } from '../features/learning/LearningSettings';
 import { LearningPackPage } from '../features/learning/LearningPackPage';
 import { MathSettings } from '../features/learning/MathSettings';
@@ -52,6 +55,7 @@ export function App() {
             <Route path="familienzeit/abenteuer" element={<AdventurePage />} />
             <Route path="familienzeit/familienrat" element={<CouncilPage />} />
             <Route path="familienzeit/erinnerungen" element={<MemoriesPage />} />
+            <Route path="familienzeit/rituale" element={<RitualsPage />} />
             <Route path="timer/:presetId" element={<TimerPage />} />
             <Route path="eltern" element={<ParentLayout />}>
               <Route index element={<ParentHome />} />
@@ -66,6 +70,8 @@ export function App() {
               <Route path="timer" element={<TimerSettings />} />
               <Route path="daten" element={<DataSettings />} />
               <Route path="pin" element={<PinSettings />} />
+              <Route path="missionen" element={<MissionSettings />} />
+              <Route path="sondertag" element={<SpecialDaySettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

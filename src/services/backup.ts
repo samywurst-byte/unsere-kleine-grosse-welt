@@ -73,6 +73,14 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || (r.photos !== undefined && !(Array.isArray(r.photos) && r.photos.every(isImageData))) ? 'Erinnerung ungültig' : null),
   familyTimeSessions: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || !isStr(r.activity) ? 'Mama-Zeit ungültig' : null),
   familyCouncilNotes: (r) => (!isValidDateKey(r.date) ? 'Familienrat ungültig' : null),
+  rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
+    || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),
+  missions: (r) => (!isStr(r.title) || typeof r.stars !== 'number' || r.stars < 1 || !Array.isArray(r.assignedTo) ? 'Zusatzmission ungültig' : null),
+  missionCompletions: (r) => (!isStr(r.missionId) || !isStr(r.childId) || !isValidDateKey(r.date)
+    || !['pending', 'confirmed', 'declined'].includes(String(r.status)) ? 'Missions-Erledigung ungültig' : null),
+  starTransactions: (r) => (typeof r.amount !== 'number' || !isStr(r.sourceId) || (r.kind !== 'earned' && r.kind !== 'spent')
+    || (r.kind === 'earned' ? r.amount < 0 : r.amount > 0) ? 'Sternbuchung ungültig' : null),
+  specialDays: (r) => (!isValidDateKey(r.date) || !Array.isArray(r.childIds) ? 'Sondertag ungültig' : null),
   settings: (r) => (r.id !== 'app' || !isValidTime(r.bedtime) || !isValidTime(r.kindergartenDeparture) ? 'Einstellungen ungültig' : null),
 };
 

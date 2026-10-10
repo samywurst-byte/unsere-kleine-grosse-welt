@@ -392,6 +392,26 @@ export interface SpecialDayMode {
   note?: string;
 }
 
+/** Ein geplantes Jahreszeitenritual. */
+export interface FamilyRitual {
+  id: Id;
+  /** Id aus der Ritualbibliothek oder "own". */
+  ritualId: string;
+  title: string;
+  emoji: string;
+  date?: DateKey;
+  status: 'planned' | 'done';
+  materials: PackingItem[];
+  note?: string;
+  createdAt: string;
+}
+
+/** Ritual, das jedes Jahr wiederkommt; mit eurer Notiz, z. B. dem Lieblingsrezept. Id = Ritual-Id. */
+export interface RitualFavorite {
+  id: string;
+  note?: string;
+}
+
 export interface Country {
   id: Id;
   nameDe: string;

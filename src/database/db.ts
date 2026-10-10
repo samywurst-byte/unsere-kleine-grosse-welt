@@ -1,13 +1,14 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AppSettings, CalendarEvent, ChoreDefinition, ChoreOccurrence, Country, CountryUnlock, DeviceMeta, EventException,
-  FamilyCouncilNote, FamilyMemory, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
+  FamilyCouncilNote, FamilyMemory, FamilyRitual, RitualFavorite, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
   OptionalMission, ParentAuth, PassportStamp, RoutineDefinition, RoutineOccurrence, SpecialDayMode,
   RoutineDefinition as RoutineDef, SafetyCopy, StarTransaction, TimerPreset, TimerState, Weekday,
 } from '../types';
 import { buildSeed } from '../data/seed';
 import { toDateKey } from '../utils/dates';
-import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6 } from './schema';
+import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7 } from './schema';
+import { WORLD } from '../data/countries';
 import { upgradeRoutine, upgradeSettings } from './migrations';
 
 export class FamilyDatabase extends Dexie {
@@ -40,6 +41,8 @@ export class FamilyDatabase extends Dexie {
   learningPacks!: Table<LearningPack, string>;
   weekendAdventures!: Table<WeekendAdventure, string>;
   familyMemories!: Table<FamilyMemory, string>;
+  rituals!: Table<FamilyRitual, string>;
+  ritualFavorites!: Table<RitualFavorite, string>;
 
   constructor(name: string = DB_NAME, options?: { seedDate?: Date }) {
     super(name);
@@ -69,6 +72,13 @@ export class FamilyDatabase extends Dexie {
 
     this.version(6).stores(SCHEMA_V6);
 
+    this.version(7).stores(SCHEMA_V7).upgrade(async (tx) => {
+      // Fehlende Länder der Weltreise ergänzen, vorhandene bleiben unangetastet
+      const table = tx.table('countries');
+      const have = new Set((await table.toArray()).map((c: { id: string }) => c.id));
+      await table.bulkAdd(WORLD.map((w) => w.country).filter((c) => !have.has(c.id)));
+    });
+
     // Läuft ausschließlich, wenn die Datenbank zum allerersten Mal angelegt wird.
     this.on('populate', async (tx) => {
       const seed = buildSeed(toDateKey(options?.seedDate ?? new Date()));
@@ -86,4 +96,4 @@ export class FamilyDatabase extends Dexie {
 export const db = new FamilyDatabase();
 
 /** Alle Tabellen in fester Reihenfolge, z. B. für Export und Import. */
-export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6)] as const;
+export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6), ...Object.keys(SCHEMA_V7)] as const;

@@ -99,3 +99,5 @@
   .kid-card { flex-direction: column; text-align: center; border-left: 0; border-top: 8px solid var(--tone); }
   .kid-card__dots { justify-content: center; }
 }
+.dash__special { display: flex; align-items: center; gap: var(--space-3); background: var(--tone-soft); }
+.dash__special-emoji { font-size: 2.6rem; line-height: 1; }

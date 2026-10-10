@@ -1,16 +1,22 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
-import { db } from '../../database/db';
+import { useSettings, useStarTransactions, useWorld } from '../../hooks/useData';
+import { nextCountry, starBalance } from '../../services/stars';
 
 export function WorldTeaser() {
-  const first = useLiveQuery(() => db.countries.orderBy('order').first(), []);
+  const world = useWorld();
+  const stars = useStarTransactions();
+  const settings = useSettings();
+  if (!world || !stars || !settings) return null;
+  const next = nextCountry(world.countries, world.unlocks);
+  const balance = starBalance(stars);
+  const cost = settings.starsPerCountry;
   return (
     <Link to="/weltreise" className="card dash__world">
       <p className="card__eyebrow">Unsere Weltreise</p>
-      {first
-        ? <p className="dash__world-title">Das erste Land wartet: {first.nameDe} <span aria-hidden="true">{first.flagEmoji}</span></p>
-        : <p className="dash__world-title">Bald geht die Reise los</p>}
-      <p className="small muted">Die Sternereise startet mit einer späteren Ausbaustufe.</p>
+      {next
+        ? <p className="dash__world-title">Nächstes Land: {next.nameDe} <span aria-hidden="true">{next.flagEmoji}</span></p>
+        : <p className="dash__world-title">Alle Länder besucht!</p>}
+      <p className="small muted">{next ? (balance >= cost ? 'Das Sternenglas ist voll genug!' : `${balance} von ${cost} Sternen im Glas`) : `${world.unlocks.length} Stempel im Pass`}</p>
     </Link>
   );
 }

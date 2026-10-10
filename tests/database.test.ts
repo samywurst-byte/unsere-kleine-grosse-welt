@@ -37,7 +37,7 @@ describe('Datenbank', () => {
 
     const upgraded = new FamilyDatabase(name);
     await upgraded.open();
-    expect(upgraded.verno).toBe(6);
+    expect(upgraded.verno).toBe(7);
     const settings = await upgraded.settings.get('app');
     expect(settings?.bedtime).toBe('19:15');
     expect(settings?.maxStarsPerChildPerDay).toBe(5);
@@ -46,6 +46,7 @@ describe('Datenbank', () => {
     expect(await upgraded.members.count()).toBe(5);
     // populate läuft bei einem Upgrade nicht: keine zusätzlichen Startdaten
     expect(await upgraded.routineDefinitions.count()).toBe(0);
-    expect(await upgraded.countries.count()).toBe(0);
+    // Ausnahme seit Version 7: die Länder der Weltreise sind Nachschlagedaten und werden ergänzt
+    expect(await upgraded.countries.count()).toBe(12);
   });
 });

@@ -14,6 +14,7 @@ import { BirthdayNote } from './BirthdayNote';
 import { CurrentRoutine } from './CurrentRoutine';
 import { WorldTeaser } from './WorldTeaser';
 import { FamilyTimeNote } from './FamilyTimeNote';
+import { SpecialDayNote } from './SpecialDayNote';
 import './dashboard.css';
 
 const PHASE_EMOJI = { night: '🌙', morning: '☀️', kindergarten: '🎒', afternoon: '🌿', evening: '🌆' } as const;
@@ -50,6 +51,7 @@ export function DashboardPage() {
       </section>
 
       <section className="dash__right">
+        <SpecialDayNote today={today} />
         {calm ? (
           <DayOverview
             title={info.phase === 'night' && now.getHours() >= 12 ? 'Morgen' : 'Heute'}

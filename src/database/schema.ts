@@ -57,4 +57,10 @@ export const SCHEMA_V6 = {
   familyMemories: 'id, date',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 6;
+/** Version 7: Jahreszeitenrituale; Weltreise bekommt alle Länder. */
+export const SCHEMA_V7 = {
+  rituals: 'id, ritualId, date, status',
+  ritualFavorites: 'id',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 7;

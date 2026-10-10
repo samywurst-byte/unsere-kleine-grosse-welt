@@ -1,3 +1,4 @@
+import { WORLD } from './countries';
 import type {
   AppSettings, CalendarEvent, ChildProfile, ChoreDefinition, Country, FamilyMember, RoutineDefinition,
   TimerPreset, Weekday,
@@ -135,12 +136,7 @@ export function buildSeed(todayKey: string) {
     createdAt: now,
   };
 
-  const countries: Country[] = [
-    {
-      id: 'country-italy', nameDe: 'Italien', capital: 'Rom', continent: 'Europa', flagEmoji: '🇮🇹',
-      greeting: { word: 'Ciao', language: 'Italienisch' }, order: 2, lat: 41.9, lng: 12.5,
-    },
-  ];
+  const countries: Country[] = WORLD.map((w) => w.country);
 
   return { members: [...parents, ...children], routines, chores, events, timerPresets, settings, countries };
 }

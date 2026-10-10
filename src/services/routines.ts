@@ -1,5 +1,6 @@
 import type { FamilyDatabase } from '../database/db';
-import type { ChildProfile, DateKey, RoutineDefinition, RoutineOccurrence, RoutinePhase } from '../types';
+import type { ChildProfile, DateKey, RoutineDefinition, RoutineOccurrence, RoutinePhase, SpecialDayMode } from '../types';
+import { noKindergartenFor, tasksHiddenFor } from './specialDay';
 import { weekdayOf } from '../utils/dates';
 
 const PHASE_ORDER: Record<RoutinePhase, number> = { morning: 0, afternoon: 1, evening: 2 };
@@ -11,12 +12,14 @@ export function routineOccurrenceId(definitionId: string, childId: string, date:
 /**
  * Welche Routinen ein Kind an einem Tag hat. Reine Funktion.
  * `kindergartenDay: false` (Ferien, freier Tag) blendet Kindergarten-Routinen aus.
+ * Ein Sondermodus (krank, Urlaub …) kann für einzelne Kinder alles ausblenden oder den Kindergarten streichen.
  */
 export function routinesForChild(
-  defs: RoutineDefinition[], childId: string, date: DateKey, opts: { kindergartenDay?: boolean } = {},
+  defs: RoutineDefinition[], childId: string, date: DateKey, opts: { kindergartenDay?: boolean; special?: SpecialDayMode } = {},
 ): RoutineDefinition[] {
+  if (tasksHiddenFor(opts.special, childId)) return [];
   const wd = weekdayOf(date);
-  const kg = opts.kindergartenDay ?? true;
+  const kg = (opts.kindergartenDay ?? true) && !noKindergartenFor(opts.special, childId);
   return defs
     .filter((d) => d.active && d.assignedTo.includes(childId) && d.weekdays.includes(wd) && (kg || !d.kindergartenOnly))
     .sort((a, b) => PHASE_ORDER[a.phase] - PHASE_ORDER[b.phase] || a.order - b.order);

@@ -5,7 +5,7 @@ import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
 import { db } from '../../database/db';
-import { useChildren, useIsHoliday, useSettings } from '../../hooks/useData';
+import { useChildren, useIsHoliday, useSettings, useSpecialDay } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import { completeChore, reopenChore } from '../../services/chores';
 import { getDayPhase, ROUTINE_PHASE_LABEL } from '../../services/dayPhase';
@@ -14,6 +14,8 @@ import type { ChildProfile, RoutinePhase } from '../../types';
 import { formatWeekday, toDateKey } from '../../utils/dates';
 import { TaskCard } from '../routines/TaskCard';
 import { useChildDay, type ChoreItem, type RoutineItem } from './useChildDay';
+import { ChildMissions } from './ChildMissions';
+import { SPECIAL_KIND, affects } from '../../services/specialDay';
 import './children.css';
 
 type Item = RoutineItem | ChoreItem;
@@ -30,6 +32,7 @@ export function ChildBoardPage() {
   const settings = useSettings();
   const holiday = useIsHoliday(today);
   const day = useChildDay(child, today);
+  const special = useSpecialDay(today);
   const currentPhase = settings ? getDayPhase(now, today, settings, holiday).routinePhase : 'morning';
   const [phase, setPhase] = useState<RoutinePhase | null>(null);
   const [confirm, setConfirm] = useState<Item | null>(null);
@@ -81,6 +84,10 @@ export function ChildBoardPage() {
         </div>
       </header>
 
+      {special && child && affects(special, child.id) && (
+        <p className="board__hint board__hint--special"><span aria-hidden="true">{SPECIAL_KIND[special.kind].emoji}</span> {special.note || SPECIAL_KIND[special.kind].text}</p>
+      )}
+
       {openChores.length > 0 && (
         <p className="board__hint"><Icon name="house" size={20} /> Heute ist Haushaltstag. Deine Familienaufgabe wartet auf dich.</p>
       )}
@@ -115,6 +122,8 @@ export function ChildBoardPage() {
       )}
 
       {hiddenCount > 0 && <p className="board__more">Danach {hiddenCount === 1 ? 'kommt noch 1 Aufgabe' : `kommen noch ${hiddenCount} Aufgaben`}.</p>}
+
+      <ChildMissions child={child} today={today} />
 
       {done.length > 0 && (
         <section className="board__done" aria-label="Schon geschafft">

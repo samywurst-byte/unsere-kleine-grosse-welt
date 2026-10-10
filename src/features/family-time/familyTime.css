@@ -92,3 +92,16 @@
 .ft-photo--more { min-height: 70px; }
 .ft-add-photos { position: relative; overflow: hidden; margin-top: var(--space-3); }
 .ft-add-photos input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* Jahreszeitenrituale */
+.ft-ritual { padding: var(--space-3); border-radius: var(--radius-m, 16px); border: 2px solid var(--line); }
+.ft-ritual--due { border-color: var(--c-gold-ink); background: var(--c-gold-soft); }
+.ft-pick--ritual { position: relative; padding: 0; }
+.ft-pick__main { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1); width: 100%; min-height: 110px;
+  padding: var(--space-2) var(--space-5); border: 0; background: none; font: inherit; font-weight: 700; color: inherit; cursor: pointer; }
+.ft-fav { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; border-radius: 99px; background: none; color: var(--ink-soft); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; }
+.ft-fav.is-on { color: var(--c-rose-ink); }
+.ft-jar-mini { display: flex; align-items: center; gap: var(--space-3); }
+.ft-jar-mini__bar { flex: 1; height: 18px; border-radius: 99px; background: var(--card); border: 2px solid var(--c-gold-ink); overflow: hidden; }
+.ft-jar-mini__bar > span { display: block; height: 100%; background: var(--c-gold); }
