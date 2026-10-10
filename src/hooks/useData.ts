@@ -156,3 +156,16 @@ export function useCouncilNote(date: DateKey) {
 export function useFamilyMemories() {
   return useLiveQuery(() => db.familyMemories.orderBy('date').reverse().toArray(), []);
 }
+
+export function useRecipes() {
+  return useLiveQuery(() => db.recipes.toArray(), []);
+}
+
+/** Alle Wochenpläne (klein: ein Eintrag pro Woche). */
+export function useMealPlans() {
+  return useLiveQuery(() => db.mealPlans.toArray(), []);
+}
+
+export function useShoppingItems() {
+  return useLiveQuery(() => db.shoppingItems.orderBy('createdAt').toArray(), []);
+}

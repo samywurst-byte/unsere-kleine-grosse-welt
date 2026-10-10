@@ -15,6 +15,7 @@ const SECTIONS = [
   { to: '/eltern/lernen', label: 'Lesepfad' },
   { to: '/eltern/rechnen', label: 'Rechenpfad' },
   { to: '/eltern/lernpaket', label: 'Lernpaket' },
+  { to: '/eltern/essen', label: 'Essen' },
   { to: '/eltern/missionen', label: 'Missionen' },
   { to: '/eltern/sondertag', label: 'Sondertag' },
   { to: '/eltern/kalender', label: 'Kalender' },

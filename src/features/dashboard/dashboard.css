@@ -101,3 +101,4 @@
 }
 .dash__special { display: flex; align-items: center; gap: var(--space-3); background: var(--tone-soft); }
 .dash__special-emoji { font-size: 2.6rem; line-height: 1; }
+.dash__meal { display: flex; align-items: center; gap: var(--space-3); }

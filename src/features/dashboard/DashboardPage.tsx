@@ -15,6 +15,7 @@ import { CurrentRoutine } from './CurrentRoutine';
 import { WorldTeaser } from './WorldTeaser';
 import { FamilyTimeNote } from './FamilyTimeNote';
 import { SpecialDayNote } from './SpecialDayNote';
+import { MealToday } from './MealToday';
 import './dashboard.css';
 
 const PHASE_EMOJI = { night: '🌙', morning: '☀️', kindergarten: '🎒', afternoon: '🌿', evening: '🌆' } as const;
@@ -49,6 +50,7 @@ export function DashboardPage() {
           <p className="chip dash__phase">{info.title}{publicHoliday ? ` · ${publicHoliday.event.title}` : holiday ? ' · Ferien' : ''}</p>
         </div>
         <NextEventCard occurrences={occurrences} now={now} />
+        <MealToday today={today} />
       </section>
 
       <section className="dash__right">

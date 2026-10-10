@@ -26,6 +26,7 @@ import { TimerSettings } from '../features/parent-settings/TimerSettings';
 import { DataSettings } from '../features/parent-settings/DataSettings';
 import { PinSettings } from '../features/parent-settings/PinSettings';
 import { MissionSettings } from '../features/parent-settings/MissionSettings';
+import { MealsPage } from '../features/meals/MealsPage';
 import { SpecialDaySettings } from '../features/parent-settings/SpecialDaySettings';
 import { RitualsPage } from '../features/family-time/RitualsPage';
 import { LearningSettings } from '../features/learning/LearningSettings';
@@ -71,6 +72,7 @@ export function App() {
               <Route path="daten" element={<DataSettings />} />
               <Route path="pin" element={<PinSettings />} />
               <Route path="missionen" element={<MissionSettings />} />
+              <Route path="essen" element={<MealsPage />} />
               <Route path="sondertag" element={<SpecialDaySettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

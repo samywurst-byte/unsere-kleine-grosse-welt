@@ -254,6 +254,8 @@ export interface AppSettings {
   papaTime?: PapaTimeSettings;
   /** Letzter Kalenderexport fürs Handy. */
   icsExportedAt?: string;
+  /** Wochenziele des Essensplans. Fehlt = die sieben Standardkategorien. */
+  mealCategories?: MealCategory[];
   createdAt: string;
 }
 
@@ -527,4 +529,77 @@ export interface LearningRelease {
   at: string;
   /** Bei "postponed": bis wann der Vorschlag ruht. */
   until?: DateKey;
+}
+
+// ---------------------------------------------------------------- Essen
+
+/** Abteilung im Laden, damit die Einkaufsliste sortiert ist. */
+export type ShopSection = 'obst-gemuese' | 'brot' | 'kuehl' | 'fleisch' | 'vorrat' | 'tk' | 'drogerie' | 'sonstiges';
+
+/** Beilage für die Abwechslung über mehrere Wochen. */
+export type MealSide = 'reis' | 'nudeln' | 'kartoffeln' | 'couscous' | 'bulgur' | 'brot';
+
+/** Wochenziel, z. B. einmal pro Woche ein süßes Hauptgericht. Frei änderbar in den Einstellungen. */
+export interface MealCategory {
+  id: string;
+  label: string;
+  emoji: string;
+  perWeek: number;
+}
+
+export interface Ingredient {
+  name: string;
+  /** Freitext, z. B. "500 g" oder "1 Bund". */
+  amount?: string;
+  section: ShopSection;
+}
+
+/** Ein Gericht aus eurer Sammlung. Kategorien dürfen sich überschneiden (Hühnersuppe = Hähnchen und Suppe). */
+export interface Recipe {
+  id: Id;
+  title: string;
+  emoji: string;
+  categories: string[];
+  side?: MealSide;
+  ingredients: Ingredient[];
+  note?: string;
+  favorite?: boolean;
+  /** Mag die Familie gerade nicht: wird nicht vorgeschlagen. */
+  paused?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MealPlanDay {
+  date: DateKey;
+  recipeId?: Id;
+  /** Titel bleibt erhalten, auch wenn das Gericht später gelöscht wird; freie Einträge wie "Reste" gehen auch. */
+  title: string;
+  emoji?: string;
+  categories: string[];
+  side?: MealSide;
+  /** Wunsch eines Kindes aus dem Familienrat. */
+  wishedBy?: Id;
+}
+
+/** Wochenplan. Id = Montag der Woche. */
+export interface MealPlan {
+  id: DateKey;
+  days: MealPlanDay[];
+  /** Essenswünsche der Kinder aus dem Familienrat, noch keinem Tag zugeordnet. */
+  wishes: { childId: Id; recipeId: Id }[];
+  /** Zutaten wurden geprüft und übernommen. */
+  ingredientsCheckedAt?: string;
+}
+
+export interface ShoppingItem {
+  id: Id;
+  name: string;
+  amount?: string;
+  section: ShopSection;
+  done: boolean;
+  /** Woher der Eintrag kommt, z. B. "Pizza (Fr)". */
+  source?: string;
+  createdAt: string;
+  doneAt?: string;
 }

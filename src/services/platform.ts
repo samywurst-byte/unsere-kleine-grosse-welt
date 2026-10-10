@@ -56,3 +56,21 @@ export async function saveFile(name: string, content: string, type = 'applicatio
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return 'downloaded';
 }
+
+/** Text teilen (iPad: Teilen-Menü, z. B. AirDrop, Notizen, Nachrichten); sonst in die Zwischenablage. */
+export async function shareText(text: string, title?: string): Promise<'shared' | 'copied' | 'cancelled' | 'failed'> {
+  if (navigator.share) {
+    try {
+      await navigator.share({ text, ...(title ? { title } : {}) });
+      return 'shared';
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return 'copied';
+  } catch {
+    return 'failed';
+  }
+}

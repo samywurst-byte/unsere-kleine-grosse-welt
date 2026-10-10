@@ -6,7 +6,9 @@ import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { DEFAULT_COUNCIL_AGENDA } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useCouncilNote, useDeviceMeta, useMembers, useOccurrences, useSettings, useWeekendAdventures } from '../../hooks/useData';
+import { useChildren, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
+import { guessSection } from '../../data/meals';
+import { addShoppingItem, emptyPlan, mealCategories, setWish, wishOptions } from '../../services/meals';
 import { backupIsDue } from '../../services/backup';
 import { exportBackupFile } from '../../services/backupExport';
 import { useNow } from '../../hooks/useNow';
@@ -17,7 +19,7 @@ import type { CouncilDecision, FamilyCouncilNote, Member } from '../../types';
 import { addDaysKey, formatDayMonth, formatWeekday, formatWeekdayShort, toDateKey } from '../../utils/dates';
 import './familyTime.css';
 
-type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'notes';
+type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'shopping' | 'notes';
 
 /** Welche Hilfe ein Tagesordnungspunkt bekommt; erkannt am Titel, damit eigene Punkte einfach Notizen sind. */
 function itemKind(title: string): ItemKind {
@@ -25,7 +27,8 @@ function itemKind(title: string): ItemKind {
   if (t.includes('erlebnis') || t.includes('schönst')) return 'highlights';
   if (t.includes('termin')) return 'events';
   if (t.includes('abenteuer')) return 'adventure';
-  if (t.includes('essen') || t.includes('einkauf')) return 'meals';
+  if (t.includes('einkauf')) return 'shopping';
+  if (t.includes('essen')) return 'meals';
   return 'notes';
 }
 
@@ -92,7 +95,7 @@ function ItemBody({ kind, itemKey, note, date, members, today, change }: {
   const notes = (
     <DraftText
       multiline label="Notizen" value={note.notes?.[itemKey] ?? ''}
-      placeholder={kind === 'meals' ? 'Wünsche notieren. Der Essensplan kommt in einem späteren Paket.' : 'Notizen'}
+      placeholder={kind === 'meals' ? 'Weitere Wünsche oder Ideen' : 'Notizen'}
       onSave={(v) => change((n) => ({ ...n, notes: { ...n.notes, [itemKey]: v } }))}
     />
   );
@@ -113,6 +116,8 @@ function ItemBody({ kind, itemKey, note, date, members, today, change }: {
   }
   if (kind === 'events') return <><NextWeekEvents from={addDaysKey(date, 1)} />{notes}</>;
   if (kind === 'adventure') return <><NextAdventure council={date} today={today} />{notes}</>;
+  if (kind === 'meals') return <><MealWishes weekStart={addDaysKey(date, 1)} />{notes}</>;
+  if (kind === 'shopping') return <><ShoppingQuick />{notes}</>;
   return notes;
 }
 
@@ -257,5 +262,60 @@ function BackupRound() {
       </button>
       {message && <p className="notice notice--ok">{message}</p>}
     </section>
+  );
+}
+
+/** Jedes Kind wählt aus drei Gerichten sein Wunschessen für die kommende Woche. Mama und Papa verteilen es dann im Wochenplan. */
+function MealWishes({ weekStart }: { weekStart: string }) {
+  const children = useChildren();
+  const settings = useSettings();
+  const recipes = useRecipes();
+  const plans = useMealPlans();
+  if (!children || !recipes || !plans) return null;
+  const plan = plans.find((p) => p.id === weekStart) ?? emptyPlan(weekStart);
+  const recent = plans.filter((p) => p.id < weekStart && p.id >= addDaysKey(weekStart, -21));
+  return (
+    <div className="stack ft-wishes">
+      <p className="muted ft-card__lead">Was wünschst du dir nächste Woche? Jedes Kind darf eins aussuchen.</p>
+      {children.map((c) => {
+        const wish = plan.wishes.find((w) => w.childId === c.id)?.recipeId;
+        const options = wishOptions(recipes, plan, recent, c.id, settings ? mealCategories(settings) : undefined);
+        const wished = wish ? recipes.find((r) => r.id === wish) : undefined;
+        const shown = wished && !options.includes(wished) ? [wished, ...options.slice(0, 2)] : options;
+        return (
+          <div key={c.id} className="ft-wish-row">
+            <Avatar avatar={c.avatar} color={c.color} size={48} />
+            <div className="ft-wish-options">
+              {shown.map((r) => (
+                <button key={r.id} type="button" className={`ft-pick ft-pick--wish ${wish === r.id ? 'ft-pick--on' : ''}`} aria-pressed={wish === r.id}
+                  onClick={() => void setWish(db, weekStart, c.id, wish === r.id ? null : r.id)}>
+                  <span className="ft-pick__emoji" aria-hidden="true">{r.emoji}</span><span>{r.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {plan.days.length > 0 && <p className="small muted">Schon geplant: {plan.days.map((d) => `${formatWeekdayShort(d.date)} ${d.emoji ?? ''} ${d.title}`).join(' · ')}</p>}
+      <Link to="/eltern/essen" className="btn btn--small ft-card__more">Zum Wochenplan (Eltern)</Link>
+    </div>
+  );
+}
+
+function ShoppingQuick() {
+  const items = useShoppingItems();
+  const [name, setName] = useState('');
+  if (!items) return null;
+  const open = items.filter((i) => !i.done);
+  const add = () => { if (name.trim()) { void addShoppingItem(db, name, guessSection(name)); setName(''); } };
+  return (
+    <div className="stack">
+      <p className="muted ft-card__lead">{open.length ? `${open.length} Sachen stehen auf der Einkaufsliste.` : 'Die Einkaufsliste ist leer.'} Was fehlt noch?</p>
+      <div className="row">
+        <input className="input" value={name} placeholder="z. B. Bananen" aria-label="Auf die Einkaufsliste" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
+        <button type="button" className="btn" disabled={!name.trim()} onClick={add}><Plus size={18} aria-hidden="true" /> Dazu</button>
+      </div>
+      <Link to="/eltern/essen?tab=list" className="btn btn--small ft-card__more">Einkaufsliste öffnen (Eltern)</Link>
+    </div>
   );
 }

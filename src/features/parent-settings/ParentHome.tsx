@@ -7,6 +7,7 @@ const TILES = [
   { to: '/eltern/lernen', title: 'Lesepfad', text: 'Buchstabenatlas, Beobachtungen, nächste Schritte je Kind' },
   { to: '/eltern/rechnen', title: 'Rechenpfad', text: 'Mengen, Plus und Minus, Einmaleins: Stufen und nächste Schritte je Kind' },
   { to: '/eltern/lernpaket', title: 'Lernpaket der Woche', text: 'Ein Thema für alle, A4-Arbeitsblätter je Kind zum Drucken' },
+  { to: '/eltern/essen', title: 'Essen und Einkauf', text: 'Wochenplan mit Kinderwünschen, eure Gerichte, Einkaufsliste fürs Handy' },
   { to: '/eltern/missionen', title: 'Zusatzmissionen und Sterne', text: 'Missionen bestätigen und pflegen, Familienglas, Grenzen' },
   { to: '/eltern/sondertag', title: 'Heute ist alles anders', text: 'Krank, Urlaub, Besuch: Aufgaben für einzelne Kinder ausblenden' },
   { to: '/eltern/kalender', title: 'Kalender', text: 'Termine, Serien, Ausnahmen, Ferien, Packlisten' },
@@ -19,7 +20,7 @@ const TILES = [
 ];
 
 const LATER = [
-  { title: 'Essensplan und Einkaufsliste', text: 'Nach der Entscheidung, wie ihr vom Handy auf die Daten kommt' },
+  { title: 'Suppenküche und Vorrat', text: 'Brühe-Rhythmus im Winter, Gefriervorrat, Portionen' },
   { title: 'Entdeckerwelt und Projekte', text: 'Projektwerkstatt, Bibliothek, Zeitstrahl' },
   { title: 'Geldwelt und Reisekasse', text: 'Taschengeld, Sparziele, gemeinsame Reisekasse' },
   { title: 'Familienarchiv', text: 'Jahresrückblick aus Erinnerungen und Lernstand' },

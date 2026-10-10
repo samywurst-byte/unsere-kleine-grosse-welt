@@ -63,4 +63,11 @@ export const SCHEMA_V7 = {
   ritualFavorites: 'id',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 7;
+/** Version 8: Essensplan, Gerichte und Einkaufsliste. */
+export const SCHEMA_V8 = {
+  recipes: 'id, title',
+  mealPlans: 'id',
+  shoppingItems: 'id, section, done, createdAt',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 8;

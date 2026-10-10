@@ -4,6 +4,8 @@ import { CURRENT_SCHEMA_VERSION } from '../database/schema';
 import { upgradeRoutine, upgradeSettings } from '../database/migrations';
 import type { AppSettings, RoutineDefinition, SafetyCopy, Weekday } from '../types';
 import { newId } from '../utils/id';
+import { WORLD } from '../data/countries';
+import { defaultRecipes } from '../data/meals';
 import { isValidDateKey, isValidTime } from '../utils/dates';
 
 /**
@@ -73,6 +75,9 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || (r.photos !== undefined && !(Array.isArray(r.photos) && r.photos.every(isImageData))) ? 'Erinnerung ungültig' : null),
   familyTimeSessions: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || !isStr(r.activity) ? 'Mama-Zeit ungültig' : null),
   familyCouncilNotes: (r) => (!isValidDateKey(r.date) ? 'Familienrat ungültig' : null),
+  recipes: (r) => (!isStr(r.title) || !Array.isArray(r.categories) || !Array.isArray(r.ingredients) ? 'Gericht ungültig' : null),
+  mealPlans: (r) => (!isValidDateKey(r.id) || !Array.isArray(r.days) || !Array.isArray(r.wishes) ? 'Essensplan ungültig' : null),
+  shoppingItems: (r) => (!isStr(r.name) || typeof r.done !== 'boolean' ? 'Einkaufsliste ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),
   missions: (r) => (!isStr(r.title) || typeof r.stars !== 'number' || r.stars < 1 || !Array.isArray(r.assignedTo) ? 'Zusatzmission ungültig' : null),
@@ -129,6 +134,12 @@ export function migrateBackupTables(backup: BackupFile): BackupFile['tables'] {
   settings.forEach((s) => upgradeSettings(s, backup.schemaVersion));
   const kgDays = (settings[0]?.kindergartenDays ?? [1, 2, 3, 4, 5]) as Weekday[];
   ((tables.routineDefinitions ?? []) as Partial<RoutineDefinition>[]).forEach((r) => upgradeRoutine(r, kgDays));
+  // Nachschlagedaten, die mit neueren Versionen dazukamen, gehen beim Einspielen älterer Sicherungen nicht verloren
+  {
+    const have = new Set((tables.countries ?? []).map((c) => c.id));
+    tables.countries = [...(tables.countries ?? []), ...(WORLD.map((w) => w.country).filter((c) => !have.has(c.id)) as unknown as Record<string, unknown>[])];
+  }
+  if (backup.schemaVersion < 8 && !tables.recipes?.length) tables.recipes = defaultRecipes() as unknown as Record<string, unknown>[];
   return tables;
 }
 

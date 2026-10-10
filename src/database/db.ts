@@ -1,13 +1,14 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AppSettings, CalendarEvent, ChoreDefinition, ChoreOccurrence, Country, CountryUnlock, DeviceMeta, EventException,
-  FamilyCouncilNote, FamilyMemory, FamilyRitual, RitualFavorite, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
+  FamilyCouncilNote, FamilyMemory, MealPlan, Recipe, ShoppingItem, FamilyRitual, RitualFavorite, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
   OptionalMission, ParentAuth, PassportStamp, RoutineDefinition, RoutineOccurrence, SpecialDayMode,
   RoutineDefinition as RoutineDef, SafetyCopy, StarTransaction, TimerPreset, TimerState, Weekday,
 } from '../types';
 import { buildSeed } from '../data/seed';
 import { toDateKey } from '../utils/dates';
-import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7 } from './schema';
+import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8 } from './schema';
+import { defaultRecipes } from '../data/meals';
 import { WORLD } from '../data/countries';
 import { upgradeRoutine, upgradeSettings } from './migrations';
 
@@ -43,6 +44,9 @@ export class FamilyDatabase extends Dexie {
   familyMemories!: Table<FamilyMemory, string>;
   rituals!: Table<FamilyRitual, string>;
   ritualFavorites!: Table<RitualFavorite, string>;
+  recipes!: Table<Recipe, string>;
+  mealPlans!: Table<MealPlan, string>;
+  shoppingItems!: Table<ShoppingItem, string>;
 
   constructor(name: string = DB_NAME, options?: { seedDate?: Date }) {
     super(name);
@@ -79,6 +83,11 @@ export class FamilyDatabase extends Dexie {
       await table.bulkAdd(WORLD.map((w) => w.country).filter((c) => !have.has(c.id)));
     });
 
+    this.version(8).stores(SCHEMA_V8).upgrade(async (tx) => {
+      // Startsammlung an Gerichten; die Familie kann sie danach frei ändern oder löschen
+      await tx.table('recipes').bulkAdd(defaultRecipes());
+    });
+
     // Läuft ausschließlich, wenn die Datenbank zum allerersten Mal angelegt wird.
     this.on('populate', async (tx) => {
       const seed = buildSeed(toDateKey(options?.seedDate ?? new Date()));
@@ -89,6 +98,7 @@ export class FamilyDatabase extends Dexie {
       await tx.table('timerPresets').bulkAdd(seed.timerPresets);
       await tx.table('settings').add(seed.settings);
       await tx.table('countries').bulkAdd(seed.countries);
+      await tx.table('recipes').bulkAdd(defaultRecipes());
     });
   }
 }
@@ -96,4 +106,4 @@ export class FamilyDatabase extends Dexie {
 export const db = new FamilyDatabase();
 
 /** Alle Tabellen in fester Reihenfolge, z. B. für Export und Import. */
-export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6), ...Object.keys(SCHEMA_V7)] as const;
+export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6), ...Object.keys(SCHEMA_V7), ...Object.keys(SCHEMA_V8)] as const;

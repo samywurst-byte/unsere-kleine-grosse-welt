@@ -108,3 +108,6 @@
 .ft-backup { margin-top: var(--space-4); }
 .ft-backup--due { border: 2px solid var(--c-gold-ink); background: var(--c-gold-soft); }
 .ft-pick { hyphens: auto; overflow-wrap: anywhere; }
+.ft-wish-row { display: flex; align-items: center; gap: var(--space-3); }
+.ft-wish-options { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.ft-pick--wish { min-height: 96px; }
