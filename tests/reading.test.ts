@@ -6,7 +6,7 @@ import { CHECK_SENTENCES, DRAW_SENTENCES, READ_TEXTS, READ_WORDS, SOUND_BOX_WORD
 import { GOALS_BY_ID, LETTERS, READING_GOALS, READING_STAGES } from '../src/data/readingCurriculum';
 import { ILLUSTRATIONS } from '../src/data/illustrations';
 import { goalStates } from '../src/services/learning';
-import { defaultTrack, pagesForScope, planPack, seededRandom, type PlannedPage } from '../src/services/learningPack';
+import { defaultTrack, pagesForScope, planPack, READING_TITLE, seededRandom, type PlannedPage } from '../src/services/learningPack';
 import { extraMathPage } from '../src/services/mathSheets';
 import { graphemes, plain, readingBox, readingPageFor, readingPages, readableWords, sentenceReadable, wordsOf } from '../src/services/reading';
 import { renderWorksheets } from '../src/services/worksheetPdf';
@@ -116,7 +116,7 @@ describe('Lese- und Schreibblätter', () => {
     for (let i = 0; !specs.some((s) => s.kind === 'sentence-draw') || !specs.some((s) => s.kind === 'sentence-check'); i++) {
       specs.push(readingPageFor('read.sentences', states, seededRandom(`s${i}`))!.spec);
     }
-    const reading: PlannedPage[] = specs.map((spec, i) => ({ id: `r${i}`, section: 'child', title: spec.kind, spec: { kind: 'reading', title: spec.kind, reading: spec } }));
+    const reading: PlannedPage[] = specs.map((spec, i) => ({ id: `r${i}`, section: 'child', title: READING_TITLE[spec.kind], spec: { kind: 'reading', title: READING_TITLE[spec.kind], reading: spec } }));
     const math: PlannedPage[] = [];
     for (const g of MATH_GOALS) for (let k = 0; k < 6; k++) {
       const p = extraMathPage(g, seededRandom(`${g.id}${k}`));

@@ -189,7 +189,7 @@ export function syllablesFor(letter: LetterInfo, knownUppers: string[]): string[
   return out.slice(0, 5);
 }
 
-const READING_TITLE: Record<ReadingSpec['kind'], string> = {
+export const READING_TITLE: Record<ReadingSpec['kind'], string> = {
   'read-draw': 'Lesen und malen',
   'word-copy': 'Wörter abschreiben',
   'sound-boxes': 'Schreib, was du hörst',
