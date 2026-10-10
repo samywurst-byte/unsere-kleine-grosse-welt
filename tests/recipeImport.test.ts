@@ -55,3 +55,18 @@ describe('Rezepte importieren', () => {
     expect(parseIngredient('- Eier, 3 Stück')).toMatchObject({ name: 'Eier, 3 Stück' });
   });
 });
+
+describe('Kategorien aus einer großen Sammlung', () => {
+  it('ordnet Beilagen, Soßen und Frühstück zu und liest „Hauptgericht“ nicht als süß', () => {
+    const text = [
+      'Rezept: Lasagne', 'Kategorie: Rinderhack, Hauptgericht', 'Zutaten:', '• 600 g Rinderhack',
+      'Rezept: Spätzle', 'Kategorie: Beilage', 'Zutaten:', '• 800 g Mehl',
+      'Rezept: Dunkle Soße', 'Kategorie: Hähnchen, Soßen', 'Zutaten:', '• 1 l Brühe',
+      'Rezept: Granola', 'Kategorie: Frühstück, Brot und Backen', 'Zutaten:', '• 300 g Haferflocken',
+      'Rezept: Pfannkuchen herzhaft gefüllt', 'Kategorie: Hauptgericht', 'Zutaten:', '• 250 g Mehl',
+      'Rezept: Gebackene Fischstäbchen mit Kartoffelpüree', 'Kategorie: Hauptgericht', 'Zutaten:', '• 1 kg Kartoffeln',
+    ].join('\n');
+    const r = parseRecipeText(text);
+    expect(r.map((x) => x.categories)).toEqual([['beef'], ['side'], ['chicken', 'side'], ['breakfast', 'bread'], [], []]);
+  });
+});

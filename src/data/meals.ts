@@ -15,6 +15,8 @@ export const DEFAULT_MEAL_CATEGORIES: MealCategory[] = [
   { id: 'vesper', label: 'Vesper', emoji: '🥨', perWeek: 1 },
   { id: 'soup', label: 'Suppenküche', emoji: '🍲', perWeek: 0 },
   { id: 'bread', label: 'Brot und Backen', emoji: '🍞', perWeek: 0, notMeal: true },
+  { id: 'side', label: 'Beilagen und Soßen', emoji: '🥣', perWeek: 0, notMeal: true },
+  { id: 'breakfast', label: 'Frühstück', emoji: '🥐', perWeek: 0, notMeal: true },
 ];
 
 export const SIDE_LABEL: Record<MealSide, string> = {

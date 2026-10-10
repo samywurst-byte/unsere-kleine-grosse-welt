@@ -47,6 +47,15 @@ const CATEGORY_WORDS: Record<string, string[]> = {
   bread: ['brot', 'brötchen', 'backen', 'gebäck', 'kuchen', 'zopf', 'hefezopf', 'sauerteig', 'baguette', 'semmel', 'laugen', 'brezel', 'muffin', 'plätzchen', 'keks'],
 };
 
+/** Nur für ausdrücklich angegebene Kategorien (beim Raten aus dem Namen wären sie zu ungenau, z. B. „Nudeln mit Tomatensoße“). */
+const EXPLICIT_WORDS: Record<string, string[]> = {
+  side: ['beilage', 'soße', 'sosse', 'soßen', 'dip', 'dressing'],
+  breakfast: ['frühstück', 'fruehstueck', 'brunch'],
+};
+
+/** Allgemeine Angaben, die keiner Kategorie entsprechen („Hauptgericht“ ist kein „Süßes Hauptgericht“). */
+const GENERIC = /^(haupt(gericht|gerichte|speise)|mittagessen|abendessen|essen|gericht|gerichte|rezept)$/;
+
 const EMOJI_WORDS: [string, string][] = [
   ['pizza', '🍕'], ['flammkuchen', '🥧'], ['suppe', '🍲'], ['brühe', '🍲'], ['eintopf', '🍲'], ['salat', '🥗'], ['nudel', '🍝'], ['spaghetti', '🍝'],
   ['lasagne', '🍝'], ['reis', '🍚'], ['hähnchen', '🍗'], ['huhn', '🍗'], ['pfannkuchen', '🥞'], ['kaiserschmarrn', '🥞'], ['waffel', '🧇'],
@@ -58,12 +67,12 @@ const norm = (s: string) => s.toLowerCase().normalize('NFC');
 
 function matchCategory(word: string, categories: MealCategory[]): string | undefined {
   const w = norm(word.trim());
-  if (!w) return undefined;
+  if (!w || GENERIC.test(w)) return undefined;
   const direct = categories.find((c) => norm(c.label) === w || c.id === w);
   if (direct) return direct.id;
   const partial = categories.find((c) => norm(c.label).includes(w) || w.includes(norm(c.label)));
   if (partial) return partial.id;
-  for (const [id, words] of Object.entries(CATEGORY_WORDS)) {
+  for (const [id, words] of [...Object.entries(EXPLICIT_WORDS), ...Object.entries(CATEGORY_WORDS)]) {
     if (categories.some((c) => c.id === id) && words.some((k) => w.includes(k))) return id;
   }
   return undefined;
@@ -82,6 +91,12 @@ export function guessCategories(title: string, ingredients: Ingredient[], catego
     if (/hähnchen|huhn|pute/.test(ing)) out.push('chicken');
     else if (/rinderhack|hackfleisch/.test(ing)) out.push('beef');
     else if (/hefe|sauerteig/.test(ing) && /mehl/.test(ing)) out.push('bread');
+  }
+  // „Gebackene Fischstäbchen“ sind kein Backrezept, „herzhaft gefüllte Pfannkuchen“ nicht süß
+  if (out.includes('bread') && /gebacken/.test(t) && !/brot|brötchen|kuchen|zopf|baguette|semmel|brezel|muffin|plätzchen|keks|laugen|sauerteig/.test(t)) out.splice(out.indexOf('bread'), 1);
+  if (out.includes('sweet') && /herzhaft|pikant|gefüllt mit (hack|käse|schinken|gemüse)/.test(t)) {
+    out.splice(out.indexOf('sweet'), 1);
+    if (out.includes('bread') && !/brot|(?<!pfann)kuchen/.test(t)) out.splice(out.indexOf('bread'), 1);
   }
   // Brot schließt Hauptgerichte nicht aus, aber "Brotzeit" ist Vesper, kein Backrezept
   if (out.includes('vesper') && out.includes('bread') && /brotzeit|vesper/.test(t)) out.splice(out.indexOf('bread'), 1);
