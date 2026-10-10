@@ -11,6 +11,9 @@ import { WeekPage } from '../features/calendar/WeekPage';
 import { DayPage } from '../features/calendar/DayPage';
 import { WorldPage } from '../features/world-adventure/WorldPage';
 import { FamilyTimePage } from '../features/family-time/FamilyTimePage';
+import { AdventurePage } from '../features/family-time/AdventurePage';
+import { CouncilPage } from '../features/family-time/CouncilPage';
+import { MemoriesPage } from '../features/family-time/MemoriesPage';
 import { TimerPage } from '../features/timers/TimerPage';
 import { ParentLayout } from '../features/parent-settings/ParentLayout';
 import { ParentHome } from '../features/parent-settings/ParentHome';
@@ -46,6 +49,9 @@ export function App() {
             <Route path="woche/:date" element={<DayPage />} />
             <Route path="weltreise" element={<WorldPage />} />
             <Route path="familienzeit" element={<FamilyTimePage />} />
+            <Route path="familienzeit/abenteuer" element={<AdventurePage />} />
+            <Route path="familienzeit/familienrat" element={<CouncilPage />} />
+            <Route path="familienzeit/erinnerungen" element={<MemoriesPage />} />
             <Route path="timer/:presetId" element={<TimerPage />} />
             <Route path="eltern" element={<ParentLayout />}>
               <Route index element={<ParentHome />} />

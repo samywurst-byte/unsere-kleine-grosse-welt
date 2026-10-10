@@ -51,4 +51,10 @@ export const SCHEMA_V5 = {
   learningPacks: 'id, weekStart',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 5;
+/** Version 6: Familienzeit (Wochenendabenteuer, Erinnerungen). */
+export const SCHEMA_V6 = {
+  weekendAdventures: 'id, weekend, status',
+  familyMemories: 'id, date',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 6;

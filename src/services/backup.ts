@@ -65,6 +65,12 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || !['independent', 'little-help', 'much-help', 'not-yet', 'not-assessable'].includes(String(r.level)) ? 'Lernbeobachtung ungültig' : null),
   learningReleases: (r) => (!isStr(r.childId) || !isStr(r.goalId) || (r.status !== 'released' && r.status !== 'postponed') ? 'Lernfreigabe ungültig' : null),
   learningPacks: (r) => (!isValidDateKey(r.weekStart) || !isStr(r.letter) || !Array.isArray(r.children) || !Array.isArray(r.prints) ? 'Lernpaket ungültig' : null),
+  weekendAdventures: (r) => (!isValidDateKey(r.weekend) || !isStr(r.title) || !Array.isArray(r.packing)
+    || !['planned', 'done', 'postponed', 'cancelled'].includes(String(r.status)) ? 'Wochenendabenteuer ungültig' : null),
+  familyMemories: (r) => (!isValidDateKey(r.date) || !isStr(r.title) || !Array.isArray(r.memberIds)
+    || (r.photo !== undefined && !(typeof r.photo === 'string' && r.photo.startsWith('data:image/'))) ? 'Erinnerung ungültig' : null),
+  familyTimeSessions: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || !isStr(r.activity) ? 'Mama-Zeit ungültig' : null),
+  familyCouncilNotes: (r) => (!isValidDateKey(r.date) ? 'Familienrat ungültig' : null),
   settings: (r) => (r.id !== 'app' || !isValidTime(r.bedtime) || !isValidTime(r.kindergartenDeparture) ? 'Einstellungen ungültig' : null),
 };
 

@@ -94,3 +94,19 @@ export function useAllLearning() {
 export function useLearningPacks() {
   return useLiveQuery(() => db.learningPacks.orderBy('weekStart').reverse().toArray(), []);
 }
+
+export function useFamilyTimeSessions(date: DateKey) {
+  return useLiveQuery(() => db.familyTimeSessions.where('date').equals(date).toArray(), [date]);
+}
+
+export function useWeekendAdventures() {
+  return useLiveQuery(() => db.weekendAdventures.orderBy('weekend').reverse().toArray(), []);
+}
+
+export function useCouncilNote(date: DateKey) {
+  return useLiveQuery(async () => (await db.familyCouncilNotes.get(date)) ?? null, [date]);
+}
+
+export function useFamilyMemories() {
+  return useLiveQuery(() => db.familyMemories.orderBy('date').reverse().toArray(), []);
+}

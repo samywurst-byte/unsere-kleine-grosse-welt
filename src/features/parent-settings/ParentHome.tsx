@@ -17,9 +17,9 @@ const TILES = [
 ];
 
 const LATER = [
-  { title: 'Missionen und Sterne', text: 'Phase C' },
-  { title: 'Mama-Zeit und Familienrat', text: 'Phase C' },
-  { title: 'Sondermodus „Heute ist alles anders“', text: 'Phase C' },
+  { title: 'Missionen und Familiensterne', text: 'Familienzeit, Paket 2' },
+  { title: 'Sondermodus „Heute ist alles anders“', text: 'Familienzeit, Paket 2' },
+  { title: 'Jahreszeitenrituale', text: 'Familienzeit, Paket 2' },
   { title: 'Weltreise und Länder', text: 'Phase D' },
 ];
 

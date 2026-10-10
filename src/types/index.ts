@@ -242,6 +242,8 @@ export interface AppSettings {
   /** Phase C/D: werden schon gespeichert, damit keine Migration nötig wird. */
   maxStarsPerChildPerDay: number;
   starsPerCountry: number;
+  /** Tagesordnung des Familienrats. Fehlt = Standard. */
+  councilAgenda?: string[];
   createdAt: string;
 }
 
@@ -308,21 +310,74 @@ export interface StarTransaction {
   createdAt: string;
 }
 
+/** Mama-Zeit: festgehalten wird nur, dass sie stattfand, und was das Kind sich ausgesucht hat. Keine Sterne. */
 export interface FamilyTimeSession {
   id: Id;
   childId: Id;
   date: DateKey;
+  /** Id aus der Aktivitätsliste, z. B. "read". */
   activity: string;
   startedAt?: string;
   minutes?: number;
 }
 
+/** Familienrat am Sonntag. Id = Datum des Sonntags. */
 export interface FamilyCouncilNote {
   id: Id;
   date: DateKey;
+  /** Abgehakte Tagesordnungspunkte (Index in der Tagesordnung). */
+  doneItems?: number[];
+  /** Schönstes Erlebnis je Familienmitglied. */
+  highlights?: Record<Id, string>;
+  /** Notizen je Tagesordnungspunkt. */
+  notes?: Record<string, string>;
+  decisions?: CouncilDecision[];
+  /** Ältere Felder aus Phase B. */
   beautiful?: string;
   difficult?: string;
   lookingForward?: string;
+}
+
+export interface CouncilDecision {
+  id: Id;
+  text: string;
+  /** Als Termin im Kalender eingetragen. */
+  eventId?: Id;
+}
+
+export type AdventureStatus = 'planned' | 'done' | 'postponed' | 'cancelled';
+
+export interface PackingItem { id: Id; label: string; done: boolean }
+
+/** Wochenendabenteuer. Id = Datum des Freitags. Kein Eintrag = noch nicht geplant. Keine Sterne. */
+export interface WeekendAdventure {
+  id: Id;
+  /** Freitag des Wochenendes. */
+  weekend: DateKey;
+  status: AdventureStatus;
+  ideaId?: string;
+  title: string;
+  emoji: string;
+  day?: DateKey;
+  time?: TimeOfDay;
+  packing: PackingItem[];
+  /** Besondere Vorbereitung, z. B. "Kakao kochen". */
+  prep?: string;
+  /** Begründung beim Verschieben oder Ausfallen. */
+  reason?: string;
+  updatedAt: string;
+}
+
+/** Eine Familienerinnerung, z. B. nach einem Abenteuer. Fotos als verkleinertes JPEG (Daten-URL). */
+export interface FamilyMemory {
+  id: Id;
+  date: DateKey;
+  title: string;
+  text?: string;
+  photo?: string;
+  memberIds: Id[];
+  source?: { kind: 'adventure' | 'council' | 'mama-time'; id: Id };
+  createdAt: string;
 }
 
 export type SpecialDayKind = 'sick' | 'vacation' | 'trip' | 'visit' | 'no-kindergarten' | 'free-day';

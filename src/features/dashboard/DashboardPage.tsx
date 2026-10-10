@@ -13,6 +13,7 @@ import { TodayEssentials } from './TodayEssentials';
 import { BirthdayNote } from './BirthdayNote';
 import { CurrentRoutine } from './CurrentRoutine';
 import { WorldTeaser } from './WorldTeaser';
+import { FamilyTimeNote } from './FamilyTimeNote';
 import './dashboard.css';
 
 const PHASE_EMOJI = { night: '🌙', morning: '☀️', kindergarten: '🎒', afternoon: '🌿', evening: '🌆' } as const;
@@ -63,6 +64,7 @@ export function DashboardPage() {
             <TodayEssentials date={today} />
           </>
         )}
+        <FamilyTimeNote now={now} today={today} />
         <ChildrenOverview date={today} focusPhase={info.routinePhase} />
         <div className="dash__row">
           <QuickTimers />

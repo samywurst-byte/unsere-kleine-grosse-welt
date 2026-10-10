@@ -1,13 +1,13 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AppSettings, CalendarEvent, ChoreDefinition, ChoreOccurrence, Country, CountryUnlock, DeviceMeta, EventException,
-  FamilyCouncilNote, FamilyTimeSession, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
+  FamilyCouncilNote, FamilyMemory, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
   OptionalMission, ParentAuth, PassportStamp, RoutineDefinition, RoutineOccurrence, SpecialDayMode,
   RoutineDefinition as RoutineDef, SafetyCopy, StarTransaction, TimerPreset, TimerState, Weekday,
 } from '../types';
 import { buildSeed } from '../data/seed';
 import { toDateKey } from '../utils/dates';
-import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5 } from './schema';
+import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6 } from './schema';
 import { upgradeRoutine, upgradeSettings } from './migrations';
 
 export class FamilyDatabase extends Dexie {
@@ -38,6 +38,8 @@ export class FamilyDatabase extends Dexie {
   learningObservations!: Table<LearningObservation, string>;
   learningReleases!: Table<LearningRelease, string>;
   learningPacks!: Table<LearningPack, string>;
+  weekendAdventures!: Table<WeekendAdventure, string>;
+  familyMemories!: Table<FamilyMemory, string>;
 
   constructor(name: string = DB_NAME, options?: { seedDate?: Date }) {
     super(name);
@@ -65,6 +67,8 @@ export class FamilyDatabase extends Dexie {
 
     this.version(5).stores(SCHEMA_V5);
 
+    this.version(6).stores(SCHEMA_V6);
+
     // Läuft ausschließlich, wenn die Datenbank zum allerersten Mal angelegt wird.
     this.on('populate', async (tx) => {
       const seed = buildSeed(toDateKey(options?.seedDate ?? new Date()));
@@ -82,4 +86,4 @@ export class FamilyDatabase extends Dexie {
 export const db = new FamilyDatabase();
 
 /** Alle Tabellen in fester Reihenfolge, z. B. für Export und Import. */
-export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5)] as const;
+export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6)] as const;
