@@ -65,7 +65,8 @@ describe('Lesewörter', () => {
   it('zeigt im Oktober zuerst Ideen zur Jahreszeit', () => {
     const order = ideasForNow(TODAY).map((i) => i.id);
     expect(order.indexOf('lanterns')).toBeLessThan(order.indexOf('paper-planes'));
-    expect(order.indexOf('lemonade')).toBe(order.length - 1);
+    expect(order.indexOf('lemonade')).toBeGreaterThan(order.indexOf('paper-planes'));
+    expect(order.indexOf('vegetable-bed')).toBeGreaterThan(order.indexOf('bread'));
     expect(ideasForNow('2026-06-10').findIndex((i) => i.id === 'lanterns')).toBeGreaterThan(5);
   });
 });

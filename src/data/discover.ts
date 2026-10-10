@@ -267,7 +267,7 @@ export const DISCOVER_TOPICS: DiscoverTopic[] = [
     sources: [klex('Mittelalter', 'Mittelalter')],
   },
   {
-    id: 'body', title: 'Mein Körper', emoji: '💪',
+    id: 'body', title: 'Mein Körper', emoji: '💪', projectId: 'growth-chart',
     intro: 'In dir klopft, zieht und atmet es den ganzen Tag, auch wenn du schläfst. Lass uns herausfinden, was dein Körper alles kann!',
     facts: [
       { text: 'Wir haben fünf Sinne. Mit der Nase riechen wir, mit der Zunge schmecken wir, mit den Ohren hören wir, mit den Augen sehen wir und mit der Haut fühlen wir.', source: 0 },
@@ -294,7 +294,7 @@ export const DISCOVER_TOPICS: DiscoverTopic[] = [
     sources: [klex('Sinnesorgan', 'Sinnesorgan'), klex('Herz', 'Herz'), klex('Skelett', 'Skelett'), klex('Muskel', 'Muskel'), klex('Lunge', 'Lunge')],
   },
   {
-    id: 'food', title: 'Woher kommt unser Essen?', emoji: '🥕',
+    id: 'food', title: 'Woher kommt unser Essen?', emoji: '🥕', projectId: 'bread',
     intro: 'Brot, Milch und Äpfel liegen im Laden. Aber wo kommen sie eigentlich her? Wir gehen auf Spurensuche bis aufs Feld und in den Stall.',
     facts: [
       { text: 'Auf einem Bauernhof gibt es oft Kühe, Schweine und Hühner. Die Bäuerin oder der Bauer bekommt von ihnen Milch, Fleisch und Eier.', source: 0 },
@@ -321,7 +321,7 @@ export const DISCOVER_TOPICS: DiscoverTopic[] = [
     sources: [klex('Bauernhof', 'Bauernhof'), klex('Getreide', 'Getreide'), klex('Mühle', 'Mühle'), klex('Brot', 'Brot'), klex('Milch', 'Milch'), klex('Gemüse', 'Gemüse'), klex('Apfel', 'Apfel')],
   },
   {
-    id: 'volcanoes', title: 'Vulkane und das Innere der Erde', emoji: '⛰️',
+    id: 'volcanoes', title: 'Vulkane und das Innere der Erde', emoji: '⛰️', projectId: 'volcano-lab',
     intro: 'Unter unseren Füßen ist die Erde ganz anders, als wir denken. Tief unten ist es so heiß, dass Stein flüssig wird. Und manchmal kommt er aus einem Berg heraus!',
     facts: [
       { text: 'Die Erde hat Schichten wie ein Apfel. Außen ist die Erdkruste. Darauf leben wir. Sie ist so dünn wie die Schale eines Apfels im Vergleich zum ganzen Apfel.', source: 0 },
@@ -348,7 +348,7 @@ export const DISCOVER_TOPICS: DiscoverTopic[] = [
     sources: [klex('Erde', 'Erde'), klex('Vulkan', 'Vulkan'), klex('Eifel', 'Eifel')],
   },
   {
-    id: 'habitats', title: 'Lebensräume der Erde', emoji: '🌍',
+    id: 'habitats', title: 'Lebensräume der Erde', emoji: '🌍', projectId: 'insect-hotel',
     intro: 'Manche Tiere leben im eiskalten Norden, andere in der heißen Wüste oder tief im Meer. Wie schaffen sie das bloß?',
     facts: [
       { text: 'Fast drei Viertel der Erde sind mit Meer bedeckt. Im Meerwasser ist Salz. Dort leben zum Beispiel Fische, Seesterne und Korallen.', source: 0 },
@@ -441,7 +441,7 @@ export const DISCOVER_TOPICS: DiscoverTopic[] = [
     ],
   },
   {
-    id: 'weather', title: 'Wetter', emoji: '🌦️',
+    id: 'weather', title: 'Wetter', emoji: '🌦️', projectId: 'weather-station',
     intro: 'Heute Sonne, morgen Regen, im Winter Schnee: Das Wetter ändert sich ständig. Wer steckt dahinter, und wie können wir es selbst beobachten?',
     facts: [
       { text: 'Die Sonne macht das Wetter. Ihre Wärme lässt Wasser aus dem Meer verdunsten. Dann ist das Wasser ein unsichtbarer Dampf. Der Dampf steigt nach oben und wird zu Wolken.', source: 0 },
@@ -476,7 +476,7 @@ export const DISCOVER_TOPICS: DiscoverTopic[] = [
     ],
   },
   {
-    id: 'electricity', title: 'Strom und Licht', emoji: '💡',
+    id: 'electricity', title: 'Strom und Licht', emoji: '💡', projectId: 'lighthouse',
     intro: 'Ein Knopfdruck, und die Lampe leuchtet. Aber was fließt da eigentlich durch das Kabel, und warum muss man mit Strom so vorsichtig sein?',
     facts: [
       { text: 'Strom fließt, wenn sich winzige Teilchen, die Elektronen, alle in eine Richtung bewegen. Zum Beispiel in einem Kabel aus Kupfer.', source: 0 },
