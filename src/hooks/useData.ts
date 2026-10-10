@@ -177,3 +177,7 @@ export function useCookSessions() {
 export function useFreezerItems() {
   return useLiveQuery(() => db.freezerItems.toArray(), []);
 }
+
+export function useProjects() {
+  return useLiveQuery(() => db.projects.toArray(), []);
+}

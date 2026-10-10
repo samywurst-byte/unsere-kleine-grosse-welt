@@ -76,4 +76,9 @@ export const SCHEMA_V9 = {
   freezerItems: 'id, frozenAt',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 9;
+/** Version 10: Projektwerkstatt. */
+export const SCHEMA_V10 = {
+  projects: 'id, status, ideaId',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 10;

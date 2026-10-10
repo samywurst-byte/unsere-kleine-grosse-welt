@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, Earth, Heart, LayoutGrid, Lock, Sun } from 'lucide-react';
+import { BookOpen, CalendarDays, Earth, Heart, LayoutGrid, Lightbulb, Lock, Sun } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from './ErrorBoundary';
 import './AppShell.css';
@@ -8,6 +8,7 @@ const NAV = [
   { to: '/aufgaben', label: 'Meine Aufgaben', icon: LayoutGrid },
   { to: '/lernen', label: 'Buchstaben', icon: BookOpen },
   { to: '/woche', label: 'Unsere Woche', icon: CalendarDays },
+  { to: '/projekte', label: 'Projekte', icon: Lightbulb },
   { to: '/weltreise', label: 'Weltreise', icon: Earth },
   { to: '/familienzeit', label: 'Familienzeit', icon: Heart },
 ];

@@ -80,6 +80,10 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   shoppingItems: (r) => (!isStr(r.name) || typeof r.done !== 'boolean' ? 'Einkaufsliste ungültig' : null),
   cookSessions: (r) => (!isValidDateKey(r.date) || !isStr(r.recipeId) ? 'Suppenküche ungültig' : null),
   freezerItems: (r) => (!isStr(r.name) || typeof r.portions !== 'number' || r.portions < 0 || !isValidDateKey(r.frozenAt) ? 'Gefriervorrat ungültig' : null),
+  projects: (r) => (!isStr(r.title) || !Array.isArray(r.childIds) || !Array.isArray(r.steps) || !Array.isArray(r.tasks)
+    || !Array.isArray(r.materials) || !Array.isArray(r.money) || !Array.isArray(r.entries)
+    || !['active', 'paused', 'done'].includes(String(r.status)) || !isValidDateKey(r.startDate)
+    || !(r.entries as unknown[]).every((e) => isObj(e) && Array.isArray(e.photos) && e.photos.every(isImageData)) ? 'Projekt ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),
   missions: (r) => (!isStr(r.title) || typeof r.stars !== 'number' || r.stars < 1 || !Array.isArray(r.assignedTo) ? 'Zusatzmission ungültig' : null),

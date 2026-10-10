@@ -19,6 +19,7 @@
 }
 .nav-item--active { background: var(--card); color: var(--ink); box-shadow: var(--shadow-s); }
 .nav-item--active svg { color: var(--terracotta); }
+@media (max-height: 800px) { .nav-item { min-height: 66px; } .shell__brand svg { width: 36px; height: 36px; } }
 .nav-item--parent { min-height: 60px; color: var(--ink-faint); font-size: 0.72rem; }
 .shell__main {
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;

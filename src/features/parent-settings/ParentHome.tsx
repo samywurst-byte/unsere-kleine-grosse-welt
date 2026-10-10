@@ -20,8 +20,7 @@ const TILES = [
 ];
 
 const LATER = [
-  { title: 'Suppenküche und Vorrat', text: 'Brühe-Rhythmus im Winter, Gefriervorrat, Portionen' },
-  { title: 'Entdeckerwelt und Projekte', text: 'Projektwerkstatt, Bibliothek, Zeitstrahl' },
+  { title: 'Entdeckerbibliothek', text: 'Dinosaurier, Weltraum, Tiere, Länder: Themen mit Quellen, Forscheraufträge, Druckmaterial' },
   { title: 'Geldwelt und Reisekasse', text: 'Taschengeld, Sparziele, gemeinsame Reisekasse' },
   { title: 'Familienarchiv', text: 'Jahresrückblick aus Erinnerungen und Lernstand' },
 ];

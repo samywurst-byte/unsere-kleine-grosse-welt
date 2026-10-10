@@ -6,7 +6,8 @@ import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { DEFAULT_COUNCIL_AGENDA } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useChildren, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
+import { useChildren, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useProjects, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
+import { nextStep, projectProgress } from '../../services/projects';
 import { guessSection } from '../../data/meals';
 import { addShoppingItem, emptyPlan, mealCategories, setWish, wishOptions } from '../../services/meals';
 import { backupIsDue } from '../../services/backup';
@@ -19,7 +20,7 @@ import type { CouncilDecision, FamilyCouncilNote, Member } from '../../types';
 import { addDaysKey, formatDayMonth, formatWeekday, formatWeekdayShort, toDateKey } from '../../utils/dates';
 import './familyTime.css';
 
-type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'shopping' | 'notes';
+type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'shopping' | 'projects' | 'notes';
 
 /** Welche Hilfe ein Tagesordnungspunkt bekommt; erkannt am Titel, damit eigene Punkte einfach Notizen sind. */
 function itemKind(title: string): ItemKind {
@@ -29,6 +30,7 @@ function itemKind(title: string): ItemKind {
   if (t.includes('abenteuer')) return 'adventure';
   if (t.includes('einkauf')) return 'shopping';
   if (t.includes('essen')) return 'meals';
+  if (t.includes('projekt')) return 'projects';
   return 'notes';
 }
 
@@ -118,6 +120,7 @@ function ItemBody({ kind, itemKey, note, date, members, today, change }: {
   if (kind === 'adventure') return <><NextAdventure council={date} today={today} />{notes}</>;
   if (kind === 'meals') return <><MealWishes weekStart={addDaysKey(date, 1)} />{notes}</>;
   if (kind === 'shopping') return <><ShoppingQuick />{notes}</>;
+  if (kind === 'projects') return <><ProjectsQuick />{notes}</>;
   return notes;
 }
 
@@ -316,6 +319,35 @@ function ShoppingQuick() {
         <button type="button" className="btn" disabled={!name.trim()} onClick={add}><Plus size={18} aria-hidden="true" /> Dazu</button>
       </div>
       <Link to="/eltern/essen?tab=list" className="btn btn--small ft-card__more">Einkaufsliste öffnen (Eltern)</Link>
+    </div>
+  );
+}
+
+/** Familienprojekte: wo stehen wir, was kommt als Nächstes? Neue Projekte suchen die Kinder in der Projektwerkstatt aus. */
+function ProjectsQuick() {
+  const projects = useProjects();
+  if (!projects) return null;
+  const active = projects.filter((p) => p.status === 'active');
+  return (
+    <div className="stack">
+      {active.length === 0 ? <p className="muted ft-card__lead">Gerade läuft kein Projekt. Sucht euch gemeinsam eines aus.</p> : (
+        <ul className="list">
+          {active.map((p) => {
+            const step = nextStep(p);
+            const { done, total } = projectProgress(p);
+            return (
+              <li key={p.id} className="list-item">
+                <span className="ft-hist__emoji" aria-hidden="true">{p.emoji}</span>
+                <Link to={`/projekte/${p.id}`} className="list-item__main">
+                  <p className="list-item__title">{p.title}</p>
+                  <p className="list-item__meta">{done} von {total} erledigt{step ? ` · Als Nächstes: ${step.label}` : ''}</p>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <Link to="/projekte" className="btn btn--small ft-card__more">Zur Projektwerkstatt</Link>
     </div>
   );
 }

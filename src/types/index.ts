@@ -403,7 +403,7 @@ export interface FamilyMemory {
   /** Ältere Erinnerungen (Version 0.7.0) hatten nur ein Foto. */
   photo?: string;
   memberIds: Id[];
-  source?: { kind: 'adventure' | 'council' | 'mama-time'; id: Id };
+  source?: { kind: 'adventure' | 'council' | 'mama-time' | 'project'; id: Id };
   createdAt: string;
 }
 
@@ -647,4 +647,58 @@ export interface FreezerItem {
   portions: number;
   frozenAt: DateKey;
   note?: string;
+}
+
+// ---------------------------------------------------------------- Projektwerkstatt
+
+/** Jedes Projekt hat dieselbe Grundstruktur (aus dem Konzept). */
+export type ProjectPhase = 'discover' | 'plan' | 'make' | 'document' | 'finish';
+
+/** Auf welchem Niveau ein Kind im Projekt mitmacht: Bild- und Mitmachaufgaben, Vorschule, Lesekind, Schulkind. */
+export type ProjectLevel = 'toddler' | 'preschool' | 'reader' | 'school';
+
+export interface ProjectStep { id: Id; phase: ProjectPhase; label: string; done: boolean }
+
+/** Eine Teilaufgabe für ein bestimmtes Kind, passend zu seinem Niveau. Keine Sterne. */
+export interface ProjectTask { id: Id; childId: Id; label: string; done: boolean; doneAt?: string }
+
+export interface ProjectMaterial { id: Id; label: string; done: boolean }
+
+/** Kosten und Einnahmen in Cent, einzeln erfasst. */
+export interface ProjectMoney { id: Id; date: DateKey; label: string; cents: number; kind: 'cost' | 'income' }
+
+/** Eintrag im Projekttagebuch: was wir gemacht oder herausgefunden haben, mit Fotos. */
+export interface ProjectEntry { id: Id; date: DateKey; text?: string; photos: string[] }
+
+/** Ausflug oder Forscherabend, auf Wunsch als Familientermin im Kalender. */
+export interface ProjectDate { title: string; date?: DateKey; time?: TimeOfDay; eventId?: Id }
+
+export interface FamilyProject {
+  id: Id;
+  /** Id aus der Ideensammlung oder "own". */
+  ideaId: string;
+  title: string;
+  emoji: string;
+  description?: string;
+  status: 'active' | 'paused' | 'done';
+  childIds: Id[];
+  /** Niveau je Kind beim Start (änderbar). */
+  levels: Record<Id, ProjectLevel>;
+  /** Lernbereiche, z. B. "math", "nature". */
+  areas: string[];
+  steps: ProjectStep[];
+  tasks: ProjectTask[];
+  materials: ProjectMaterial[];
+  money: ProjectMoney[];
+  entries: ProjectEntry[];
+  trip?: ProjectDate;
+  presentation?: ProjectDate;
+  startDate: DateKey;
+  targetDate?: DateKey;
+  doneAt?: DateKey;
+  /** Was wir herausgefunden haben (beim Abschluss). */
+  reflection?: string;
+  memoryId?: Id;
+  createdAt: string;
+  updatedAt: string;
 }
