@@ -84,6 +84,7 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || !Array.isArray(r.materials) || !Array.isArray(r.money) || !Array.isArray(r.entries)
     || !['active', 'paused', 'done'].includes(String(r.status)) || !isValidDateKey(r.startDate)
     || !(r.entries as unknown[]).every((e) => isObj(e) && Array.isArray(e.photos) && e.photos.every(isImageData)) ? 'Projekt ungültig' : null),
+  discoveries: (r) => (!isStr(r.topicId) || !isStr(r.missionId) || !isValidDateKey(r.date) ? 'Forscherauftrag ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),
   missions: (r) => (!isStr(r.title) || typeof r.stars !== 'number' || r.stars < 1 || !Array.isArray(r.assignedTo) ? 'Zusatzmission ungültig' : null),

@@ -81,4 +81,9 @@ export const SCHEMA_V10 = {
   projects: 'id, status, ideaId',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 10;
+/** Version 11: Entdeckerbibliothek (erledigte Forscheraufträge). */
+export const SCHEMA_V11 = {
+  discoveries: 'id, topicId',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 11;

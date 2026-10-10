@@ -1,6 +1,7 @@
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
 import { LEVEL_LABEL, PHASES } from '../data/projects';
+import type { DiscoverTopic } from '../data/discover';
 import type { ChildProfile, FamilyProject } from '../types';
 import { formatLong } from '../utils/dates';
 import type { WorksheetFonts } from './worksheetPdf';
@@ -63,7 +64,7 @@ function hline(c: Ctx, top: number, color = LINE) {
 
 function header(c: Ctx, title: string, name?: string): number {
   let size = 22;
-  const maxW = name ? CW - 190 : CW;
+  const maxW = name !== undefined ? CW - 190 : CW;
   const t = clean(title, c.bold);
   while (c.bold.widthOfTextAtSize(t, size) > maxW && size > 13) size -= 1;
   text(c, t, M, 62, size, { font: c.bold });
@@ -75,8 +76,8 @@ function header(c: Ctx, title: string, name?: string): number {
   return 92;
 }
 
-function footer(c: Ctx, p: FamilyProject, i: number, total: number) {
-  text(c, `Projekt ${p.title} · Unsere kleine große Welt`, M, H - 24, 8.5, { color: MUTED });
+function footer(c: Ctx, p: Pick<FamilyProject, 'title'>, i: number, total: number, prefix = 'Projekt') {
+  text(c, `${prefix} ${p.title} · Unsere kleine große Welt`, M, H - 24, 8.5, { color: MUTED });
   const s = `Seite ${i} von ${total}`;
   text(c, s, W - M - c.regular.widthOfTextAtSize(s, 8.5), H - 24, 8.5, { color: MUTED });
 }
@@ -199,5 +200,71 @@ export async function renderProjectSheets(p: FamilyProject, kids: ChildProfile[]
     childPage(c, p, k);
     footer(c, p, i + 2, total);
   });
+  return doc.save();
+}
+
+// ------------------------------------------------------------- Entdeckerbibliothek
+
+/**
+ * Forscherblatt zu einem Thema: Seite 1 „Wusstest du?“ mit Quellen zum Vorlesen,
+ * Seite 2 zum Ausfüllen mit Forscherauftrag, Wörtern zum Nachspuren und Platz zum Malen.
+ */
+export async function renderTopicSheet(topic: DiscoverTopic, missionId: string | undefined, words: string[], fonts: WorksheetFonts): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
+  doc.setTitle(`Forscherblatt ${topic.title}`);
+  doc.setAuthor('Unsere kleine große Welt');
+  doc.setLanguage('de-DE');
+  const [regular, bold, school] = await Promise.all([
+    doc.embedFont(fonts.regular, { subset: true }),
+    doc.embedFont(fonts.bold, { subset: true }),
+    doc.embedFont(fonts.school, { subset: true }),
+  ]);
+  const ctx = (): Ctx => ({ page: doc.addPage([W, H]), regular, bold, school });
+
+  const c1 = ctx();
+  let top = header(c1, `${topic.title}: Wusstest du?`);
+  top = para(c1, topic.intro, M, top, 12, CW, { color: MUTED }) + 12;
+  topic.facts.forEach((f, i) => {
+    text(c1, `${i + 1}.`, M, top + 13, 13, { font: c1.bold });
+    top = para(c1, `${f.text} [${f.source + 1}]`, M + 24, top + 13, 13, CW - 24) + 8;
+  });
+  top += 10;
+  text(c1, 'Quellen', M, top + 12, 11, { font: c1.bold, color: MUTED });
+  top += 20;
+  topic.sources.forEach((src, i) => {
+    top = para(c1, `[${i + 1}] ${src.publisher}: ${src.title}, ${src.url}`, M, top + 10, 9, CW, { color: MUTED }) + 2;
+  });
+  text(c1, 'Geprüft am 10. Oktober 2026', M, top + 12, 9, { color: MUTED });
+  footer(c1, topic, 1, 2, 'Forscherblatt');
+
+  const c2 = ctx();
+  top = header(c2, `${topic.title}: Mein Forscherblatt`, '');
+  const mission = topic.missions.find((m) => m.id === missionId) ?? topic.missions[0];
+  if (mission) {
+    text(c2, `Forscherauftrag: ${mission.title}`, M, top + 14, 14, { font: c2.bold });
+    top = para(c2, mission.how, M, top + 36, 12.5, CW) + 6;
+    if (mission.materials?.length) top = para(c2, `Das brauchen wir: ${mission.materials.join(', ')}`, M, top + 12, 11, CW, { color: MUTED }) + 4;
+  }
+  if (words.length) {
+    top += 10;
+    text(c2, 'Spure die Wörter nach.', M, top + 14, 13, { font: c2.bold });
+    top += 28;
+    const size = 36;
+    let x = M;
+    for (const w of words.slice(0, 5)) {
+      const width = c2.school.widthOfTextAtSize(w, size);
+      if (x + width > W - M) { x = M; top += size * 1.5; }
+      c2.page.drawText(w, { x, y: Y(top + size), size, font: c2.school, color: TRACE });
+      x += width + 30;
+    }
+    top += size * 1.5;
+    hline(c2, top - size * 0.3);
+  }
+  const room = H - 70 - top;
+  if (room > 140) {
+    framedBox(c2, 'Das habe ich entdeckt (malen oder schreiben)', top + 14, room - 20);
+  }
+  footer(c2, topic, 2, 2, 'Forscherblatt');
   return doc.save();
 }

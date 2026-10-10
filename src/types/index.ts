@@ -702,3 +702,11 @@ export interface FamilyProject {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Erledigter Forscherauftrag aus der Entdeckerbibliothek. Id: `${topicId}|${missionId}`. */
+export interface Discovery {
+  id: string;
+  topicId: string;
+  missionId: string;
+  date: DateKey;
+}

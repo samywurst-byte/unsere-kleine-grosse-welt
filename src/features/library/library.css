@@ -1,0 +1,52 @@
+.lib-tabs { margin-bottom: var(--space-4); }
+.lib-tab { display: inline-flex; align-items: center; text-decoration: none; color: inherit; font-size: var(--fs-m); }
+.lib-tab.is-on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); }
+.lib-topic { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); min-height: 170px; padding: var(--space-4) var(--space-3);
+  text-decoration: none; color: inherit; text-align: center; hyphens: auto; }
+.lib-topic__emoji { font-size: 3.4rem; line-height: 1; }
+.lib-topic__title { font-weight: 800; font-size: var(--fs-l); }
+.lib-topic--world { background: var(--c-sky-soft); }
+.lib-dots { display: flex; gap: 4px; }
+.lib-dots span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--c-sage-ink); }
+.lib-dots span.is-on { background: var(--c-sage-ink); }
+
+.lib-head-emoji { font-size: 2.6rem; line-height: 1; }
+.lib-intro { font-size: var(--fs-l); margin: 0 0 var(--space-4); max-width: 60ch; }
+.lib-grid2 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+@media (max-width: 960px) { .lib-grid2 { grid-template-columns: 1fr; } }
+.lib-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.lib-fact { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-m); background: var(--c-gold-soft); }
+.lib-fact p { margin: 0; flex: 1; font-size: var(--fs-m); line-height: 1.45; }
+.lib-fact sup a { color: var(--ink-soft); text-decoration: none; font-weight: 700; margin-left: 2px; }
+.lib-speak { flex-shrink: 0; }
+.lib-sources { margin: 0; padding-left: 1.4em; font-size: var(--fs-s); color: var(--ink-soft); }
+.lib-sources a { color: inherit; overflow-wrap: anywhere; }
+
+.lib-quiz__q { font-size: var(--fs-l); font-weight: 800; margin: 0 0 var(--space-3); }
+.lib-quiz__opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-2); }
+.lib-quiz__opt { min-height: 72px; padding: var(--space-3); border-radius: var(--radius-m); border: 3px solid var(--line); background: var(--card);
+  font: inherit; font-weight: 800; font-size: var(--fs-m); color: inherit; cursor: pointer; }
+.lib-quiz__opt.is-right { border-color: var(--c-sage-ink); background: var(--c-sage-soft); }
+.lib-quiz__opt.is-picked { border-color: var(--c-gold-ink); background: var(--c-gold-soft); }
+.lib-quiz__answer { margin: var(--space-3) 0 0; font-size: var(--fs-m); }
+
+.lib-missions { display: flex; flex-direction: column; gap: var(--space-3); }
+.lib-mission { padding: var(--space-3); border-radius: var(--radius-m); border: 2px solid var(--line); }
+.lib-mission.is-done { border-color: var(--c-sage-ink); background: var(--c-sage-soft); }
+.lib-mission__title { margin: 0 0 4px; font-size: var(--fs-m); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.lib-mission p { margin: 4px 0; }
+
+.lib-words { display: flex; flex-direction: column; gap: var(--space-2); }
+.lib-word-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.lib-word { font-size: 1.6rem; font-weight: 800; letter-spacing: .04em; padding: 2px 10px; border-radius: 10px; background: var(--tone-soft, var(--c-sky-soft)); color: var(--tone-ink, var(--ink)); }
+
+.lib-timeline { position: relative; margin: var(--space-3) 0 var(--space-5); }
+.lib-timeline__bar { display: flex; height: 64px; border-radius: 14px; overflow: hidden; }
+.lib-timeline__seg { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: var(--fs-s); text-align: center; padding: 0 4px; }
+.lib-timeline__scale { position: relative; height: 1.4em; font-size: var(--fs-xs); color: var(--ink-soft); margin-top: 4px; }
+.lib-timeline__scale span { position: absolute; top: 0; white-space: nowrap; }
+.lib-timeline__scale span:not(:first-child):not(:last-child) { transform: translateX(-50%); }
+.lib-timeline__marker { position: absolute; right: 0; top: -6px; bottom: 18px; border-right: 4px solid var(--terracotta); }
+.lib-timeline__note { margin: var(--space-2) 0 0; text-align: right; font-weight: 700; color: var(--c-terracotta-ink); }

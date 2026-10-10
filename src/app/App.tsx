@@ -35,6 +35,8 @@ import { MathSettings } from '../features/learning/MathSettings';
 import { DiscoverPage, DiscoverPickerPage } from '../features/learning/DiscoverPage';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { ProjectPage } from '../features/projects/ProjectPage';
+import { LibraryPage } from '../features/library/LibraryPage';
+import { TopicPage } from '../features/library/TopicPage';
 
 export function App() {
   const pinCount = useLiveQuery(() => db.parentAuth.count(), []);
@@ -54,6 +56,8 @@ export function App() {
             <Route path="woche" element={<WeekPage />} />
             <Route path="woche/:date" element={<DayPage />} />
             <Route path="weltreise" element={<WorldPage />} />
+            <Route path="entdecken" element={<LibraryPage />} />
+            <Route path="entdecken/:topicId" element={<TopicPage />} />
             <Route path="projekte" element={<ProjectsPage />} />
             <Route path="projekte/:projectId" element={<ProjectPage />} />
             <Route path="familienzeit" element={<FamilyTimePage />} />

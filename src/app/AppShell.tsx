@@ -8,7 +8,7 @@ const NAV = [
   { to: '/aufgaben', label: 'Meine Aufgaben', icon: LayoutGrid },
   { to: '/lernen', label: 'Buchstaben', icon: BookOpen },
   { to: '/woche', label: 'Unsere Woche', icon: CalendarDays },
-  { to: '/projekte', label: 'Projekte', icon: Lightbulb },
+  { to: '/entdecken', label: 'Entdecken', icon: Lightbulb, also: '/projekte' },
   { to: '/weltreise', label: 'Weltreise', icon: Earth },
   { to: '/familienzeit', label: 'Familienzeit', icon: Heart },
 ];
@@ -26,9 +26,9 @@ export function AppShell() {
           </svg>
         </div>
         <ul className="shell__links">
-          {NAV.map(({ to, label, icon: Ico, end }) => (
+          {NAV.map(({ to, label, icon: Ico, end, also }) => (
             <li key={to}>
-              <NavLink to={to} end={end} className={({ isActive }) => (isActive ? 'nav-item nav-item--active' : 'nav-item')}>
+              <NavLink to={to} end={end} className={({ isActive }) => (isActive || (also && pathname.startsWith(also)) ? 'nav-item nav-item--active' : 'nav-item')}>
                 <Ico size={30} strokeWidth={2} aria-hidden="true" />
                 <span>{label}</span>
               </NavLink>

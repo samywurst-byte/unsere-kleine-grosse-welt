@@ -20,7 +20,6 @@ const TILES = [
 ];
 
 const LATER = [
-  { title: 'Entdeckerbibliothek', text: 'Dinosaurier, Weltraum, Tiere, Länder: Themen mit Quellen, Forscheraufträge, Druckmaterial' },
   { title: 'Geldwelt und Reisekasse', text: 'Taschengeld, Sparziele, gemeinsame Reisekasse' },
   { title: 'Familienarchiv', text: 'Jahresrückblick aus Erinnerungen und Lernstand' },
 ];

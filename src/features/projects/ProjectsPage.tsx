@@ -1,6 +1,7 @@
 import { Plus, RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ExploreTabs } from '../library/ExploreTabs';
 import { Avatar } from '../../components/Avatar';
 import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
@@ -22,7 +23,12 @@ export function ProjectsPage() {
   const today = toDateKey(useNow(60_000));
   const projects = useProjects();
   const children = useChildren();
-  const [starting, setStarting] = useState<{ idea?: ProjectIdea; title?: string; copyFrom?: FamilyProject } | null>(null);
+  const [params, setParams] = useSearchParams();
+  const linked = params.get('idee');
+  const [starting, setStarting] = useState<{ idea?: ProjectIdea; title?: string; copyFrom?: FamilyProject } | null>(() => {
+    const idea = linked ? PROJECT_IDEA_BY_ID.get(linked) : undefined;
+    return idea ? { idea } : null;
+  });
   const [own, setOwn] = useState('');
   const [chronicleChild, setChronicleChild] = useState<string | undefined>(undefined);
   if (!projects || !children) return null;
@@ -39,6 +45,7 @@ export function ProjectsPage() {
         <h1>Unsere Projektwerkstatt</h1>
         <span className="page-head__sub">Entdecken, Planen, Machen, Dokumentieren, Abschließen</span>
       </header>
+      <ExploreTabs />
       <div className="stack">
         {active.length > 0 && (
           <section className="pj-active">
@@ -114,7 +121,7 @@ export function ProjectsPage() {
           )}
         </section>
       </div>
-      {starting && <StartModal {...starting} kids={children} today={today} onClose={() => setStarting(null)} />}
+      {starting && <StartModal {...starting} kids={children} today={today} onClose={() => { setStarting(null); if (linked) setParams({}, { replace: true }); }} />}
     </div>
   );
 }

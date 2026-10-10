@@ -181,3 +181,7 @@ export function useFreezerItems() {
 export function useProjects() {
   return useLiveQuery(() => db.projects.toArray(), []);
 }
+
+export function useDiscoveries() {
+  return useLiveQuery(() => db.discoveries.toArray(), []);
+}
