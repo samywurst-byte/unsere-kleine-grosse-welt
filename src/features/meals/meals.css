@@ -58,3 +58,9 @@
 .meal-stepper__value { min-width: 7em; text-align: center; font-size: var(--fs-l); }
 .meal-servings { gap: 4px; }
 .meal-old { color: var(--c-terracotta-ink); font-weight: 700; }
+.meal-import { align-items: flex-start; }
+.meal-import.is-off { opacity: .45; }
+.meal-import__check { width: 26px; height: 26px; margin-top: 10px; flex: 0 0 auto; }
+.meal-import__cats { margin-top: 6px; }
+.seg__item--small { padding: 4px 10px; min-height: 34px; font-size: .85rem; }
+.meal-import__dup { display: inline-flex; gap: 6px; align-items: center; margin-top: 6px; color: var(--c-terracotta-ink); font-weight: 700; }

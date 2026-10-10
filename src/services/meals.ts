@@ -10,7 +10,16 @@ import { newId } from '../utils/id';
  * Zutaten kommen erst nach eurer Prüfung auf die Einkaufsliste.
  */
 
-export const mealCategories = (settings: Pick<AppSettings, 'mealCategories'>): MealCategory[] => settings.mealCategories ?? DEFAULT_MEAL_CATEGORIES;
+/** Eure Kategorien; neue Standardkategorien (z. B. Brot und Backen) kommen automatisch dazu. */
+export function mealCategories(settings: Pick<AppSettings, 'mealCategories'>): MealCategory[] {
+  const own = settings.mealCategories;
+  if (!own) return DEFAULT_MEAL_CATEGORIES;
+  return [...own, ...DEFAULT_MEAL_CATEGORIES.filter((d) => !own.some((o) => o.id === d.id))];
+}
+
+/** Brot, Kuchen und Co. sind keine Hauptgerichte und werden nur auf ausdrückliche Auswahl eingeplant. */
+const NOT_MEAL = new Set(DEFAULT_MEAL_CATEGORIES.filter((c) => c.notMeal).map((c) => c.id));
+export const isMainDish = (r: Pick<Recipe, 'categories'>) => !r.categories.length || r.categories.some((c) => !NOT_MEAL.has(c));
 
 export const emptyPlan = (weekStart: DateKey): MealPlan => ({ id: weekStart, days: [], wishes: [] });
 
@@ -113,7 +122,7 @@ export function rankRecipes(recipes: Recipe[], opts: { plan: MealPlan; recent: M
     - (r.side ? sides[r.side] * 0.5 + weekSides[r.side] * 2 : 0)
     + (soup && r.categories.includes('soup') ? 1.5 : 0);
   return recipes
-    .filter((r) => !r.paused && !inPlan.has(r.id) && (!opts.category || r.categories.includes(opts.category)))
+    .filter((r) => !r.paused && !inPlan.has(r.id) && (opts.category ? r.categories.includes(opts.category) : isMainDish(r)))
     .sort((a, b) => score(b) - score(a) || a.title.localeCompare(b.title, 'de'));
 }
 

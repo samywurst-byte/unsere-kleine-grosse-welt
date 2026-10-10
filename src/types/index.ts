@@ -547,6 +547,8 @@ export interface MealCategory {
   label: string;
   emoji: string;
   perWeek: number;
+  /** Kein Hauptgericht (z. B. Brot und Backen): wird im Wochenplan nicht von allein vorgeschlagen. */
+  notMeal?: boolean;
 }
 
 export interface Ingredient {
