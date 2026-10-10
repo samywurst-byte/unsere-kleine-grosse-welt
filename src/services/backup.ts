@@ -6,6 +6,7 @@ import type { AppSettings, RoutineDefinition, SafetyCopy, Weekday } from '../typ
 import { newId } from '../utils/id';
 import { WORLD } from '../data/countries';
 import { defaultRecipes } from '../data/meals';
+import { defaultTrips } from '../data/money';
 import { isValidDateKey, isValidTime } from '../utils/dates';
 
 /**
@@ -34,7 +35,7 @@ export async function exportData(db: FamilyDatabase): Promise<BackupFile> {
 }
 
 /** Primärschlüssel je Tabelle, damit auch Tabellen ohne eigene Prüfung keine leeren Datensätze annehmen. */
-const PRIMARY_KEY: Record<string, string> = { specialDays: 'date', countryUnlocks: 'countryId' };
+const PRIMARY_KEY: Record<string, string> = { specialDays: 'date', countryUnlocks: 'countryId', simDepots: 'childId' };
 
 export type ValidationResult = { ok: true; data: BackupFile } | { ok: false; errors: string[] };
 
@@ -84,6 +85,16 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || !Array.isArray(r.materials) || !Array.isArray(r.money) || !Array.isArray(r.entries)
     || !['active', 'paused', 'done'].includes(String(r.status)) || !isValidDateKey(r.startDate)
     || !(r.entries as unknown[]).every((e) => isObj(e) && Array.isArray(e.photos) && e.photos.every(isImageData)) ? 'Projekt ungültig' : null),
+  moneyTransactions: (r) => (!['income', 'expense', 'transfer', 'correction'].includes(String(r.kind)) || !isValidDateKey(r.date)
+    || typeof r.cents !== 'number' || !Number.isInteger(r.cents) || r.cents <= 0 || !isStr(r.confirmedBy)
+    || (r.from === undefined && r.to === undefined) || (r.from !== undefined && !isObj(r.from)) || (r.to !== undefined && !isObj(r.to)) ? 'Geldbuchung ungültig' : null),
+  savingsGoals: (r) => (!isStr(r.childId) || !isStr(r.title) || typeof r.targetCents !== 'number' || r.targetCents <= 0 ? 'Sparziel ungültig' : null),
+  tripGoals: (r) => (!isStr(r.name) || typeof r.targetCents !== 'number' || !Array.isArray(r.activities) || !Array.isArray(r.learning)
+    || !['active', 'done', 'archived'].includes(String(r.status)) || (r.photo !== undefined && !isImageData(r.photo)) ? 'Reiseziel ungültig' : null),
+  moneyRequests: (r) => (!isStr(r.childId) || !['save', 'invest', 'trip', 'buy'].includes(String(r.kind)) || typeof r.cents !== 'number'
+    || !['open', 'done', 'declined'].includes(String(r.status)) ? 'Geldwunsch ungültig' : null),
+  simDepots: (r) => (typeof r.startCents !== 'number' || !Array.isArray(r.changes) ? 'Musterdepot ungültig' : null),
+  depotValuations: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || typeof r.cents !== 'number' || r.cents < 0 ? 'Depotwert ungültig' : null),
   discoveries: (r) => (!isStr(r.topicId) || !isStr(r.missionId) || !isValidDateKey(r.date) ? 'Forscherauftrag ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),
@@ -147,6 +158,7 @@ export function migrateBackupTables(backup: BackupFile): BackupFile['tables'] {
     tables.countries = [...(tables.countries ?? []), ...(WORLD.map((w) => w.country).filter((c) => !have.has(c.id)) as unknown as Record<string, unknown>[])];
   }
   if (backup.schemaVersion < 8 && !tables.recipes?.length) tables.recipes = defaultRecipes() as unknown as Record<string, unknown>[];
+  if (backup.schemaVersion < 12 && !tables.tripGoals?.length) tables.tripGoals = defaultTrips(new Date().toISOString()) as unknown as Record<string, unknown>[];
   return tables;
 }
 

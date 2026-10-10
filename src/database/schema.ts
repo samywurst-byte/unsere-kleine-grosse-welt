@@ -86,4 +86,14 @@ export const SCHEMA_V11 = {
   discoveries: 'id, topicId',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 11;
+/** Version 12: Geldwelt (Kassenbuch, Sparziele, Wünsche, Musterdepot, Depotwerte) und Reisekasse. */
+export const SCHEMA_V12 = {
+  moneyTransactions: 'id, date, kind, batchId, projectId, requestId',
+  savingsGoals: 'id, childId',
+  tripGoals: 'id, status, order',
+  moneyRequests: 'id, childId, status',
+  simDepots: 'childId',
+  depotValuations: 'id, childId, date',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 12;

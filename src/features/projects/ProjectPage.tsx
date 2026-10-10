@@ -395,14 +395,21 @@ function Money({ project: p, today }: { project: FamilyProject; today: string })
             <li key={m.id} className="list-item">
               <div className="list-item__main"><p className="list-item__title">{m.label}</p><p className="list-item__meta">{formatLong(m.date)}</p></div>
               <strong className={m.kind === 'income' ? 'pj-income' : 'pj-cost'}>{m.kind === 'income' ? '+' : '−'} {formatEuro(m.cents)}</strong>
-              {p.status !== 'done' && <button type="button" className="btn btn--icon btn--ghost btn--small" aria-label="Betrag löschen"
+              {p.status !== 'done' && !p.moneyBatchId && <button type="button" className="btn btn--icon btn--ghost btn--small" aria-label="Betrag löschen"
                 onClick={() => change((x) => ({ ...x, money: x.money.filter((y) => y.id !== m.id) }))}><Trash2 size={14} /></button>}
             </li>
           ))}
         </ul>
       )}
       <p className="pj-sum">Einnahmen {formatEuro(sum.income)} · Kosten {formatEuro(sum.costs)} · <strong>{sum.surplus >= 0 ? 'Überschuss' : 'Minus'} {formatEuro(Math.abs(sum.surplus))}</strong></p>
-      {p.status !== 'done' && (
+      {p.moneyBatchId ? <p className="small">✓ Der Überschuss ist in der <Link to="/geld">Geldwelt</Link> verteilt.</p>
+        : sum.surplus > 0 && (
+          <div className="row row--wrap">
+            <Link to={`/eltern/geld?tab=book&projekt=${p.id}`} className="btn btn--small btn--sage">Überschuss verteilen</Link>
+            <span className="small muted">Gemeinsam entscheiden: ausgeben, sparen, Reisekasse. Mama oder Papa bestätigen im Elternbereich.</span>
+          </div>
+        )}
+      {p.status !== 'done' && !p.moneyBatchId && (
         <div className="row row--wrap pj-add">
           <input className="input pj-money-label" value={label} placeholder={kind === 'income' ? 'z. B. 4 Körbchen' : 'z. B. Körbchen gekauft'} aria-label="Wofür" onChange={(e) => setLabel(e.target.value)} />
           <div className="seg" role="group" aria-label="Art">

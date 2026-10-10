@@ -699,6 +699,8 @@ export interface FamilyProject {
   /** Was wir herausgefunden haben (beim Abschluss). */
   reflection?: string;
   memoryId?: Id;
+  /** Überschuss wurde im Kassenbuch verteilt (Buchungsgruppe). */
+  moneyBatchId?: Id;
   createdAt: string;
   updatedAt: string;
 }
@@ -709,4 +711,120 @@ export interface Discovery {
   topicId: string;
   missionId: string;
   date: DateKey;
+}
+
+// ---------------------------------------------------------------- Geldwelt und Reisekasse
+
+/** Die drei persönlichen Geldbereiche eines Kindes: Ausgeben, Sparen, Anlegen. */
+export type MoneyPot = 'spend' | 'save' | 'invest';
+
+/** Wo echtes Geld tatsächlich liegt. "depot" ist eine echte, von den Eltern verwaltete Anlage. */
+export type MoneyHolding = 'cash' | 'bank' | 'depot';
+
+/** Woher eine Einnahme kommt. Geld entsteht nie durch Antippen einer Aufgabe. */
+export type MoneySource = 'pocket' | 'gift' | 'own-sale' | 'project' | 'parents' | 'other';
+
+/** Ein Konto im Kassenbuch: Bereich eines Kindes oder ein Reiseziel, jeweils getrennt nach Bargeld, Bank und Depot. */
+export type MoneyAccount =
+  | { kind: 'child'; childId: Id; pot: MoneyPot; holding: MoneyHolding }
+  | { kind: 'trip'; tripId: Id; holding: MoneyHolding };
+
+export type MoneyTxKind = 'income' | 'expense' | 'transfer' | 'correction';
+
+/**
+ * Eine Buchung im Kassenbuch, Beträge in Cent. Buchungen werden nie geändert:
+ * Fehler werden durch eine eigene Gegenbuchung (reverses) oder Korrektur ausgeglichen.
+ */
+export interface MoneyTransaction {
+  id: Id;
+  kind: MoneyTxKind;
+  date: DateKey;
+  /** Immer positiv. */
+  cents: number;
+  /** Geld verlässt dieses Konto (Ausgabe, Umbuchung, Korrektur nach unten). */
+  from?: MoneyAccount;
+  /** Geld kommt hier an (Einnahme, Umbuchung, Korrektur nach oben). */
+  to?: MoneyAccount;
+  source?: MoneySource;
+  note: string;
+  /** Erwachsene Person, die die Buchung bestätigt hat. */
+  confirmedBy: Id;
+  /** Kind, von dem ein Reisekassenbeitrag stammt (Herkunft). */
+  byChildId?: Id;
+  /** Das Kind hat ausdrücklich zugestimmt, persönliches Geld abzugeben. */
+  childConsent?: boolean;
+  /** Gemeinsame Verteilung, z. B. ein Projektüberschuss. */
+  batchId?: Id;
+  projectId?: Id;
+  requestId?: Id;
+  /** Diese Buchung hebt eine frühere Buchung auf. */
+  reverses?: Id;
+  createdAt: string;
+}
+
+/** Sparziel eines Kindes. Das Geld bleibt Eigentum des Kindes. */
+export interface SavingsGoal {
+  id: Id;
+  childId: Id;
+  title: string;
+  emoji: string;
+  targetCents: number;
+  order: number;
+  createdAt: string;
+  /** Gekauft bzw. erreicht und abgeschlossen. */
+  doneAt?: DateKey;
+}
+
+/** Reiseziel der Familien-Reisekasse. Das Sparziel ist ein Beitrag, nicht die gesamten Reisekosten. */
+export interface TripGoal {
+  id: Id;
+  name: string;
+  flag: string;
+  /** Land der Weltreise, falls vorhanden. */
+  countryId?: Id;
+  countryName: string;
+  description: string;
+  photo?: string;
+  targetCents: number;
+  /** Geschätzte Gesamtkosten, getrennt vom Sparziel. Optional. */
+  totalCostCents?: number;
+  activities: string[];
+  /** Lernaufgaben vor der Reise. */
+  learning: string[];
+  /** Passende Themen der Entdeckerbibliothek. */
+  topicIds?: string[];
+  status: 'active' | 'done' | 'archived';
+  order: number;
+  createdAt: string;
+}
+
+/** Ein Wunsch des Kindes, z. B. "Ich möchte 10 € anlegen". Gebucht wird erst nach Elternbestätigung. */
+export interface MoneyRequest {
+  id: Id;
+  childId: Id;
+  kind: 'save' | 'invest' | 'trip' | 'buy';
+  cents: number;
+  tripId?: Id;
+  note?: string;
+  status: 'open' | 'done' | 'declined';
+  createdAt: string;
+  decidedAt?: string;
+}
+
+/** Musterdepot: Lernrechner mit frei gewählten Kursänderungen. Kein echtes Geld, keine echten Kurse. */
+export interface SimDepot {
+  childId: Id;
+  enabled: boolean;
+  startCents: number;
+  startDate: DateKey;
+  changes: { id: Id; date: DateKey; percent: number }[];
+}
+
+/** Von den Eltern eingetragener Wert eines echten Kinderdepots zu einem Zeitpunkt. */
+export interface DepotValuation {
+  id: Id;
+  childId: Id;
+  date: DateKey;
+  cents: number;
+  note?: string;
 }

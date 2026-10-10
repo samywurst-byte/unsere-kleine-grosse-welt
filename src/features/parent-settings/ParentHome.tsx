@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useDeviceMeta, useMissionCompletions } from '../../hooks/useData';
+import { useDeviceMeta, useMissionCompletions, useMoneyRequests } from '../../hooks/useData';
 import { backupIsDue } from '../../services/backup';
 
 const TILES = [
@@ -8,6 +8,7 @@ const TILES = [
   { to: '/eltern/rechnen', title: 'Rechenpfad', text: 'Mengen, Plus und Minus, Einmaleins: Stufen und nächste Schritte je Kind' },
   { to: '/eltern/lernpaket', title: 'Lernpaket der Woche', text: 'Ein Thema für alle, A4-Arbeitsblätter je Kind zum Drucken' },
   { to: '/eltern/essen', title: 'Essen und Einkauf', text: 'Wochenplan mit Kinderwünschen, eure Gerichte, Einkaufsliste fürs Handy' },
+  { to: '/eltern/geld', title: 'Geldwelt und Reisekasse', text: 'Geld eintragen und verteilen, Wünsche der Kinder, Sparziele, Reiseziele, Kassenabgleich' },
   { to: '/eltern/missionen', title: 'Zusatzmissionen und Sterne', text: 'Missionen bestätigen und pflegen, Familienglas, Grenzen' },
   { to: '/eltern/sondertag', title: 'Heute ist alles anders', text: 'Krank, Urlaub, Besuch: Aufgaben für einzelne Kinder ausblenden' },
   { to: '/eltern/kalender', title: 'Kalender', text: 'Termine, Serien, Ausnahmen, Ferien, Packlisten' },
@@ -20,7 +21,6 @@ const TILES = [
 ];
 
 const LATER = [
-  { title: 'Geldwelt und Reisekasse', text: 'Taschengeld, Sparziele, gemeinsame Reisekasse' },
   { title: 'Familienarchiv', text: 'Jahresrückblick aus Erinnerungen und Lernstand' },
 ];
 
@@ -28,6 +28,7 @@ export function ParentHome() {
   const meta = useDeviceMeta();
   const completions = useMissionCompletions();
   const waiting = completions?.filter((c) => c.status === 'pending').length ?? 0;
+  const wishes = useMoneyRequests()?.filter((r) => r.status === 'open').length ?? 0;
   return (
     <div className="parent-section">
       {meta && backupIsDue(meta.lastBackupAt) && (
@@ -39,7 +40,7 @@ export function ParentHome() {
       <div className="parent-tiles">
         {TILES.map((t) => (
           <Link key={t.to} to={t.to} className="card parent-tile">
-            <span className="parent-tile__title">{t.title}{t.to === '/eltern/missionen' && waiting > 0 && <span className="chip">{waiting} warten</span>}</span>
+            <span className="parent-tile__title">{t.title}{t.to === '/eltern/missionen' && waiting > 0 && <span className="chip">{waiting} warten</span>}{t.to === '/eltern/geld' && wishes > 0 && <span className="chip">{wishes} {wishes === 1 ? 'Wunsch' : 'Wünsche'}</span>}</span>
             <span className="small muted">{t.text}</span>
           </Link>
         ))}

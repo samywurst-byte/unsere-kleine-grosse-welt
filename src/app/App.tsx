@@ -37,6 +37,10 @@ import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { ProjectPage } from '../features/projects/ProjectPage';
 import { LibraryPage } from '../features/library/LibraryPage';
 import { TopicPage } from '../features/library/TopicPage';
+import { MoneyPage } from '../features/money/MoneyPage';
+import { ChildMoneyPage } from '../features/money/ChildMoneyPage';
+import { TravelPage, TripPage } from '../features/money/TravelPage';
+import { MoneySettings } from '../features/money/MoneySettings';
 
 export function App() {
   const pinCount = useLiveQuery(() => db.parentAuth.count(), []);
@@ -60,6 +64,10 @@ export function App() {
             <Route path="entdecken/:topicId" element={<TopicPage />} />
             <Route path="projekte" element={<ProjectsPage />} />
             <Route path="projekte/:projectId" element={<ProjectPage />} />
+            <Route path="geld" element={<MoneyPage />} />
+            <Route path="geld/:childId" element={<ChildMoneyPage />} />
+            <Route path="reisekasse" element={<TravelPage />} />
+            <Route path="reisekasse/:tripId" element={<TripPage />} />
             <Route path="familienzeit" element={<FamilyTimePage />} />
             <Route path="familienzeit/abenteuer" element={<AdventurePage />} />
             <Route path="familienzeit/familienrat" element={<CouncilPage />} />
@@ -81,6 +89,7 @@ export function App() {
               <Route path="pin" element={<PinSettings />} />
               <Route path="missionen" element={<MissionSettings />} />
               <Route path="essen" element={<MealsPage />} />
+              <Route path="geld" element={<MoneySettings />} />
               <Route path="sondertag" element={<SpecialDaySettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

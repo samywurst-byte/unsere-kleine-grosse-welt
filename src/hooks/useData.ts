@@ -185,3 +185,27 @@ export function useProjects() {
 export function useDiscoveries() {
   return useLiveQuery(() => db.discoveries.toArray(), []);
 }
+
+export function useMoneyTransactions() {
+  return useLiveQuery(() => db.moneyTransactions.orderBy('date').toArray(), []);
+}
+
+export function useSavingsGoals() {
+  return useLiveQuery(() => db.savingsGoals.toArray(), []);
+}
+
+export function useTripGoals() {
+  return useLiveQuery(() => db.tripGoals.orderBy('order').toArray(), []);
+}
+
+export function useMoneyRequests() {
+  return useLiveQuery(() => db.moneyRequests.toArray(), []);
+}
+
+export function useSimDepots() {
+  return useLiveQuery(() => db.simDepots.toArray(), []);
+}
+
+export function useDepotValuations() {
+  return useLiveQuery(() => db.depotValuations.toArray(), []);
+}
