@@ -87,7 +87,7 @@ export type GoalKind = 'skill' | 'letter';
 export interface LearningGoal {
   /** Dauerhafte Id, z. B. "read.letter.M" */
   id: string;
-  area: 'reading';
+  area: 'reading' | 'math';
   stage: number;
   kind: GoalKind;
   title: string;
@@ -99,6 +99,8 @@ export interface LearningGoal {
   requires: string[];
   /** Nur bei Buchstaben. */
   letter?: LetterInfo;
+  /** Freiwilliger Zusatz (großes Einmaleins). */
+  optional?: boolean;
 }
 
 export const letterGoalId = (upper: string) => `read.letter.${upper}`;

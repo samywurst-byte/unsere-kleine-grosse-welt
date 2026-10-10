@@ -8,6 +8,7 @@ import { ILLUSTRATIONS } from '../data/illustrations';
 import type { LetterInfo } from '../data/readingCurriculum';
 import { fromDateKey } from '../utils/dates';
 import type { PackPlan, PageSpec, PlannedPage } from './learningPack';
+import type { MathSpec, TaskPart } from './mathSheets';
 
 /**
  * Echte A4-PDFs für die Lernpakete: Vektorgrafik und eingebettete Schriften, druckerfreundliches Schwarzweiß.
@@ -396,7 +397,7 @@ function memory(c: Ctx, spec: Extract<PageSpec, { kind: 'memory' }>) {
 const LEVEL_COLUMNS = [['selbst-', 'ständig'], ['mit wenig', 'Hilfe'], ['mit viel', 'Hilfe'], ['noch', 'nicht'], ['nicht', 'beurteilt']];
 
 function observation(c: Ctx, spec: Extract<PageSpec, { kind: 'observation' }>) {
-  let top = header(c, 'Beobachtungsbogen', 'Nach dem Lernen kurz ankreuzen und danach in der App eintragen: Eltern › Lesepfad. Ein einzelnes Blatt entscheidet nichts, erst mehrere Beobachtungen an verschiedenen Tagen.', false);
+  let top = header(c, 'Beobachtungsbogen', 'Nach dem Lernen kurz ankreuzen und danach in der App eintragen: Eltern › Lesepfad oder Rechenpfad. Ein einzelnes Blatt entscheidet nichts, erst mehrere Beobachtungen an verschiedenen Tagen.', false);
   text(c, 'Datum:', M, top + 16, 12, { color: MUTED });
   hline(c, M + 44, M + 180, top + 18, { color: LINE });
   top += 40;
@@ -445,7 +446,259 @@ function renderPage(c: Ctx, spec: PageSpec) {
     case 'coloring': return coloring(c, spec);
     case 'memory': return memory(c, spec);
     case 'observation': return observation(c, spec);
+    case 'math': return mathPage(c, spec.title, spec.math);
+    case 'math-memory': return mathMemory(c, spec.heading, spec.cards);
   }
+}
+
+// ------------------------------------------------------------- Rechenblätter
+
+const PIPS: Record<number, [number, number][]> = {
+  1: [[1, 1]],
+  2: [[0, 0], [2, 2]],
+  3: [[0, 0], [1, 1], [2, 2]],
+  4: [[0, 0], [2, 0], [0, 2], [2, 2]],
+  5: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]],
+  6: [[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]],
+};
+
+/** Würfelbild in einem Quadrat (linke obere Ecke x/top). */
+function dice(c: Ctx, k: number, x: number, top: number, size: number) {
+  roundRect(c, x, top, size, size, { r: size * 0.16, border: 1.4 });
+  const step = size * 0.28;
+  for (const [col, row] of PIPS[k] ?? []) {
+    c.page.drawCircle({ x: x + size * 0.22 + col * step, y: Y(top + size * 0.22 + row * step), size: size * 0.085, color: BLACK });
+  }
+}
+
+/** Zehnerfeld (2 × 5); die ersten `filled` Kreise sind ausgemalt. */
+function tenFrame(c: Ctx, x: number, top: number, cell: number, filled = 0) {
+  for (let i = 0; i < 10; i++) {
+    const col = i % 5;
+    const row = Math.floor(i / 5);
+    const cx = x + col * cell;
+    const ct = top + row * cell;
+    c.page.drawRectangle({ x: cx, y: Y(ct + cell), width: cell, height: cell, borderColor: BLACK, borderWidth: 0.9 });
+    c.page.drawCircle({ x: cx + cell / 2, y: Y(ct + cell / 2), size: cell * 0.34, borderColor: BLACK, borderWidth: 0.9, color: i < filled ? BLACK : undefined });
+  }
+  // Fünferlinie betonen (Kraft der Fünf)
+  c.page.drawLine({ start: { x: x + 5 * cell, y: Y(top) }, end: { x: x + 5 * cell, y: Y(top + 2 * cell) }, thickness: 1.6, color: BLACK });
+}
+
+/** Aufgabenzeile: Text und leere Kästchen nebeneinander. Gibt die Breite zurück. */
+function taskRow(c: Ctx, parts: TaskPart[], x: number, baselineTop: number, size: number, draw = true): number {
+  const boxW = size * 2;
+  const boxH = size * 1.5;
+  let cx = x;
+  for (const p of parts) {
+    if (p === null) {
+      if (draw) c.page.drawRectangle({ x: cx, y: Y(baselineTop + size * 0.38), width: boxW, height: boxH, borderColor: BLACK, borderWidth: 0.9 });
+      cx += boxW + size * 0.35;
+    } else {
+      const w = c.regular.widthOfTextAtSize(p, size);
+      if (draw) c.page.drawText(p, { x: cx, y: Y(baselineTop), size, font: c.regular, color: BLACK });
+      cx += w + size * 0.35;
+    }
+  }
+  return cx - x;
+}
+
+function mathPage(c: Ctx, title: string, spec: MathSpec) {
+  switch (spec.kind) {
+    case 'dice-match': return diceMatch(c, title, spec);
+    case 'digit-trace': return digitTrace(c, title, spec);
+    case 'ten-frame': return tenFramePage(c, title, spec);
+    case 'number-house': return numberHouses(c, title, spec);
+    case 'packets': return packetsPage(c, spec);
+    case 'number-wall': return numberWalls(c, title, spec);
+    case 'times-row': return timesRow(c, title, spec);
+  }
+}
+
+function diceMatch(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'dice-match' }>) {
+  header(c, title, 'Verbinde jedes Würfelbild mit der passenden Zahl.', true);
+  const size = 62;
+  spec.dice.forEach((k, i) => {
+    const top = 122 + i * 84;
+    dice(c, k, M + 40, top, size);
+    c.page.drawCircle({ x: M + 40 + size + 18, y: Y(top + size / 2), size: 4, color: BLACK });
+    const d = String(spec.digits[i]);
+    c.page.drawCircle({ x: W - M - 110, y: Y(top + size / 2), size: 4, color: BLACK });
+    text(c, d, W - M - 70, top + size / 2 + 15, 42, { font: c.bold, align: 'center' });
+  });
+  let top = 122 + spec.dice.length * 84 + 10;
+  text(c, 'Wo sind mehr Punkte? Kreise das Würfelbild ein.', M, top, 14, { font: c.bold });
+  top += 16;
+  const s = 52;
+  spec.compare.forEach(([a, b], i) => {
+    const x = M + i * (CW / 3) + (CW / 3 - (2 * s + 18)) / 2;
+    dice(c, a, x, top, s);
+    dice(c, b, x + s + 18, top, s);
+  });
+  top += s + 34;
+  text(c, 'Male so viele Punkte, wie die Zahl sagt.', M, top, 14, { font: c.bold });
+  top += 12;
+  const w = (CW - 20) / 3;
+  spec.dice.slice(0, 3).forEach((k, i) => {
+    const x = M + i * (w + 10);
+    roundRect(c, x, top, w, H - 46 - top, { color: LINE, border: 0.8 });
+    text(c, String(k), x + 12, top + 30, 26, { font: c.bold });
+  });
+}
+
+function digitTrace(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'digit-trace' }>) {
+  header(c, title, 'Spure die grauen Zahlen nach und schreibe dann selbst. Links siehst du, wie viele das sind.', true);
+  const box = 14.17; // 5 mm Rechenkaro
+  const gridX = M + 96;
+  const cols = Math.floor((W - M - gridX) / box);
+  const rowH = 66;
+  spec.digits.forEach((d, i) => {
+    const top = 116 + i * rowH;
+    tenFrame(c, M, top + 4, 15, d);
+    // zwei Kästchen hohe Schreibzeile auf Rechenkaro
+    for (let r = 0; r <= 3; r++) hline(c, gridX, gridX + cols * box, top + r * box, { color: LINE, thickness: 0.4 });
+    for (let k = 0; k <= cols; k++) {
+      c.page.drawLine({ start: { x: gridX + k * box, y: Y(top) }, end: { x: gridX + k * box, y: Y(top + 3 * box) }, thickness: 0.4, color: LINE });
+    }
+    // Ziffer zwei Kästchen hoch in den unteren beiden Reihen, alle drei Kästchen eine
+    const size = (2 * box * 0.9) / CAP;
+    const baseline = top + 3 * box - 1;
+    for (let k = 0; k < 5; k++) {
+      const str = String(d);
+      const w = c.school.widthOfTextAtSize(str, size);
+      c.page.drawText(str, { x: gridX + k * 3 * box + 1.5 * box - w / 2, y: Y(baseline), size, font: c.school, color: k === 0 ? BLACK : TRACE });
+    }
+  });
+}
+
+function tenFramePage(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'ten-frame' }>) {
+  header(c, title, 'Male so viele Kreise an, wie die Zahl sagt. Wie viele fehlen bis 10? Das ist die verliebte Zahl.', true);
+  const cell = 30;
+  spec.numbers.forEach((n, i) => {
+    const x = M + (i % 2) * (CW / 2);
+    const top = 128 + Math.floor(i / 2) * 210;
+    roundRect(c, x, top, CW / 2 - 12, 190, { color: LINE, border: 0.8 });
+    text(c, String(n), x + 22, top + 52, 40, { font: c.bold });
+    tenFrame(c, x + 70, top + 18, cell, 0);
+    taskRow(c, [`${n} +`, null, '= 10'], x + 22, top + 130, 20);
+    taskRow(c, ['10 =', null, '+', null], x + 22, top + 172, 20);
+  });
+}
+
+function numberHouses(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'number-house' }>) {
+  header(c, title, 'In jedem Stockwerk ergeben die zwei Zahlen zusammen die Zahl im Dach. Fülle die leeren Fenster aus.', true);
+  const gap = 18;
+  const w = (CW - gap * (spec.houses.length - 1)) / spec.houses.length;
+  const rowH = Math.min(30, (H - 60 - 200) / Math.max(...spec.houses.map((h) => h.rows.length)));
+  spec.houses.forEach((house, i) => {
+    const x = M + i * (w + gap);
+    const top = 130;
+    c.page.drawSvgPath(`M 0 60 L ${w / 2} 0 L ${w} 60 Z`, { x, y: Y(top), borderColor: BLACK, borderWidth: 1.4, color: WHITE });
+    text(c, String(house.top), x + w / 2, top + 50, 26, { font: c.bold, align: 'center' });
+    house.rows.forEach((row, r) => {
+      const t = top + 60 + r * rowH;
+      row.forEach((v, k) => {
+        c.page.drawRectangle({ x: x + k * (w / 2), y: Y(t + rowH), width: w / 2, height: rowH, borderColor: BLACK, borderWidth: 1 });
+        if (v !== null) text(c, String(v), x + k * (w / 2) + w / 4, t + rowH * 0.7, rowH * 0.6, { align: 'center' });
+      });
+    });
+  });
+}
+
+function packetsPage(c: Ctx, spec: Extract<MathSpec, { kind: 'packets' }>) {
+  let top = header(c, spec.heading, spec.instruction, true) + 10;
+  if (spec.help) {
+    text(c, 'Zum Legen und Malen:', M, top + 14, 11, { color: MUTED });
+    tenFrame(c, M + 120, top, 18, 0);
+    if (spec.help === 'twenty') tenFrame(c, M + 120 + 5 * 18 + 16, top, 18, 0);
+    top += 2 * 18 + 22;
+  }
+  const size = 17;
+  const widest = Math.max(...spec.tasks.map((t) => taskRow(c, t, 0, 0, size, false)));
+  const cols = widest > CW / 3 - 12 ? 2 : 3;
+  const colW = CW / cols;
+  const rows = Math.ceil(spec.tasks.length / cols);
+  const rowH = Math.min(46, (H - 50 - top) / rows);
+  spec.tasks.forEach((t, i) => {
+    const col = Math.floor(i / rows);
+    const row = i % rows;
+    taskRow(c, t, M + col * colW, top + 26 + row * rowH, size);
+  });
+}
+
+function numberWalls(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'number-wall' }>) {
+  header(c, title, 'Zwei Steine nebeneinander ergeben zusammen den Stein darüber.', true);
+  const bw = 66;
+  const bh = 34;
+  spec.walls.forEach((wall, i) => {
+    const x0 = M + (i % 2) * (CW / 2) + (CW / 2 - 3 * bw) / 2;
+    const base = 130 + Math.floor(i / 2) * 220 + 3 * bh;
+    wall.forEach((row, level) => {
+      row.forEach((v, k) => {
+        const x = x0 + level * (bw / 2) + k * bw;
+        const top = base - (level + 1) * bh;
+        c.page.drawRectangle({ x, y: Y(top + bh), width: bw, height: bh, borderColor: BLACK, borderWidth: 1.1 });
+        if (v !== null) text(c, String(v), x + bw / 2, top + bh * 0.7, 17, { align: 'center' });
+      });
+    });
+  });
+}
+
+const CORE_ROWS = new Set([1, 2, 5, 10]);
+
+function timesRow(c: Ctx, title: string, spec: Extract<MathSpec, { kind: 'times-row' }>) {
+  const n = spec.n;
+  header(c, title, spec.withDiv
+    ? 'Rechne die Malaufgabe. Rechts steht die passende Geteiltaufgabe: Sie hat dieselben Zahlen.'
+    : 'Rechne. Fett gedruckt sind die Kernaufgaben, aus ihnen kannst du die anderen ableiten.', true);
+  let top = 122;
+  text(c, `Zähle in ${n}er-Schritten:`, M, top + 6, 13, { font: c.bold });
+  top += 18;
+  const bw = CW / 10;
+  spec.skip.forEach((v, i) => {
+    c.page.drawRectangle({ x: M + i * bw, y: Y(top + 32), width: bw, height: 32, borderColor: BLACK, borderWidth: 0.9 });
+    if (v !== null) text(c, String(v), M + i * bw + bw / 2, top + 23, 15, { align: 'center' });
+  });
+  top += 70;
+  const size = 18;
+  const rowH = 46;
+  for (let k = 1; k <= 10; k++) {
+    const t = top + (k - 1) * rowH;
+    const core = CORE_ROWS.has(k);
+    const label = `${k} · ${n} =`;
+    c.page.drawText(label, { x: M, y: Y(t), size, font: core ? c.bold : c.regular, color: BLACK });
+    taskRow(c, [null], M + c.bold.widthOfTextAtSize(label, size) + 8, t, size);
+    const right = spec.withDiv ? `${k * n} : ${n} =` : `${n} · ${k} =`;
+    taskRow(c, [right, null], M + CW / 2 + 10, t, size);
+  }
+  const tip = top + 10 * rowH + 4;
+  if (tip < H - 60 && n > 2) text(c, `Tipp: 6 · ${n} ist 5 · ${n} und noch einmal ${n}. 9 · ${n} ist 10 · ${n} minus ${n}.`, M, tip, 11.5, { color: MUTED });
+}
+
+function mathMemory(c: Ctx, heading: string, cards: string[]) {
+  const top = header(c, `Rechen-Memory: ${heading}`, 'Karten ausschneiden, umdrehen und Paare suchen. Wer ein Paar findet, sagt laut, warum es zusammengehört.', false) + 14;
+  const cols = 3;
+  const rows = 4;
+  const cw = 165;
+  const ch = Math.min(160, (H - 46 - top) / rows);
+  const x0 = (W - cols * cw) / 2;
+  const dash = [5, 4];
+  for (let r = 0; r <= rows; r++) hline(c, x0, x0 + cols * cw, top + r * ch, { dash, color: MUTED });
+  for (let col = 0; col <= cols; col++) {
+    c.page.drawLine({ start: { x: x0 + col * cw, y: Y(top) }, end: { x: x0 + col * cw, y: Y(top + rows * ch) }, thickness: 0.6, color: MUTED, dashArray: dash });
+  }
+  cards.slice(0, cols * rows).forEach((card, i) => {
+    const x = x0 + (i % cols) * cw;
+    const t = top + Math.floor(i / cols) * ch;
+    const [kind, value] = card.split(':');
+    if (kind === 'dice' && value) dice(c, Number(value), x + (cw - 80) / 2, t + (ch - 80) / 2, 80);
+    else if (kind === 'frame' && value) tenFrame(c, x + (cw - 125) / 2, t + (ch - 50) / 2, 25, Number(value));
+    else {
+      let size = 40;
+      while (c.bold.widthOfTextAtSize(card, size) > cw - 24) size -= 2;
+      text(c, card, x + cw / 2, t + ch / 2 + size * 0.35, size, { font: c.bold, align: 'center' });
+    }
+  });
 }
 
 export async function renderWorksheets(plan: PackPlan, pages: PlannedPage[], fonts: WorksheetFonts): Promise<Uint8Array> {

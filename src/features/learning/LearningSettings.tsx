@@ -158,7 +158,7 @@ function ChildLearning({ child }: { child: ChildProfile }) {
   );
 }
 
-function GoalModal({ state, child, today, onClose }: { state: GoalState; child: ChildProfile; today: string; onClose: () => void }) {
+export function GoalModal({ state, child, today, onClose }: { state: GoalState; child: ChildProfile; today: string; onClose: () => void }) {
   const [level, setLevel] = useState<ObservationLevel | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState(today);

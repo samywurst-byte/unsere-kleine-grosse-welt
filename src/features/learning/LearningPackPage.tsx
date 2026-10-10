@@ -3,12 +3,13 @@ import { getISOWeek } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
-import { Field, Segmented } from '../../components/FormControls';
+import { Field, Segmented, Toggle } from '../../components/FormControls';
 import { db } from '../../database/db';
 import { LETTERS } from '../../data/readingCurriculum';
 import { useAllLearning, useChildren, useLearningPacks } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import { goalStates, type GoalState } from '../../services/learning';
+import { mathStates } from '../../services/math';
 import {
   defaultLetter, defaultTrack, packForWeek, pagesForScope, planPack, recordPrint, savePack, themeTitle, TRACK_LABEL,
   type PackPlan, type PrintScope,
@@ -17,7 +18,7 @@ import type { ChildProfile, LearningPack, PackTrack } from '../../types';
 import { formatDayMonth, fromDateKey, toDateKey, weekStartKey } from '../../utils/dates';
 import './learning.css';
 
-const TRACKS: PackTrack[] = ['letters', 'preschool', 'toddler', 'skip'];
+const TRACKS: PackTrack[] = ['letters', 'preschool', 'toddler', 'math', 'skip'];
 
 /** Elternbereich › Lernpaket: ein Thema für alle, passende A4-Blätter je Kind, als PDF zum Drucken. */
 export function LearningPackPage() {
@@ -34,6 +35,11 @@ export function LearningPackPage() {
     if (learning && children) for (const c of children) map.set(c.id, goalStates(c.id, learning.observations, learning.releases, today));
     return map;
   }, [learning, children, today]);
+  const mathStatesByChild = useMemo(() => {
+    const map = new Map<string, GoalState[]>();
+    if (learning && children) for (const c of children) map.set(c.id, mathStates(c.id, learning.observations, learning.releases, today));
+    return map;
+  }, [learning, children, today]);
 
   if (!children || !learning || !packs) return null;
   const current = packForWeek(packs, week);
@@ -48,7 +54,7 @@ export function LearningPackPage() {
       </div>
       <p className="muted" style={{ marginTop: 0 }}>
         Ein Thema für alle am Tisch, für jedes Kind passende Blätter. Gelernt wird auf Papier, das Tablet bereitet nur vor.
-        Danach tragt ihr im <Link to="/eltern/lernen">Lesepfad</Link> ein, wie es lief.
+        Danach tragt ihr im <Link to="/eltern/lernen">Lesepfad</Link> oder <Link to="/eltern/rechnen">Rechenpfad</Link> ein, wie es lief.
       </p>
 
       {(!current || editing) && (
@@ -62,7 +68,7 @@ export function LearningPackPage() {
 
       {viewed && !(editing && viewed.id === current?.id) && (
         <PackView
-          key={viewed.id} pack={viewed} children={children} statesByChild={statesByChild}
+          key={viewed.id} pack={viewed} children={children} statesByChild={statesByChild} mathStatesByChild={mathStatesByChild} today={today}
           isCurrent={viewed.id === current?.id}
           onEdit={() => { setViewId(null); setEditing(true); }}
           onBack={viewId ? () => setViewId(null) : undefined}
@@ -102,10 +108,13 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
   const [tracks, setTracks] = useState<Record<string, PackTrack>>(() => Object.fromEntries(children.map((c) => [
     c.id, existing?.children.find((x) => x.childId === c.id)?.track ?? defaultTrack(c, today, statesByChild.get(c.id) ?? []),
   ])));
+  const [math, setMath] = useState<Record<string, boolean>>(() => Object.fromEntries(children.map((c) => [
+    c.id, existing?.children.find((x) => x.childId === c.id)?.math ?? true,
+  ])));
   const anyone = Object.values(tracks).some((t) => t !== 'skip');
 
   const save = async () => {
-    await savePack(db, week, letter, children.map((c) => ({ childId: c.id, track: tracks[c.id] ?? 'skip' })), existing);
+    await savePack(db, week, letter, children.map((c) => ({ childId: c.id, track: tracks[c.id] ?? 'skip', math: math[c.id] ?? false })), existing);
     onDone();
   };
 
@@ -123,6 +132,9 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
             <span className="pack-child__name"><Avatar avatar={c.avatar} color={c.color} size={40} /> {c.name}</span>
             <Segmented label={`Blätter für ${c.name}`} value={tracks[c.id]} options={TRACKS.map((t) => ({ value: t, label: TRACK_LABEL[t] }))}
               onChange={(t) => setTracks((s) => ({ ...s, [c.id]: t }))} />
+            {(tracks[c.id] === 'letters' || tracks[c.id] === 'preschool') && (
+              <Toggle label="Rechenblätter dazu" checked={math[c.id] ?? false} onChange={(v) => setMath((s) => ({ ...s, [c.id]: v }))} />
+            )}
           </div>
         ))}
         <div className="row">
@@ -136,11 +148,14 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
 
 interface PdfResult { scope: PrintScope; url: string; file: File; pages: number }
 
-function PackView({ pack, children, statesByChild, isCurrent, onEdit, onBack }: {
-  pack: LearningPack; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>;
+function PackView({ pack, children, statesByChild, mathStatesByChild, today, isCurrent, onEdit, onBack }: {
+  pack: LearningPack; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>; mathStatesByChild: Map<string, GoalState[]>; today: string;
   isCurrent: boolean; onEdit: () => void; onBack?: () => void;
 }) {
-  const plan = useMemo(() => planPack({ pack, children, statesByChild }), [pack, children, statesByChild]);
+  const plan = useMemo(
+    () => planPack({ pack, children, statesByChild, mathStatesByChild, today }),
+    [pack, children, statesByChild, mathStatesByChild, today],
+  );
   const [busy, setBusy] = useState<PrintScope | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PdfResult | null>(null);

@@ -44,6 +44,8 @@ export interface ChildProfile extends FamilyMember {
   showLabels: boolean;
   /** Geplanter Schulbeginn. Grundlage für den späteren Lesepfad (Start ein Jahr vorher). */
   schoolEntryDate?: DateKey;
+  /** Schulkind bekommt Übungsblätter passend zum Unterricht (Rechenpfad). Standard: aus. */
+  schoolPractice?: boolean;
 }
 
 export type Member = FamilyMember | ChildProfile;
@@ -401,7 +403,7 @@ export interface LearningObservation {
 export type LearningMood = 'fun' | 'ok' | 'reluctant';
 
 /** Was ein Kind im Wochenpaket bekommt. */
-export type PackTrack = 'letters' | 'preschool' | 'toddler' | 'skip';
+export type PackTrack = 'letters' | 'preschool' | 'toddler' | 'math' | 'skip';
 
 /** Lernpaket einer Woche: ein gemeinsames Thema, passende Blätter je Kind. */
 export interface LearningPack {
@@ -409,7 +411,8 @@ export interface LearningPack {
   weekStart: DateKey;
   /** Buchstabe aus dem Lehrplan (LETTERS.upper), z. B. "M". */
   letter: string;
-  children: { childId: Id; track: PackTrack }[];
+  /** math: zusätzlich Rechenblätter (fehlt bei älteren Paketen = nein). */
+  children: { childId: Id; track: PackTrack; math?: boolean }[];
   createdAt: string;
   /** Wann was gedruckt beziehungsweise als PDF erzeugt wurde. */
   prints: { at: string; scope: string; pages: number }[];

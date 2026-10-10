@@ -5,6 +5,9 @@ import type { ChildProfile, DateKey, LearningPack, LearningRelease, PackTrack } 
 import { ageInYears } from '../utils/dates';
 import { newId } from '../utils/id';
 import { pathPhase, todaysLetter, suggestions, type GoalState } from './learning';
+import { currentMathGoals, mathStates } from './math';
+import { mathMemoryPairs, mathPageFor, numberWallPage, type MathPage, type MathSpec } from './mathSheets';
+import type { LearningGoal } from '../data/readingCurriculum';
 
 /**
  * Lernpaket der Woche: ein gemeinsames Thema (Buchstabe mit Bildwort), passende Blätter für jedes Kind,
@@ -16,6 +19,7 @@ export const TRACK_LABEL: Record<PackTrack, string> = {
   letters: 'Buchstaben und Laute',
   preschool: 'Zählen, Silben, Anfangslaute',
   toddler: 'Malen und Kleben',
+  math: 'Nur Rechnen (Schule)',
   skip: 'Diese Woche nicht',
 };
 
@@ -32,6 +36,8 @@ export type PageSpec =
   | { kind: 'syllable-onset'; letter: LetterInfo; pictures: string[]; onset: boolean }
   | { kind: 'coloring'; illustration: string }
   | { kind: 'memory'; cards: string[]; players: { name: string; track: PackTrack }[] }
+  | { kind: 'math'; title: string; math: MathSpec }
+  | { kind: 'math-memory'; heading: string; cards: string[] }
   | { kind: 'observation'; rows: { name: string; goals: string[] }[] };
 
 export type PageSection = 'child' | 'game' | 'observation';
@@ -103,8 +109,8 @@ export function themeTitle(letter: LetterInfo): string {
 /** Welche Blätter ein Kind bekommt: Schulkind → keine, Lesepfad aktiv → Buchstaben, ab 3 Jahren → Vorschule, sonst Malen. */
 export function defaultTrack(child: ChildProfile, today: DateKey, states: GoalState[]): PackTrack {
   const phase = pathPhase(child, today).kind;
-  // Schulkinder machen ihre Hausaufgaben, das Paket ist für die Kleineren
-  if (phase === 'in-school') return 'skip';
+  // Schulkinder machen ihre Hausaufgaben; Übungsblätter zum Unterricht nur, wenn eingeschaltet
+  if (phase === 'in-school') return child.schoolPractice ? 'math' : 'skip';
   if (phase === 'active' || states.some((s) => s.released)) return 'letters';
   const age = child.birthDate ? ageInYears(child.birthDate, today) : child.ageStage === 'small' ? 2 : 4;
   return age >= 3 ? 'preschool' : 'toddler';
@@ -243,22 +249,46 @@ export interface PlanInput {
   children: ChildProfile[];
   /** Lernstand je Kind (für Silbenfreigabe und Buchstaben). */
   statesByChild: Map<string, GoalState[]>;
+  /** Rechenpfad je Kind. */
+  mathStatesByChild?: Map<string, GoalState[]>;
+  /** Für die Phase vor oder nach der Einschulung. */
+  today?: DateKey;
 }
 
-export function planPack({ pack, children, statesByChild }: PlanInput): PackPlan {
+/** Ein bis zwei Rechenblätter zu dem, woran das Kind gerade rechnet. */
+function childMathPages(child: ChildProfile, states: GoalState[], today: DateKey, seed: string): { pages: MathPage[]; goals: LearningGoal[] } {
+  const rnd = seededRandom(`${seed}|${child.id}|math`);
+  const goals = currentMathGoals(states, child, today).map((s) => s.goal);
+  const pages = goals.map((g) => mathPageFor(g, rnd)).filter((p): p is MathPage => !!p);
+  if (pages.length === 1 && goals.length === 1) {
+    const wall = numberWallPage(goals[0], rnd);
+    if (wall) pages.push(wall);
+  }
+  return { pages, goals };
+}
+
+export function planPack({ pack, children, statesByChild, mathStatesByChild, today = pack.weekStart }: PlanInput): PackPlan {
   const letter = letterInfo(pack.letter);
   const seed = `${pack.weekStart}|${pack.letter}`;
   const pages: PlannedPage[] = [];
   const observationRows: { name: string; goals: string[] }[] = [];
+  const mathGoals: LearningGoal[] = [];
 
-  for (const { childId, track } of pack.children) {
+  for (const { childId, track, math } of pack.children) {
     const child = children.find((c) => c.id === childId);
     if (!child || track === 'skip') continue;
-    const specs = childPages(child, track, letter, statesByChild.get(childId) ?? [], seed);
+    const specs = track === 'math' ? [] : childPages(child, track, letter, statesByChild.get(childId) ?? [], seed);
+    const goals = observationGoals(track, letter, specs[2]);
+    if (track === 'math' || (math && track !== 'toddler')) {
+      const m = childMathPages(child, mathStatesByChild?.get(childId) ?? mathStates(childId, [], [], today), today, seed);
+      for (const p of m.pages) specs.push({ kind: 'math', title: p.title, math: p.spec });
+      goals.push(...m.goals.map((g) => g.title));
+      mathGoals.push(...m.goals);
+    }
     specs.forEach((spec, i) => pages.push({
       id: `${childId}-${i + 1}`, section: 'child', childId, childName: child.name, title: pageTitle(spec, letter), spec,
     }));
-    observationRows.push({ name: child.name, goals: observationGoals(track, letter, specs[2]) });
+    if (specs.length) observationRows.push({ name: child.name, goals });
   }
 
   const players = pack.children
@@ -269,6 +299,11 @@ export function planPack({ pack, children, statesByChild }: PlanInput): PackPlan
     id: 'game', section: 'game', title: 'Memory für alle',
     spec: { kind: 'memory', cards: memoryCards(letter, seededRandom(`${seed}|memory`)), players },
   });
+  if (mathGoals.length) {
+    const { heading, pairs } = mathMemoryPairs(mathGoals, seededRandom(`${seed}|math-memory`));
+    const cards = shuffle(pairs.flat(), seededRandom(`${seed}|math-memory-cards`));
+    pages.push({ id: 'game-math', section: 'game', title: 'Rechen-Memory', spec: { kind: 'math-memory', heading, cards } });
+  }
   if (observationRows.length) {
     pages.push({ id: 'observation', section: 'observation', title: 'Beobachtungsbogen', spec: { kind: 'observation', rows: observationRows } });
   }
@@ -285,6 +320,8 @@ export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
     case 'syllable-onset': return 'Silben klatschen';
     case 'coloring': return `Ausmalbild: ${ILLUSTRATIONS.get(spec.illustration)?.word ?? 'Bild'}`;
     case 'memory': return 'Memory für alle';
+    case 'math': return spec.title;
+    case 'math-memory': return 'Rechen-Memory';
     case 'observation': return 'Beobachtungsbogen';
   }
 }

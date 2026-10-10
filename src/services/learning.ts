@@ -1,5 +1,6 @@
 import type { FamilyDatabase } from '../database/db';
 import { GOALS_BY_ID, LETTER_ORDER, READING_GOALS, type LearningGoal } from '../data/readingCurriculum';
+import { MATH_GOALS_BY_ID } from '../data/mathCurriculum';
 import type { ChildProfile, DateKey, LearningMood, LearningObservation, LearningRelease, ObservationLevel } from '../types';
 import { addDaysKey, daysBetween, isValidDateKey } from '../utils/dates';
 import { newId } from '../utils/id';
@@ -104,16 +105,18 @@ export function deriveStatus(observations: LearningObservation[], released: bool
   return { status, evidence, lastDate };
 }
 
-export function goalStates(childId: string, observations: LearningObservation[], releases: LearningRelease[], today: DateKey): GoalState[] {
+export function goalStates(
+  childId: string, observations: LearningObservation[], releases: LearningRelease[], today: DateKey, goals: LearningGoal[] = READING_GOALS,
+): GoalState[] {
   const released = new Set(releases.filter((r) => r.childId === childId && r.status === 'released').map((r) => r.goalId));
-  return READING_GOALS.map((goal) => {
+  return goals.map((goal) => {
     const obs = observations.filter((o) => o.childId === childId && o.goalId === goal.id);
     const isReleased = released.has(goal.id) || obs.length > 0;
     return { goal, released: isReleased, observations: obs, ...deriveStatus(obs, isReleased, today) };
   });
 }
 
-const atLeastMostly = (s: GoalStatus) => s === 'mostly' || s === 'mastered' || s === 'review';
+export const atLeastMostly = (s: GoalStatus) => s === 'mostly' || s === 'mastered' || s === 'review';
 
 export interface Suggestion {
   kind: 'release' | 'review';
@@ -196,7 +199,7 @@ export async function addObservation(
   db: FamilyDatabase, childId: string, goalId: string, level: ObservationLevel, date: DateKey, note?: string,
   extra: { mood?: LearningMood; packId?: string } = {},
 ): Promise<LearningObservation> {
-  if (!GOALS_BY_ID.has(goalId)) throw new Error('Unbekanntes Lernziel.');
+  if (!GOALS_BY_ID.has(goalId) && !MATH_GOALS_BY_ID.has(goalId)) throw new Error('Unbekanntes Lernziel.');
   const obs: LearningObservation = {
     id: newId('obs'), childId, goalId, date, level, note: note?.trim() || undefined, createdAt: new Date().toISOString(),
     ...(extra.mood ? { mood: extra.mood } : {}), ...(extra.packId ? { packId: extra.packId } : {}),
