@@ -6,8 +6,9 @@ import { exportData, validateBackup } from '../src/services/backup';
 import { goalStates } from '../src/services/learning';
 import { renderProjectSheets } from '../src/services/projectPdf';
 import {
-  canRead, chronicle, currentPhase, finishProject, formatEuro, ideasForNow, knownLetters, materialsToShopping, moneySummary, nextStep, parseEuro,
-  projectDateToCalendar, projectLevel, readingTask, refreshTasks, startProject, tasksFor, updateProject,
+  canRead, childProjects, chronicle, confirmProjectTask, currentPhase, finishProject, formatEuro, ideasForNow, knownLetters, materialsToShopping, moneySummary, nextStep, parseEuro,
+  pendingProjectTasks, projectDateToCalendar, projectLevel, readingTask, refreshTasks, requestProjectTask, startProject, tasksFor, updateProject,
+  withdrawProjectTask,
 } from '../src/services/projects';
 import type { ChildProfile, LearningObservation } from '../src/types';
 import { openDb } from './helpers';
@@ -190,5 +191,28 @@ describe('Projektblätter', () => {
     const bytes = await renderProjectSheets(p, [taro, talisa], { regular: f('andika-regular.ttf'), bold: f('andika-bold.ttf'), school: f('grundschrift.ttf') });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(3);
+  });
+
+  it('zeigt Kindern ihre Projektaufgaben; gemeldet wird erst nach Bestätigung erledigt', async () => {
+    const db = await openDb();
+    const idea = PROJECT_IDEA_BY_ID.get('lanterns')!;
+    const p = await startProject(db, { idea, title: idea.title, emoji: idea.emoji, children: setups, startDate: TODAY });
+    const all = await db.projects.toArray();
+    expect(childProjects(all, 'child-1')[0].project.id).toBe(p.id);
+    expect(childProjects(all, 'child-2')).toHaveLength(0);
+    const task = p.tasks.find((t) => t.childId === 'child-1')!;
+    await requestProjectTask(db, p.id, task.id);
+    expect(pendingProjectTasks(await db.projects.toArray()).map((x) => x.task.id)).toEqual([task.id]);
+    await withdrawProjectTask(db, p.id, task.id);
+    expect(pendingProjectTasks(await db.projects.toArray())).toHaveLength(0);
+    await requestProjectTask(db, p.id, task.id);
+    // Anpassen an den Lernstand wirft gemeldete Aufgaben nicht weg
+    const refreshed = refreshTasks((await db.projects.get(p.id))!, idea, [{ child: taro, level: 'reader', known: ['L', 'A'] }]);
+    expect(refreshed.tasks.find((t) => t.id === task.id)?.requestedAt).toBeTruthy();
+    await confirmProjectTask(db, p.id, task.id);
+    const done = (await db.projects.get(p.id))!.tasks.find((t) => t.id === task.id)!;
+    expect([done.done, done.requestedAt, !!done.doneAt]).toEqual([true, undefined, true]);
+    await updateProject(db, p.id, (x) => ({ ...x, status: 'paused' }));
+    expect(childProjects(await db.projects.toArray(), 'child-1')).toHaveLength(0);
   });
 });

@@ -7,8 +7,9 @@ import { IconPicker } from '../../components/IconPicker';
 import { Modal } from '../../components/Modal';
 import { MISSION_SUGGESTIONS } from '../../data/missions';
 import { db } from '../../database/db';
-import { useChildren, useMissionCompletions, useMissions, useSettings, useStarTransactions } from '../../hooks/useData';
+import { useChildren, useMissionCompletions, useMissions, useProjects, useSettings, useStarTransactions } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
+import { confirmProjectTask, pendingProjectTasks, withdrawProjectTask } from '../../services/projects';
 import { confirmMission, declineMission, saveMission, starBalance, undoConfirmation } from '../../services/stars';
 import type { OptionalMission } from '../../types';
 import { formatLong, toDateKey } from '../../utils/dates';
@@ -21,12 +22,14 @@ export function MissionSettings() {
   const children = useChildren();
   const settings = useSettings();
   const stars = useStarTransactions();
+  const projects = useProjects();
   const [editing, setEditing] = useState<OptionalMission | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  if (!missions || !completions || !children || !settings || !stars) return null;
+  if (!missions || !completions || !children || !settings || !stars || !projects) return null;
 
   const byId = new Map(missions.map((m) => [m.id, m]));
   const pending = completions.filter((c) => c.status === 'pending').sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
+  const projectTasks = pendingProjectTasks(projects);
   const confirmedToday = completions.filter((c) => c.status === 'confirmed' && !!c.confirmedAt && toDateKey(new Date(c.confirmedAt)) === today);
   const kid = (id: string) => children.find((c) => c.id === id);
   const create = () => setEditing({ id: '', title: '', icon: 'star', stars: 1, assignedTo: children.map((c) => c.id), active: true });
@@ -51,8 +54,27 @@ export function MissionSettings() {
       </p>
 
       <div className="card">
-        <h3 className="card__title">Warten auf euch {pending.length > 0 && <span className="chip">{pending.length}</span>}</h3>
-        {pending.length === 0 ? <p className="muted">Gerade wartet nichts.</p> : (
+        <h3 className="card__title">Warten auf euch {pending.length + projectTasks.length > 0 && <span className="chip">{pending.length + projectTasks.length}</span>}</h3>
+        {projectTasks.length > 0 && (
+          <ul className="list">
+            {projectTasks.map(({ project, task }) => {
+              const child = kid(task.childId);
+              return (
+                <li key={task.id} className="list-item">
+                  {child && <Avatar avatar={child.avatar} color={child.color} size={44} />}
+                  <span className="ft-hist__emoji" aria-hidden="true">{project.emoji}</span>
+                  <div className="list-item__main">
+                    <p className="list-item__title">{task.label}</p>
+                    <p className="list-item__meta">{child?.name} · Projekt {project.title} · ohne Sterne</p>
+                  </div>
+                  <button type="button" className="btn btn--sage" onClick={() => void confirmProjectTask(db, project.id, task.id).then(() => setMessage(`Super, ${child?.name}! Die Projektaufgabe ist abgehakt.`))}><Check size={18} aria-hidden="true" /> Bestätigen</button>
+                  <button type="button" className="btn btn--ghost" onClick={() => void withdrawProjectTask(db, project.id, task.id)}>Noch nicht</button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {pending.length === 0 ? (projectTasks.length === 0 && <p className="muted">Gerade wartet nichts.</p>) : (
           <ul className="list">
             {pending.map((c) => {
               const m = byId.get(c.missionId);

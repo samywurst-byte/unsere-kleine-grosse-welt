@@ -165,8 +165,8 @@ export function refreshTasks(p: FamilyProject, idea: ProjectIdea, setups: Projec
   for (const { child, level, known } of setups) {
     const fromIdea = new Set(LEVEL_ORDER.flatMap((l) => idea.tasks[l] ?? []));
     const generated = (t: ProjectTask) => fromIdea.has(t.label) || /^(Lesen|Nachspuren): /.test(t.label);
-    const keep = tasks.filter((t) => t.childId !== child.id || t.done || !generated(t));
-    const doneLabels = new Set(tasks.filter((t) => t.childId === child.id && t.done).map((t) => t.label));
+    const keep = tasks.filter((t) => t.childId !== child.id || t.done || !!t.requestedAt || !generated(t));
+    const doneLabels = new Set(tasks.filter((t) => t.childId === child.id && (t.done || t.requestedAt)).map((t) => t.label));
     const fresh = tasksFor(idea, level, known).filter((l) => !doneLabels.has(l))
       .map((label) => ({ id: newId('task'), childId: child.id, label, done: false }));
     tasks = [...keep, ...fresh];
@@ -174,6 +174,39 @@ export function refreshTasks(p: FamilyProject, idea: ProjectIdea, setups: Projec
   }
   return { ...p, tasks, levels };
 }
+
+// ------------------------------------------------------------- Aufgabenbrett der Kinder
+
+/** Laufende Projekte, in denen das Kind Aufgaben hat. */
+export function childProjects(projects: FamilyProject[], childId: string): { project: FamilyProject; tasks: ProjectTask[] }[] {
+  return projects
+    .filter((p) => p.status === 'active')
+    .map((project) => ({ project, tasks: project.tasks.filter((t) => t.childId === childId) }))
+    .filter((x) => x.tasks.length > 0)
+    .sort((a, b) => a.project.startDate.localeCompare(b.project.startDate));
+}
+
+/** Gemeldete Aufgaben aller laufenden Projekte, älteste zuerst. */
+export function pendingProjectTasks(projects: FamilyProject[]): { project: FamilyProject; task: ProjectTask }[] {
+  return projects.filter((p) => p.status === 'active')
+    .flatMap((project) => project.tasks.filter((t) => t.requestedAt && !t.done).map((task) => ({ project, task })))
+    .sort((a, b) => a.task.requestedAt!.localeCompare(b.task.requestedAt!));
+}
+
+const setTask = (db: FamilyDatabase, projectId: string, taskId: string, fn: (t: ProjectTask) => ProjectTask) =>
+  updateProject(db, projectId, (p) => ({ ...p, tasks: p.tasks.map((t) => (t.id === taskId ? fn(t) : t)) }));
+
+/** Kind meldet „geschafft“. */
+export const requestProjectTask = (db: FamilyDatabase, projectId: string, taskId: string) =>
+  setTask(db, projectId, taskId, (t) => (t.done ? t : { ...t, requestedAt: new Date().toISOString() }));
+
+/** Kind nimmt die Meldung zurück (vertippt). */
+export const withdrawProjectTask = (db: FamilyDatabase, projectId: string, taskId: string) =>
+  setTask(db, projectId, taskId, ({ requestedAt: _r, ...t }) => t);
+
+/** Mama oder Papa bestätigen. */
+export const confirmProjectTask = (db: FamilyDatabase, projectId: string, taskId: string) =>
+  setTask(db, projectId, taskId, ({ requestedAt: _r, ...t }) => ({ ...t, done: true, doneAt: new Date().toISOString() }));
 
 // ------------------------------------------------------------- Geld
 

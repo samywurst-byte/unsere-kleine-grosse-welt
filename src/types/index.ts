@@ -660,7 +660,11 @@ export type ProjectLevel = 'toddler' | 'preschool' | 'reader' | 'school';
 export interface ProjectStep { id: Id; phase: ProjectPhase; label: string; done: boolean }
 
 /** Eine Teilaufgabe für ein bestimmtes Kind, passend zu seinem Niveau. Keine Sterne. */
-export interface ProjectTask { id: Id; childId: Id; label: string; done: boolean; doneAt?: string }
+export interface ProjectTask {
+  id: Id; childId: Id; label: string; done: boolean; doneAt?: string;
+  /** Vom Kind am Aufgabenbrett als geschafft gemeldet; Mama oder Papa bestätigen. */
+  requestedAt?: string;
+}
 
 export interface ProjectMaterial { id: Id; label: string; done: boolean }
 

@@ -15,6 +15,7 @@ import { formatWeekday, toDateKey } from '../../utils/dates';
 import { TaskCard } from '../routines/TaskCard';
 import { useChildDay, type ChoreItem, type RoutineItem } from './useChildDay';
 import { ChildMissions } from './ChildMissions';
+import { ChildProject } from './ChildProject';
 import { SPECIAL_KIND, affects } from '../../services/specialDay';
 import './children.css';
 
@@ -123,6 +124,7 @@ export function ChildBoardPage() {
 
       {hiddenCount > 0 && <p className="board__more">Danach {hiddenCount === 1 ? 'kommt noch 1 Aufgabe' : `kommen noch ${hiddenCount} Aufgaben`}.</p>}
 
+      <ChildProject child={child} today={today} />
       <ChildMissions child={child} today={today} />
 
       {done.length > 0 && (

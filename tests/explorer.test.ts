@@ -3,7 +3,7 @@ import { DISCOVER_TOPIC_BY_ID } from '../src/data/discover';
 import { EXPLORER_MODULES } from '../src/data/explorerModules';
 import { exportData, validateBackup } from '../src/services/backup';
 import {
-  answerQuestion, childRoles, currentModule, drawQuestion, nextSunday, prepToShopping, saveEntry, setSundayDate, setSundayStatus, sundayDate, sundayToCalendar,
+  answerQuestion, childRoles, currentModule, drawQuestion, explorerTeaser, nextSunday, prepToShopping, saveEntry, setSundayDate, setSundayStatus, sundayDate, sundayToCalendar,
   yearProgress, yearsOf,
 } from '../src/services/explorer';
 import { fromDateKey } from '../src/utils/dates';
@@ -96,5 +96,18 @@ describe('Entdeckerbuch und Frageglas', () => {
     expect(drawQuestion([answered!])).toBeUndefined();
     const backup = await exportData(db);
     expect(validateBackup(JSON.parse(JSON.stringify(backup))).ok).toBe(true);
+  });
+});
+
+describe('Ankündigung des Entdeckersonntags', () => {
+  it('erscheint ab Donnerstag vor dem nächsten offenen Sonntag und verschwindet, wenn er erledigt ist', () => {
+    expect(explorerTeaser('2026-10-14', [])).toBeUndefined(); // Mittwoch
+    const thu = explorerTeaser('2026-10-15', []);
+    expect([thu?.module.id, thu?.kind, thu?.daysLeft]).toEqual(['2026-10', 'trip', 3]);
+    expect(explorerTeaser('2026-10-17', [])?.daysLeft).toBe(1);
+    expect(explorerTeaser('2026-10-18', [])?.daysLeft).toBe(0);
+    expect(explorerTeaser('2026-10-18', [{ id: '2026-10|trip', moduleId: '2026-10', kind: 'trip', status: 'done' }])).toBeUndefined();
+    // verschoben: die Ankündigung folgt dem neuen Datum
+    expect(explorerTeaser('2026-10-22', [{ id: '2026-10|trip', moduleId: '2026-10', kind: 'trip', status: 'open', date: '2026-10-25' }])?.daysLeft).toBe(3);
   });
 });

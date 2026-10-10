@@ -87,3 +87,4 @@
 .pj-add .pj-euro { flex: 0 0 110px; }
 .pj-delete { align-self: flex-start; color: var(--ink-faint); }
 .grow { flex: 1; min-width: 0; }
+.pj-task__asked { margin-left: var(--space-2); background: var(--c-gold-soft); color: var(--c-gold-ink); }

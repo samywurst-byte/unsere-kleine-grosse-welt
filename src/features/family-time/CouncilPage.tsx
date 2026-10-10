@@ -6,8 +6,10 @@ import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { DEFAULT_COUNCIL_AGENDA } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useChildren, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useProjects, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
+import { useChildren, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useProjects, useExplorerSundays, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
 import { nextStep, projectProgress } from '../../services/projects';
+import { nextSunday } from '../../services/explorer';
+import { SundayControl } from '../explorer/explorerParts';
 import { guessSection } from '../../data/meals';
 import { addShoppingItem, emptyPlan, mealCategories, setWish, wishOptions } from '../../services/meals';
 import { backupIsDue } from '../../services/backup';
@@ -120,7 +122,7 @@ function ItemBody({ kind, itemKey, note, date, members, today, change }: {
   if (kind === 'adventure') return <><NextAdventure council={date} today={today} />{notes}</>;
   if (kind === 'meals') return <><MealWishes weekStart={addDaysKey(date, 1)} />{notes}</>;
   if (kind === 'shopping') return <><ShoppingQuick />{notes}</>;
-  if (kind === 'projects') return <><ProjectsQuick />{notes}</>;
+  if (kind === 'projects') return <><ProjectsQuick /><ExplorerQuick today={today} />{notes}</>;
   return notes;
 }
 
@@ -319,6 +321,25 @@ function ShoppingQuick() {
         <button type="button" className="btn" disabled={!name.trim()} onClick={add}><Plus size={18} aria-hidden="true" /> Dazu</button>
       </div>
       <Link to="/eltern/essen?tab=list" className="btn btn--small ft-card__more">Einkaufsliste öffnen (Eltern)</Link>
+    </div>
+  );
+}
+
+/** Der nächste Entdeckersonntag: Datum klären, in den Kalender legen. */
+function ExplorerQuick({ today }: { today: string }) {
+  const sundays = useExplorerSundays();
+  const children = useChildren();
+  if (!sundays || !children) return null;
+  const next = nextSunday(today, sundays);
+  if (!next) return null;
+  return (
+    <div className="stack ft-explorer">
+      <p className="ft-card__lead">
+        <strong>Nächster Entdeckersonntag:</strong> {formatWeekday(next.date)}, {formatDayMonth(next.date)} ·{' '}
+        <span aria-hidden="true">{next.kind === 'home' ? '🔭' : '🏛️'}</span> {next.kind === 'home' ? next.module.title : `Ausflug: ${next.module.trip.place}`}
+      </p>
+      <SundayControl m={next.module} kind={next.kind} sundays={sundays} children={children} today={today} />
+      <Link to={`/entdecken/sonntage/${next.module.id}`} className="btn btn--small ft-card__more">Zum Entdeckersonntag</Link>
     </div>
   );
 }

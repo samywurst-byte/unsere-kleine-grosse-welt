@@ -100,7 +100,7 @@ function KidsTasks({ project: p, kids, today }: { project: FamilyProject; kids: 
   const idea = PROJECT_IDEA_BY_ID.get(p.ideaId);
   const change = (fn: (x: FamilyProject) => FamilyProject) => void updateProject(db, p.id, fn);
   const toggle = (id: string) => change((x) => ({
-    ...x, tasks: x.tasks.map((t) => (t.id === id ? (t.done ? { ...t, done: false, doneAt: undefined } : { ...t, done: true, doneAt: new Date().toISOString() }) : t)),
+    ...x, tasks: x.tasks.map((t) => (t.id === id ? (t.done ? { ...t, done: false, doneAt: undefined } : { ...t, done: true, doneAt: new Date().toISOString(), requestedAt: undefined }) : t)),
   }));
   const add = (childId: string) => {
     const label = adding[childId]?.trim();
@@ -141,7 +141,7 @@ function KidsTasks({ project: p, kids, today }: { project: FamilyProject; kids: 
                 {tasks.map((t) => (
                   <button key={t.id} type="button" className={`pj-task ${t.done ? 'is-done' : ''}`} aria-pressed={t.done} onClick={() => toggle(t.id)}>
                     <span className="pj-task__box" aria-hidden="true">{t.done && <Check size={20} strokeWidth={3} />}</span>
-                    <span>{t.label}</span>
+                    <span>{t.label}{t.requestedAt && !t.done && <span className="chip pj-task__asked">gemeldet</span>}</span>
                   </button>
                 ))}
               </div>

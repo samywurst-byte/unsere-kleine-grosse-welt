@@ -10,6 +10,7 @@ import type { ChildProfile, ExplorerEntry, ExplorerModule, ExplorerSunday } from
 import { formatLong } from '../../utils/dates';
 import { shrinkImage } from '../../utils/image';
 import '../family-time/familyTime.css';
+import './explorer.css';
 
 /** "2026-10" → "Oktober 2026" */
 export function monthLabel(id: string): string {

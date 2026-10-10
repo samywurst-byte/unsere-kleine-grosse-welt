@@ -102,3 +102,6 @@
 .dash__special { display: flex; align-items: center; gap: var(--space-3); background: var(--tone-soft); }
 .dash__special-emoji { font-size: 2.6rem; line-height: 1; }
 .dash__meal { display: flex; align-items: center; gap: var(--space-3); }
+.dash__explorer { display: block; color: inherit; text-decoration: none; background: linear-gradient(180deg, var(--tone-soft) 0, var(--card) 120px); }
+.dash__explorer .card__eyebrow { color: var(--tone-ink); }
+.dash__explorer-title { margin: 0; font-size: var(--fs-l); font-weight: 800; }

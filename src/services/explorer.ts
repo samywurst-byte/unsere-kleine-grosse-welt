@@ -2,6 +2,7 @@ import type { FamilyDatabase } from '../database/db';
 import { EXPLORER_MODULES } from '../data/explorerModules';
 import type { CalendarEvent, ChildProfile, DateKey, ExplorerEntry, ExplorerModule, ExplorerSunday, FamilyMemory, Id, JarQuestion } from '../types';
 import { newId } from '../utils/id';
+import { daysBetween } from '../utils/dates';
 
 /** Entdeckersonntage: ein Themenmonat, zwei Sonntage. Nichts wird abgefragt, nichts bewertet. */
 
@@ -28,6 +29,18 @@ export function currentModule(today: DateKey, modules: ExplorerModule[] = EXPLOR
 export function nextSunday(today: DateKey, sundays: ExplorerSunday[], modules: ExplorerModule[] = EXPLORER_MODULES): { module: ExplorerModule; kind: SundayKind; date: DateKey } | undefined {
   const all = modules.flatMap((m) => (['home', 'trip'] as SundayKind[]).map((kind) => ({ module: m, kind, date: sundayDate(m, kind, sundays) })));
   return all.filter((x) => x.date >= today && sundayStatus(x.module, x.kind, sundays) === 'open').sort((a, b) => a.date.localeCompare(b.date))[0];
+}
+
+/**
+ * Ankündigung für Startseite und Kinder: ab Donnerstag vor dem nächsten offenen Entdeckersonntag
+ * bis zum Sonntag selbst (höchstens drei Tage vorher).
+ */
+export function explorerTeaser(today: DateKey, sundays: ExplorerSunday[], modules: ExplorerModule[] = EXPLORER_MODULES):
+  { module: ExplorerModule; kind: SundayKind; date: DateKey; daysLeft: number } | undefined {
+  const next = nextSunday(today, sundays, modules);
+  if (!next) return undefined;
+  const daysLeft = daysBetween(today, next.date);
+  return daysLeft <= 3 ? { ...next, daysLeft } : undefined;
 }
 
 export function yearsOf(modules: ExplorerModule[] = EXPLORER_MODULES): { year: string; title: string; modules: ExplorerModule[] }[] {

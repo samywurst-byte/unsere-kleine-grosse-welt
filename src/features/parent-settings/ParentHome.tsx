@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useDeviceMeta, useMissionCompletions, useMoneyRequests } from '../../hooks/useData';
+import { useDeviceMeta, useMissionCompletions, useMoneyRequests, useProjects } from '../../hooks/useData';
 import { backupIsDue } from '../../services/backup';
+import { pendingProjectTasks } from '../../services/projects';
 
 const TILES = [
   { to: '/eltern/familie', title: 'Familie', text: 'Namen, Geburtstage, Avatare, Farben, Altersstufen' },
@@ -9,7 +10,7 @@ const TILES = [
   { to: '/eltern/lernpaket', title: 'Lernpaket der Woche', text: 'Ein Thema für alle, A4-Arbeitsblätter je Kind zum Drucken' },
   { to: '/eltern/essen', title: 'Essen und Einkauf', text: 'Wochenplan mit Kinderwünschen, eure Gerichte, Einkaufsliste fürs Handy' },
   { to: '/eltern/geld', title: 'Geldwelt und Reisekasse', text: 'Geld eintragen und verteilen, Wünsche der Kinder, Sparziele, Reiseziele, Kassenabgleich' },
-  { to: '/eltern/missionen', title: 'Zusatzmissionen und Sterne', text: 'Missionen bestätigen und pflegen, Familienglas, Grenzen' },
+  { to: '/eltern/missionen', title: 'Zusatzmissionen und Sterne', text: 'Missionen und Projektaufgaben bestätigen, Missionen pflegen, Familienglas, Grenzen' },
   { to: '/eltern/sondertag', title: 'Heute ist alles anders', text: 'Krank, Urlaub, Besuch: Aufgaben für einzelne Kinder ausblenden' },
   { to: '/eltern/kalender', title: 'Kalender', text: 'Termine, Serien, Ausnahmen, Ferien, Packlisten' },
   { to: '/eltern/routinen', title: 'Routinen', text: 'Morgen, Nachmittag, Abend: Aufgaben und Zuordnung' },
@@ -20,14 +21,11 @@ const TILES = [
   { to: '/eltern/pin', title: 'PIN', text: 'Eltern-PIN ändern, Notfallcode für eine vergessene PIN' },
 ];
 
-const LATER = [
-  { title: 'Familienarchiv', text: 'Jahresrückblick aus Erinnerungen und Lernstand' },
-];
-
 export function ParentHome() {
   const meta = useDeviceMeta();
   const completions = useMissionCompletions();
-  const waiting = completions?.filter((c) => c.status === 'pending').length ?? 0;
+  const projects = useProjects();
+  const waiting = (completions?.filter((c) => c.status === 'pending').length ?? 0) + (projects ? pendingProjectTasks(projects).length : 0);
   const wishes = useMoneyRequests()?.filter((r) => r.status === 'open').length ?? 0;
   return (
     <div className="parent-section">
@@ -47,12 +45,6 @@ export function ParentHome() {
       </div>
       <h2 className="card__eyebrow" style={{ marginTop: 'var(--space-4)' }}>Folgt in den nächsten Ausbaustufen</h2>
       <div className="parent-tiles">
-        {LATER.map((t) => (
-          <div key={t.title} className="card card--sunk parent-tile parent-tile--later">
-            <span className="parent-tile__title">{t.title}</span>
-            <span className="small muted">{t.text}</span>
-          </div>
-        ))}
       </div>
       <p className="notice">
         Alle Daten liegen nur auf diesem iPad im Browser-Speicher. Löschen von Website-Daten, das Entfernen der App vom Home-Bildschirm

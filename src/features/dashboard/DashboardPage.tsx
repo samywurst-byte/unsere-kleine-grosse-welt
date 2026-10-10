@@ -14,6 +14,7 @@ import { BirthdayNote } from './BirthdayNote';
 import { CurrentRoutine } from './CurrentRoutine';
 import { WorldTeaser } from './WorldTeaser';
 import { FamilyTimeNote } from './FamilyTimeNote';
+import { ExplorerNote } from './ExplorerNote';
 import { SpecialDayNote } from './SpecialDayNote';
 import { MealToday } from './MealToday';
 import './dashboard.css';
@@ -70,6 +71,7 @@ export function DashboardPage() {
           </>
         )}
         <FamilyTimeNote now={now} today={today} />
+        <ExplorerNote today={today} />
         <ChildrenOverview date={today} focusPhase={info.routinePhase} />
         <div className="dash__row">
           <QuickTimers />

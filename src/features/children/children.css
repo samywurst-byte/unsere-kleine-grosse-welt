@@ -50,3 +50,11 @@
 .mission--pending { border-style: solid; background: var(--c-gold-soft); }
 .mission--confirmed { border-style: solid; border-color: var(--c-sage); background: var(--c-sage-soft); cursor: default; }
 .mission--confirmed .mission__state { color: var(--c-sage-ink); }
+.board__project { margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); }
+.board__project-count { font-weight: 600; color: var(--ink-soft); }
+.project-task { border-color: var(--c-sage); min-height: 120px; }
+.project-task .mission__title { font-size: var(--fs-m); }
+.project-task.mission--open .mission__state { color: var(--c-sage-ink); }
+.board__explorer { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-m);
+  background: var(--c-sky-soft); color: var(--c-sky-ink); text-decoration: none; font-size: var(--fs-m); }
+.board__explorer-emoji { font-size: 2.4rem; }
