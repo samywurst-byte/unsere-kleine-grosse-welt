@@ -179,6 +179,20 @@ export async function addMemory(db: FamilyDatabase, memory: Omit<FamilyMemory, '
   return m;
 }
 
+/** Alle Fotos einer Erinnerung, auch aus älteren Einträgen mit nur einem Foto. */
+export function memoryPhotos(m: Pick<FamilyMemory, 'photo' | 'photos'>): string[] {
+  return m.photos ?? (m.photo ? [m.photo] : []);
+}
+
+export const MAX_MEMORY_PHOTOS = 20;
+
+export async function setMemoryPhotos(db: FamilyDatabase, id: string, photos: string[]): Promise<void> {
+  await db.familyMemories.where('id').equals(id).modify((m) => {
+    m.photos = photos.slice(0, MAX_MEMORY_PHOTOS);
+    delete m.photo;
+  });
+}
+
 export async function deleteMemory(db: FamilyDatabase, id: string): Promise<void> {
   await db.familyMemories.delete(id);
 }

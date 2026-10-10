@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ADVENTURE_IDEA_BY_ID } from '../src/data/familyTime';
 import { exportData, validateBackup } from '../src/services/backup';
 import {
-  addDecision, addMemory, adventureView, councilAgenda, councilDate, decisionToEvent, draftAdventure, prepOpen, recordMamaTime,
+  addDecision, addMemory, adventureView, deleteMemory, memoryPhotos, setMemoryPhotos, councilAgenda, councilDate, decisionToEvent, draftAdventure, prepOpen, recordMamaTime,
   saveAdventure, saveCouncilAgenda, setAdventureStatus, suggestIdeas, updateCouncil, weekendOf,
 } from '../src/services/familyTime';
 import type { WeekendAdventure } from '../src/types';
@@ -82,13 +82,22 @@ describe('Mama-Zeit, Familienrat und Erinnerungen', () => {
     await saveAdventure(db, draftAdventure('2026-10-09', ADVENTURE_IDEA_BY_ID.get('forest')!));
     await recordMamaTime(db, 'child-1', '2026-10-10', 'read');
     await updateCouncil(db, '2026-10-11', (n) => ({ ...n, doneItems: [0] }));
+    const second = await addMemory(db, { date: '2026-10-10', title: 'Kastanien', photos: ['data:image/jpeg;base64,AAAA', 'data:image/jpeg;base64,BBBB'], memberIds: [] });
+    expect(memoryPhotos((await db.familyMemories.get(second.id))!)).toHaveLength(2);
+    const old = (await db.familyMemories.toArray()).find((m) => m.title === 'Laternenrunde')!;
+    expect(memoryPhotos(old)).toEqual(['data:image/jpeg;base64,AAAA']);
+    await setMemoryPhotos(db, old.id, [...memoryPhotos(old), 'data:image/jpeg;base64,CCCC']);
+    const updated = (await db.familyMemories.get(old.id))!;
+    expect(updated.photo).toBeUndefined();
+    expect(memoryPhotos(updated)).toHaveLength(2);
+    await deleteMemory(db, second.id);
     const backup = await exportData(db);
     expect(backup.tables.familyMemories).toHaveLength(1);
     expect(backup.tables.familyMemories[0].text).toBeUndefined();
     expect(backup.tables.weekendAdventures).toHaveLength(1);
     expect(validateBackup(JSON.parse(JSON.stringify(backup))).ok).toBe(true);
     const broken = JSON.parse(JSON.stringify(backup));
-    broken.tables.familyMemories[0].photo = 'javascript:alert(1)';
+    broken.tables.familyMemories[0].photos = ['javascript:alert(1)'];
     expect(validateBackup(broken).ok).toBe(false);
   });
 });

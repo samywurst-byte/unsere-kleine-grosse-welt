@@ -8,7 +8,7 @@ import { MAMA_ACTIVITIES, MAMA_ACTIVITY_BY_ID, type MamaActivity } from '../../d
 import { db } from '../../database/db';
 import { useChildren, useCouncilNote, useFamilyMemories, useFamilyTimeSessions, useSettings, useTimerPresets, useWeekendAdventures } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
-import { councilAgenda, councilDate, recordMamaTime, removeMamaTime, weekendOf } from '../../services/familyTime';
+import { councilAgenda, councilDate, memoryPhotos, recordMamaTime, removeMamaTime, weekendOf } from '../../services/familyTime';
 import type { ChildProfile } from '../../types';
 import { formatDayMonth, toDateKey, weekdayOf } from '../../utils/dates';
 import { VisualTimer } from '../timers/VisualTimer';
@@ -155,7 +155,7 @@ function MemoriesCard() {
         <div className="ft-mem-strip">
           {latest.map((m) => (
             <figure key={m.id} className="ft-mem-mini">
-              {m.photo ? <img src={m.photo} alt="" /> : <span className="ft-mem-mini__blank" aria-hidden="true">✨</span>}
+              {memoryPhotos(m)[0] ? <img src={memoryPhotos(m)[0]} alt="" /> : <span className="ft-mem-mini__blank" aria-hidden="true">✨</span>}
               <figcaption>{m.title}</figcaption>
             </figure>
           ))}

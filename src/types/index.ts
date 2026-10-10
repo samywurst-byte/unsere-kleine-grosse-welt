@@ -374,6 +374,8 @@ export interface FamilyMemory {
   date: DateKey;
   title: string;
   text?: string;
+  photos?: string[];
+  /** Ältere Erinnerungen (Version 0.7.0) hatten nur ein Foto. */
   photo?: string;
   memberIds: Id[];
   source?: { kind: 'adventure' | 'council' | 'mama-time'; id: Id };

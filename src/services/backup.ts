@@ -38,6 +38,7 @@ export type ValidationResult = { ok: true; data: BackupFile } | { ok: false; err
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isStr = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+const isImageData = (v: unknown) => typeof v === 'string' && v.startsWith('data:image/');
 
 type RowCheck = (row: Record<string, unknown>) => string | null;
 
@@ -68,7 +69,8 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   weekendAdventures: (r) => (!isValidDateKey(r.weekend) || !isStr(r.title) || !Array.isArray(r.packing)
     || !['planned', 'done', 'postponed', 'cancelled'].includes(String(r.status)) ? 'Wochenendabenteuer ungültig' : null),
   familyMemories: (r) => (!isValidDateKey(r.date) || !isStr(r.title) || !Array.isArray(r.memberIds)
-    || (r.photo !== undefined && !(typeof r.photo === 'string' && r.photo.startsWith('data:image/'))) ? 'Erinnerung ungültig' : null),
+    || (r.photo !== undefined && !isImageData(r.photo))
+    || (r.photos !== undefined && !(Array.isArray(r.photos) && r.photos.every(isImageData))) ? 'Erinnerung ungültig' : null),
   familyTimeSessions: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || !isStr(r.activity) ? 'Mama-Zeit ungültig' : null),
   familyCouncilNotes: (r) => (!isValidDateKey(r.date) ? 'Familienrat ungültig' : null),
   settings: (r) => (r.id !== 'app' || !isValidTime(r.bedtime) || !isValidTime(r.kindergartenDeparture) ? 'Einstellungen ungültig' : null),
