@@ -100,6 +100,7 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   explorerEntries: (r) => (!isStr(r.moduleId) || !isValidDateKey(r.date) || !Array.isArray(r.sentences)
     || !(Array.isArray(r.photos) && r.photos.every(isImageData)) ? 'Entdeckerbuch-Seite ungültig' : null),
   jarQuestions: (r) => (!isStr(r.question) ? 'Frageglas-Zettel ungültig' : null),
+  chessProgress: (r) => (!isStr(r.childId) || !isStr(r.lessonId) || typeof r.runs !== 'number' || typeof r.secure !== 'boolean' ? 'Schachfortschritt ungültig' : null),
   discoveries: (r) => (!isStr(r.topicId) || !isStr(r.missionId) || !isValidDateKey(r.date) ? 'Forscherauftrag ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),

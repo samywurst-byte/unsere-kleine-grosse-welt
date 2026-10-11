@@ -13,6 +13,7 @@ export function ExploreTabs() {
       <NavLink to="/entdecken" end className={({ isActive }) => cls(isActive)}>📚 Bibliothek</NavLink>
       <NavLink to="/entdecken/sonntage" className={() => cls(sundays)}>🗓️ Entdeckersonntage</NavLink>
       <NavLink to="/projekte" className={({ isActive }) => cls(isActive)}>🛠️ Projektwerkstatt</NavLink>
+      <NavLink to="/entdecken/schach" className={({ isActive }) => cls(isActive)}>♟️ Schach</NavLink>
     </nav>
   );
 }

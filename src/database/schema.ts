@@ -103,4 +103,9 @@ export const SCHEMA_V13 = {
   jarQuestions: 'id, createdAt',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 13;
+/** Version 14: Schachakademie (Fortschritt je Kind und Lektion). */
+export const SCHEMA_V14 = {
+  chessProgress: 'id, childId, lessonId',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 14;

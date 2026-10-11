@@ -235,3 +235,7 @@ export function useArchiveSource(): ArchiveSource | undefined {
     return { members, memories, projects, explorerEntries, adventures, rituals, councilNotes, countries, unlocks, stamps, observations, savingsGoals, questions, discoveries, sessions };
   }, []);
 }
+
+export function useChessProgress() {
+  return useLiveQuery(() => db.chessProgress.toArray(), []);
+}

@@ -898,3 +898,24 @@ export interface JarQuestion {
   createdAt: string;
   answeredAt?: DateKey;
 }
+
+// ---------------------------------------------------------------- Schachakademie
+
+/** Fortschritt eines Kindes in einer Lektion. */
+export interface ChessProgress {
+  /** `${childId}|${lessonId}` */
+  id: string;
+  childId: string;
+  lessonId: string;
+  runs: number;
+  lastMistakes?: number;
+  firstCompletedAt?: string;
+  completedAt?: string;
+  /** Mindestens eine Runde mit wenigen Fehlern. */
+  secure: boolean;
+  /** Von Mama oder Papa vorzeitig freigegeben. */
+  released?: boolean;
+  /** Übungen, die am echten Brett gelöst wurden. */
+  realBoard?: number;
+  updatedAt: string;
+}
