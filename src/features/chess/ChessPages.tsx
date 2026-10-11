@@ -8,6 +8,7 @@ import { useNow } from '../../hooks/useNow';
 import { lessonStatuses, type LessonStatus } from '../../services/chessAcademy';
 import type { ChessProgress, ChildProfile } from '../../types';
 import { toDateKey, weekStartKey } from '../../utils/dates';
+import { PauseGate, useCheckpoint, usePlayClock } from '../hero/playTime';
 import { ExploreTabs } from '../library/ExploreTabs';
 import { PieceIcon } from './ChessBoard';
 import { MamaModal } from './chessParts';
@@ -82,6 +83,8 @@ export function ChessMapPage() {
   const { childId } = useParams();
   const children = useChildren();
   const state = useLessonStatuses(childId);
+  const { over } = usePlayClock(childId);
+  const gate = useCheckpoint(over, 'map', true);
   if (!children || !state) return null;
   const child = children.find((c) => c.id === childId);
   if (!child) return <p className="card">Dieses Kind gibt es nicht.</p>;
@@ -135,6 +138,7 @@ export function ChessMapPage() {
           ) : <p className="muted">Nach jedem Abenteuer bekommst du ein Abzeichen.</p>}
         </section>
       </div>
+      {gate && <PauseGate childId={child.id} name={child.name} />}
     </div>
   );
 }

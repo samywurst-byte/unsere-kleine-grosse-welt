@@ -108,4 +108,11 @@ export const SCHEMA_V14 = {
   chessProgress: 'id, childId, lessonId',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 14;
+/** Version 15: Heldenwelt (Profil und Missionsstand je Kind) und sanfte Spielzeitgrenze. */
+export const SCHEMA_V15 = {
+  heroProfiles: 'childId',
+  heroMissions: 'id, childId, missionId',
+  playTimes: 'id, childId, date',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 15;

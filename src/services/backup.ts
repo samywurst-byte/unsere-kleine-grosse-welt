@@ -35,7 +35,7 @@ export async function exportData(db: FamilyDatabase): Promise<BackupFile> {
 }
 
 /** Primärschlüssel je Tabelle, damit auch Tabellen ohne eigene Prüfung keine leeren Datensätze annehmen. */
-const PRIMARY_KEY: Record<string, string> = { specialDays: 'date', countryUnlocks: 'countryId', simDepots: 'childId' };
+const PRIMARY_KEY: Record<string, string> = { specialDays: 'date', countryUnlocks: 'countryId', simDepots: 'childId', heroProfiles: 'childId' };
 
 export type ValidationResult = { ok: true; data: BackupFile } | { ok: false; errors: string[] };
 
@@ -101,6 +101,9 @@ const ROW_CHECKS: Record<string, RowCheck> = {
     || !(Array.isArray(r.photos) && r.photos.every(isImageData)) ? 'Entdeckerbuch-Seite ungültig' : null),
   jarQuestions: (r) => (!isStr(r.question) ? 'Frageglas-Zettel ungültig' : null),
   chessProgress: (r) => (!isStr(r.childId) || !isStr(r.lessonId) || typeof r.runs !== 'number' || typeof r.secure !== 'boolean' ? 'Schachfortschritt ungültig' : null),
+  heroProfiles: (r) => (!isStr(r.childId) || !['early', 'normal', 'late'].includes(String(r.helpLevel)) || typeof r.placeVisits !== 'object' ? 'Heldenwelt-Profil ungültig' : null),
+  heroMissions: (r) => (!isStr(r.childId) || !isStr(r.missionId) || typeof r.runs !== 'number' || !Array.isArray(r.solutions) ? 'Heldenwelt-Mission ungültig' : null),
+  playTimes: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || typeof r.ms !== 'number' || typeof r.extraMs !== 'number' ? 'Spielzeit ungültig' : null),
   discoveries: (r) => (!isStr(r.topicId) || !isStr(r.missionId) || !isValidDateKey(r.date) ? 'Forscherauftrag ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),

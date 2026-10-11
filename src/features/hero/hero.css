@@ -1,0 +1,230 @@
+/* Heldenwelt – Die Hüter des Wunderwaldes */
+
+.hero-say { margin: 0; font-size: var(--fs-l); line-height: 1.4; }
+.momo--bob { animation: momo-bob 3s ease-in-out infinite; }
+@keyframes momo-bob { 50% { transform: translateY(-5px); } }
+.momo-says { display: flex; align-items: center; gap: var(--space-3); }
+.momo-says > svg { flex: none; }
+.momo-says__bubble { position: relative; background: var(--c-sage-soft); color: var(--ink); border-radius: var(--radius-l); padding: var(--space-3) var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; min-width: 0; }
+.momo-says__bubble::before { content: ''; position: absolute; left: -10px; top: 50%; margin-top: -10px; border: 10px solid transparent; border-left: 0; border-right-color: var(--c-sage-soft); }
+
+.hero-home { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); background: linear-gradient(180deg, var(--c-sage-soft) 0, var(--card) 200px); }
+.hero-home .momo-says__bubble { background: var(--card); }
+.hero-home .momo-says__bubble::before { border-right-color: var(--card); }
+
+/* Weltkarte */
+.hero-map { position: relative; aspect-ratio: 16 / 8; width: 100%; border-radius: var(--radius-l); overflow: hidden; box-shadow: var(--shadow-m);
+  background: radial-gradient(circle at 20% 75%, #cfe9b7 0, transparent 30%), radial-gradient(circle at 50% 25%, #9fcf8a 0, transparent 30%),
+    radial-gradient(circle at 85% 20%, #d8c7a8 0, transparent 22%), linear-gradient(180deg, #b9e0a5 0%, #9ed08e 100%); }
+.hero-map__paths { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-map__paths path { fill: none; stroke: #f4e3b5; stroke-width: 10px; stroke-dasharray: 18 12; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.hero-map__paths .hero-map__river { stroke: #6fb6e6; stroke-width: 26px; stroke-dasharray: none; opacity: .85; }
+.hero-place { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(255, 255, 255, .85); border: none; border-radius: var(--radius-l); padding: 8px 14px; box-shadow: var(--shadow-s); cursor: pointer; color: var(--ink); min-width: 120px; }
+.hero-place__emoji { font-size: clamp(36px, 6vmin, 64px); line-height: 1.1; }
+.hero-place__name { font-weight: 800; font-size: var(--fs-m); }
+.hero-place__marks { font-size: var(--fs-s); }
+.hero-place.is-soon { opacity: .72; }
+.hero-place.is-hot { outline: 4px solid var(--c-gold); animation: hero-glow 2s ease-in-out infinite; }
+@keyframes hero-glow { 50% { box-shadow: 0 0 0 10px rgba(242, 201, 76, .35); } }
+.hero-map__hero { position: absolute; left: 32%; top: 66%; transform: translate(-50%, -50%); pointer-events: none; }
+.hero-map__momo { position: absolute; left: 9%; top: 52%; pointer-events: none; }
+.hero-next .momo-says__bubble { background: var(--c-gold-soft); }
+.hero-next .momo-says__bubble::before { border-right-color: var(--c-gold-soft); }
+
+.hero-gate { position: fixed; inset: 0; z-index: 60; background: rgba(30, 40, 30, .45); display: flex; align-items: center; justify-content: center; padding: var(--space-4); }
+.hero-gate__card { max-width: 640px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; max-height: 100%; overflow: auto; }
+.hero-gate__actions { justify-content: center; }
+.hero-gate__pin { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.hero-place-panel { text-align: left; align-items: stretch; }
+.hero-place-panel__title { margin: 0; font-size: var(--fs-xl); }
+.hero-place-panel__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.hero-mission-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-m); background: var(--card-sunk); flex-wrap: wrap; }
+.hero-mission-row__emoji { font-size: 2.4rem; width: 56px; text-align: center; display: flex; justify-content: center; }
+.hero-mission-row__main { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+.hero-mission-row__title { font-weight: 800; font-size: var(--fs-l); }
+.hero-mission-row--locked, .hero-mission-row--waiting { opacity: .65; }
+.hero-state--done { background: var(--c-sage-soft); color: var(--c-sage-ink); }
+.hero-state--progress { background: var(--c-gold-soft); color: var(--c-gold-ink); }
+.hero-state--open { background: var(--c-sky-soft); color: var(--c-sky-ink); }
+
+/* Mission */
+.hero-mission__head { flex-wrap: wrap; }
+.hero-mission__emoji { font-size: 2.2rem; }
+.hero-dots { display: flex; gap: 8px; }
+.hero-dots__dot { width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
+.hero-dots__dot.is-done { background: var(--c-sage); }
+.hero-dots__dot.is-now { background: var(--c-gold); }
+.hero-activity { display: flex; flex-direction: column; gap: var(--space-4); align-items: stretch; }
+.hero-activity > .btn { align-self: center; }
+.hero-scene-step { align-items: center; }
+.hero-scene { font-size: clamp(60px, 12vmin, 120px); margin: 0; letter-spacing: .1em; line-height: 1.1; }
+.hero-help-btn { background: var(--c-gold-soft); font-weight: 800; }
+.hero-pause { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; }
+
+.hero-choices, .hero-help-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
+.hero-choice { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-1); min-width: 150px; padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-l); border: 3px solid transparent; background: var(--card-sunk); cursor: pointer; color: var(--ink); }
+.hero-choice__emoji { font-size: clamp(48px, 8vmin, 80px); line-height: 1.1; }
+.hero-choice__name { font-weight: 800; font-size: var(--fs-m); }
+.hero-choice.is-on { border-color: var(--c-gold); background: var(--c-gold-soft); }
+.hero-choice.is-done { background: var(--c-sage-soft); }
+.hero-choice.is-tried { opacity: .55; }
+.hero-choice__check { position: absolute; top: 8px; right: 8px; background: var(--c-sage); color: #fff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+.is-hint { animation: hero-hint 1.2s ease-in-out infinite; }
+@keyframes hero-hint { 50% { box-shadow: 0 0 0 8px rgba(242, 201, 76, .7); transform: scale(1.06); } }
+
+/* Mission 1: Wege */
+.hero-meadow, .hero-cave, .hero-river { position: relative; height: clamp(240px, 42vh, 380px); border-radius: var(--radius-l); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.hero-meadow { background: linear-gradient(180deg, #d7efff 0, #d7efff 40%, #a8d88e 40%, #8cc874 100%); display: flex; align-items: center; justify-content: center; }
+.hero-pet { font-size: clamp(110px, 22vmin, 190px); transition: transform .3s; pointer-events: none; }
+.hero-pet.is-happy { transform: scale(1.1) rotate(-6deg); }
+.hero-heart { position: absolute; font-size: 32px; pointer-events: none; animation: hero-float 1.4s ease-out forwards; }
+@keyframes hero-float { to { transform: translateY(-80px); opacity: 0; } }
+.hero-big-cheer { position: absolute; top: 12%; font-size: 64px; animation: chess-pop .6s ease-out; }
+.hero-meter { position: absolute; left: 10%; right: 10%; bottom: 14px; height: 14px; border-radius: 7px; background: rgba(255, 255, 255, .6); overflow: hidden; }
+.hero-meter span { display: block; height: 100%; background: var(--c-sage); transition: width .2s; }
+.hero-hand { position: absolute; font-size: 54px; pointer-events: none; }
+.hero-hand--stroke { animation: hero-stroke 1.8s ease-in-out infinite; top: 50%; }
+@keyframes hero-stroke { 0% { left: 35%; } 50% { left: 58%; } 100% { left: 35%; } }
+.hero-hand--circle { left: 50%; top: 50%; animation: hero-circle 2s linear infinite; }
+@keyframes hero-circle { from { transform: rotate(0deg) translateX(90px) rotate(0deg); } to { transform: rotate(360deg) translateX(90px) rotate(-360deg); } }
+.hero-cave { background: radial-gradient(circle at 50% 60%, #6f6255 0, #3e352d 70%); display: flex; align-items: center; justify-content: center; }
+.hero-gear-wrap { position: relative; width: min(70%, 300px); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.hero-gear { font-size: clamp(150px, 26vmin, 240px); line-height: 1; pointer-events: none; }
+.hero-lamp { position: absolute; top: 14px; right: 18%; font-size: 64px; filter: grayscale(1) brightness(.6); transition: filter .6s; }
+.hero-lamp.is-on { filter: drop-shadow(0 0 24px #ffe066); }
+.hero-river { background: linear-gradient(90deg, #8cc874 0, #8cc874 10%, #6fb6e6 10%, #4f9fd6 50%, #6fb6e6 90%, #8cc874 90%); }
+.hero-stone { position: absolute; top: 56%; transform: translate(-50%, -50%); font-size: clamp(54px, 9vmin, 80px); background: none; border: none; border-radius: 50%; cursor: pointer; padding: 4px; }
+.hero-stone.is-wiggle { animation: hero-wiggle .5s; }
+@keyframes hero-wiggle { 25% { transform: translate(-50%, -50%) rotate(-12deg); } 75% { transform: translate(-50%, -50%) rotate(12deg); } }
+.hero-stone.is-hint { animation: hero-hint-stone 1.2s ease-in-out infinite; }
+@keyframes hero-hint-stone { 50% { transform: translate(-50%, -50%) scale(1.18); filter: drop-shadow(0 0 12px #f2c94c); } }
+.hero-river__momo { position: absolute; top: 18%; transform: translateX(-50%); transition: left .5s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none; }
+
+/* Heldenfigur */
+.hero-symbol-row { display: flex; align-items: center; justify-content: center; gap: var(--space-5); flex-wrap: wrap; }
+.hero-figure { transition: filter .4s; }
+.hero-figure--shadow { filter: brightness(0) opacity(.25); }
+.hero-figure--in { animation: hero-appear .9s ease-out; }
+@keyframes hero-appear { 0% { transform: scale(.3) rotate(-10deg); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+.hero-symbols { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.hero-symbol { width: 88px; height: 88px; font-size: 48px; border-radius: 50%; border: 4px solid transparent; background: var(--card-sunk); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.hero-symbol--small { width: 60px; height: 60px; font-size: 32px; }
+.hero-symbol.is-on { border-color: var(--c-gold); background: var(--c-gold-soft); transform: scale(1.06); }
+.hero-design { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: var(--space-5); align-items: center; }
+.hero-design__preview { display: flex; justify-content: center; }
+.hero-design__options { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.hero-option { display: flex; flex-direction: column; gap: 6px; }
+.hero-option__label { align-self: flex-start; background: none; border: none; font-weight: 800; font-size: var(--fs-m); padding: 0; cursor: pointer; color: var(--ink); }
+.hero-option__items { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.hero-swatch { width: 56px; height: 56px; border-radius: 50%; border: 4px solid var(--card); box-shadow: 0 0 0 2px var(--line); cursor: pointer; font-size: 22px; color: var(--ink-soft); }
+.hero-swatch--none { background: var(--card-sunk); }
+.hero-swatch.is-on { box-shadow: 0 0 0 4px var(--c-gold); transform: scale(1.08); }
+.hero-pill { padding: 10px 18px; border-radius: 99px; border: 3px solid transparent; background: var(--card-sunk); font-weight: 700; font-size: var(--fs-m); cursor: pointer; color: var(--ink); min-height: 52px; }
+.hero-pill.is-on { border-color: var(--c-gold); background: var(--c-gold-soft); }
+
+/* Fino retten */
+.hero-bridge, .hero-raft, .hero-animals, .hero-ninja { display: flex; flex-direction: column; gap: var(--space-3); }
+.hero-bridge__scene, .hero-raft__scene { position: relative; aspect-ratio: 2.3 / 1; border-radius: var(--radius-l); overflow: hidden; background: linear-gradient(180deg, #d7efff 0, #d7efff 50%, transparent 50%);
+  touch-action: none; user-select: none; -webkit-user-select: none; }
+.hero-bridge__scene.is-placing { outline: 4px dashed var(--c-gold); cursor: crosshair; }
+.hero-bridge__water { position: absolute; left: 18%; right: 18%; top: 50%; bottom: 0; background: repeating-linear-gradient(170deg, #5fa9de 0 18px, #6fb6e6 18px 36px); }
+.hero-bridge__island, .hero-bridge__bank { position: absolute; top: 40%; bottom: 0; width: 18%; background: linear-gradient(180deg, #8cc874 0, #8cc874 14%, #b78b5a 14%, #9c7146 100%); }
+.hero-bridge__island { left: 0; border-radius: 0 40px 0 0; }
+.hero-bridge__bank { right: 0; border-radius: 40px 0 0 0; }
+.hero-bridge__island span, .hero-bridge__bank span { position: absolute; bottom: 92%; font-size: clamp(30px, 6vmin, 56px); }
+.hero-bridge__island span { left: 6%; }
+.hero-bridge__bank span { right: 12%; }
+.hero-slot { position: absolute; top: 78%; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; border: 3px dashed rgba(255, 255, 255, .8); pointer-events: none; }
+.hero-slot.is-hint { animation: hero-hint 1s ease-in-out infinite; background: rgba(242, 201, 76, .8); }
+.hero-pillar { position: absolute; top: 46%; bottom: 0; width: 22px; margin-left: -11px; background: linear-gradient(90deg, #6b4a2b, #8a6038, #6b4a2b); border: none; border-radius: 4px 4px 0 0; cursor: pointer; z-index: 1; }
+.hero-plank { position: absolute; top: 40%; height: 6%; min-height: 14px; background: repeating-linear-gradient(90deg, #c8955c 0 28px, #b98549 28px 30px); border: 2px solid #7a5230; border-radius: 6px;
+  cursor: pointer; z-index: 2; transform-origin: left center; padding: 0; }
+.hero-plank.is-wobble { animation: hero-wobble .5s ease-in-out 3; }
+@keyframes hero-wobble { 50% { transform: rotate(7deg); } }
+.hero-plank--ghost { background: rgba(242, 201, 76, .35); border: 3px dashed var(--c-gold); pointer-events: none; animation: hero-hint 1.2s ease-in-out infinite; }
+.hero-plank.is-hint-remove { border: 3px dashed #d9483b; animation: hero-wobble .8s ease-in-out infinite; }
+.hero-hole { position: absolute; top: 36%; height: 14%; border: 4px dashed #d9483b; border-radius: 8px; pointer-events: none; }
+.hero-fino { position: absolute; top: 22%; transform: translateX(-50%); font-size: clamp(40px, 8vmin, 70px); transition: left 1.6s ease-in-out; z-index: 3; pointer-events: none; }
+.hero-fino--oops { animation: hero-wiggle-x .5s 2; }
+@keyframes hero-wiggle-x { 25% { transform: translateX(-50%) rotate(-10deg); } 75% { transform: translateX(-50%) rotate(10deg); } }
+.hero-fino--happy { animation: hero-jump .6s ease-in-out 3; }
+@keyframes hero-jump { 50% { transform: translateX(-50%) translateY(-24px); } }
+.hero-parts { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: center; }
+.hero-part { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-m); background: var(--card-sunk);
+  border: 3px solid transparent; cursor: grab; touch-action: none; min-width: 110px; min-height: 84px; justify-content: center; color: var(--ink); }
+.hero-part.is-on { border-color: var(--c-gold); background: var(--c-gold-soft); }
+.hero-part__shape { display: block; height: 16px; background: repeating-linear-gradient(90deg, #c8955c 0 18px, #b98549 18px 20px); border: 2px solid #7a5230; border-radius: 5px; }
+.hero-part--plank2 .hero-part__shape { width: 70px; }
+.hero-part--plank3 .hero-part__shape { width: 105px; }
+.hero-part--giant .hero-part__shape { width: 150px; background: #f2c94c; }
+.hero-part--pillar .hero-part__shape { width: 18px; height: 48px; background: linear-gradient(90deg, #6b4a2b, #8a6038, #6b4a2b); border: none; }
+.hero-part__label { font-weight: 700; font-size: var(--fs-s); }
+.hero-test { margin-left: auto; }
+.hero-ghost { position: fixed; z-index: 80; transform: translate(-50%, -50%); pointer-events: none; opacity: .85; }
+.hero-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-m); background: var(--card-sunk); border: 3px solid transparent;
+  font-size: 44px; line-height: 1.1; cursor: pointer; min-width: 100px; touch-action: none; color: var(--ink); }
+.hero-raft__boat { position: absolute; left: 22%; top: 47%; display: flex; gap: 4px; padding: 4px 10px; background: rgba(139, 94, 52, .9); border-radius: 12px; font-size: clamp(26px, 5vmin, 44px);
+  transition: left 2.4s ease-in-out; z-index: 2; }
+.hero-raft__empty { width: 1.1em; height: 1.1em; border: 3px dashed rgba(255, 255, 255, .7); border-radius: 8px; }
+.hero-raft__boat.is-sailing { animation: hero-sail 5s ease-in-out forwards; }
+@keyframes hero-sail { 0% { left: 22%; } 45% { left: 10%; } 55% { left: 10%; } 100% { left: 70%; } }
+.hero-fino--ride { animation: hero-ride 5s ease-in-out forwards; }
+@keyframes hero-ride { 0%, 50% { left: 7%; top: 22%; } 60% { left: 14%; top: 32%; } 100% { left: 75%; top: 32%; } }
+.hero-fino--cross { animation: hero-cross 4.5s ease-in-out forwards; }
+@keyframes hero-cross { 0%, 45% { left: 7%; } 100% { left: 88%; } }
+.hero-sink { position: absolute; left: 45%; top: 55%; font-size: 48px; animation: hero-sink 1.4s ease-in forwards; }
+@keyframes hero-sink { to { transform: translateY(80px); opacity: 0; } }
+.hero-helper { position: absolute; top: 46%; font-size: clamp(44px, 9vmin, 80px); z-index: 2; }
+.hero-helper--swan { animation: hero-swan 5s ease-in-out forwards; }
+@keyframes hero-swan { 0% { left: 70%; } 45% { left: 14%; } 60% { left: 14%; } 100% { left: 75%; } }
+.hero-helper--beaver { left: 20%; top: 32%; }
+.hero-tree { position: absolute; left: 22%; top: 8%; font-size: clamp(60px, 12vmin, 110px); transform-origin: bottom left; animation: hero-fall 2s ease-in 1s forwards; z-index: 1; }
+@keyframes hero-fall { to { transform: rotate(90deg) translateY(-30%); } }
+
+/* Ninja-Pfad */
+.hero-ninja__path { position: relative; height: clamp(200px, 34vh, 300px); border-radius: var(--radius-l); overflow: hidden;
+  background: linear-gradient(180deg, #2f6b3c 0, #3f8a4d 30%, #7aa95c 30%, #c9b07a 56%, #c9b07a 70%, #7aa95c 70%); }
+.hero-ninja__path::before { content: '🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲'; position: absolute; top: 2%; left: 2%; right: 2%; font-size: 38px; letter-spacing: .3em; opacity: .9; white-space: nowrap; overflow: hidden; }
+.hero-ninja__flag { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 44px; }
+.hero-ninja__slot { position: absolute; top: 63%; transform: translate(-50%, -50%); width: clamp(90px, 15vw, 130px); height: clamp(90px, 15vw, 130px); border-radius: var(--radius-l);
+  border: 4px dashed rgba(255, 255, 255, .9); display: flex; align-items: center; justify-content: center; }
+.hero-ninja__slot.is-hint { animation: hero-hint 1.2s ease-in-out infinite; }
+.hero-ninja__num { font-size: 40px; font-weight: 900; color: rgba(255, 255, 255, .9); }
+.hero-obstacle { font-size: clamp(54px, 9vw, 80px); background: none; border: none; cursor: grab; touch-action: none; line-height: 1; padding: 0; }
+.hero-balu { position: absolute; top: 34%; transform: translate(-50%, -50%); font-size: clamp(50px, 9vmin, 80px); transition: left 1.2s ease-in-out; z-index: 3; pointer-events: none; }
+.hero-balu--log { animation: hero-balance 1.2s ease-in-out 1.2s 2; }
+@keyframes hero-balance { 25% { transform: translate(-50%, -50%) rotate(-14deg); } 75% { transform: translate(-50%, -50%) rotate(14deg); } }
+.hero-balu--tunnel { animation: hero-duck 1.6s ease-in-out 1.2s; }
+@keyframes hero-duck { 50% { transform: translate(-50%, -10%) scale(.6); opacity: .4; } }
+.hero-balu--stones { animation: hero-hop .5s ease-in-out 1.2s 3; }
+@keyframes hero-hop { 50% { transform: translate(-50%, -110%); } }
+.hero-ninja__actions { justify-content: center; }
+.hero-order { font-size: 52px; text-align: center; margin: 0; }
+.hero-real { background: var(--c-lavender-soft); border-radius: var(--radius-m); padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.hero-real p { margin: 0; }
+.hero-safety { background: var(--c-gold-soft); border-radius: var(--radius-s); padding: var(--space-2) var(--space-3); }
+
+/* Abschluss */
+.hero-reveal { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center;
+  background: radial-gradient(circle at 50% 30%, var(--c-gold-soft) 0, var(--card) 60%); }
+.hero-reveal__stage { position: relative; display: flex; align-items: flex-end; gap: var(--space-3); }
+.hero-reveal__friend { font-size: 90px; animation: hero-jump .7s ease-in-out 3; }
+.hero-badge { font-size: var(--fs-l); font-weight: 800; background: var(--c-gold-soft); padding: 8px 20px; border-radius: 99px; margin: 0; }
+
+/* Eltern */
+.hero-parent-head { display: flex; gap: var(--space-4); align-items: center; margin-bottom: var(--space-3); flex-wrap: wrap; }
+.hero-parent-mission__emoji { font-size: 2rem; }
+.hero-parent-mission__more { margin-top: var(--space-2); }
+
+@media (max-width: 900px) {
+  .hero-design { grid-template-columns: 1fr; }
+  .hero-map { aspect-ratio: 4 / 3.4; }
+  .hero-place { min-width: 0; padding: 6px 10px; }
+  .hero-place__name { font-size: var(--fs-s); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .momo--bob, .hero-place.is-hot, .is-hint, .hero-figure--in { animation: none; }
+}

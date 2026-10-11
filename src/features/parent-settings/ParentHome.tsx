@@ -9,6 +9,7 @@ const TILES = [
   { to: '/eltern/rechnen', title: 'Rechenpfad', text: 'Mengen, Plus und Minus, Einmaleins: Stufen und nächste Schritte je Kind' },
   { to: '/eltern/lernpaket', title: 'Lernpaket der Woche', text: 'Ein Thema für alle, A4-Arbeitsblätter je Kind zum Drucken' },
   { to: '/eltern/schach', title: 'Schachakademie', text: 'Was jedes Kind im Schach kann, nächste Lektion, Freigaben, Mama lernt mit' },
+  { to: '/eltern/heldenwelt', title: 'Heldenwelt', text: 'Missionen, Missionstage, Hilfe von Momo, echte Aufgaben, sanfte Spielzeitgrenze' },
   { to: '/eltern/essen', title: 'Essen und Einkauf', text: 'Wochenplan mit Kinderwünschen, eure Gerichte, Einkaufsliste fürs Handy' },
   { to: '/eltern/geld', title: 'Geldwelt und Reisekasse', text: 'Geld eintragen und verteilen, Wünsche der Kinder, Sparziele, Reiseziele, Kassenabgleich' },
   { to: '/eltern/missionen', title: 'Zusatzmissionen und Sterne', text: 'Missionen und Projektaufgaben bestätigen, Missionen pflegen, Familienglas, Grenzen' },

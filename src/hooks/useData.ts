@@ -239,3 +239,10 @@ export function useArchiveSource(): ArchiveSource | undefined {
 export function useChessProgress() {
   return useLiveQuery(() => db.chessProgress.toArray(), []);
 }
+
+export function useHeroData() {
+  return useLiveQuery(async () => {
+    const [profiles, missions] = await Promise.all([db.heroProfiles.toArray(), db.heroMissions.toArray()]);
+    return { profiles, missions };
+  }, []);
+}

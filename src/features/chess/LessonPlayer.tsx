@@ -9,6 +9,7 @@ import {
 } from '../../services/chessAcademy';
 import { speak } from '../../services/discover';
 import type { ChildProfile } from '../../types';
+import { PauseGate, useCheckpoint, usePlayClock } from '../hero/playTime';
 import { ChessBoard, PieceIcon, type BoardMarks } from './ChessBoard';
 import { MamaModal, RestartButton, SpeakButton } from './chessParts';
 
@@ -26,6 +27,8 @@ export function LessonPlayer({ child, lesson, mirrored }: { child: ChildProfile;
   const [realSolved, setRealSolved] = useState(0);
   const [mama, setMama] = useState(false);
   const saving = useRef(false);
+  const { over } = usePlayClock(child.id);
+  const gate = useCheckpoint(over, stage.kind === 'ex' ? `ex${stage.index}` : stage.kind, stage.kind === 'intro' || stage.kind === 'done');
 
   const nextAfter = async (index: number) => {
     if (index + 1 < exercises.length) { setStage({ kind: 'ex', index: index + 1 }); return; }
@@ -88,6 +91,7 @@ export function LessonPlayer({ child, lesson, mirrored }: { child: ChildProfile;
         </section>
       )}
       {mama && <MamaModal lessons={[lesson]} onClose={() => setMama(false)} />}
+      {gate && <PauseGate childId={child.id} name={child.name} />}
     </div>
   );
 }

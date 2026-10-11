@@ -9,6 +9,8 @@ import { ChildPickerPage } from '../features/children/ChildPickerPage';
 import { ArchivePage } from '../features/archive/ArchivePage';
 import { ChessHomePage, ChessLessonPage, ChessMapPage } from '../features/chess/ChessPages';
 import { ChessSettings } from '../features/chess/ChessSettings';
+import { HeroHomePage, HeroMapPage, HeroMissionPage } from '../features/hero/HeroPages';
+import { HeroSettings } from '../features/hero/HeroSettings';
 import { ChildBoardPage } from '../features/children/ChildBoardPage';
 import { WeekPage } from '../features/calendar/WeekPage';
 import { DayPage } from '../features/calendar/DayPage';
@@ -75,6 +77,9 @@ export function App() {
             <Route path="entdecken/schach" element={<ChessHomePage />} />
             <Route path="entdecken/schach/:childId" element={<ChessMapPage />} />
             <Route path="entdecken/schach/:childId/:lessonId" element={<ChessLessonPage />} />
+            <Route path="entdecken/helden" element={<HeroHomePage />} />
+            <Route path="entdecken/helden/:childId" element={<HeroMapPage />} />
+            <Route path="entdecken/helden/:childId/:missionId" element={<HeroMissionPage />} />
             <Route path="entdecken/:topicId" element={<TopicPage />} />
             <Route path="projekte" element={<ProjectsPage />} />
             <Route path="projekte/:projectId" element={<ProjectPage />} />
@@ -107,6 +112,7 @@ export function App() {
               <Route path="geld" element={<MoneySettings />} />
               <Route path="sondertag" element={<SpecialDaySettings />} />
               <Route path="schach" element={<ChessSettings />} />
+              <Route path="heldenwelt" element={<HeroSettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

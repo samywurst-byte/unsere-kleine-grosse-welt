@@ -3,7 +3,7 @@ import './library.css';
 
 const EXPLORER_PATHS = ['/entdecken/sonntage', '/entdecken/handbuch', '/entdecken/frageglas'];
 
-/** Umschalter zwischen Entdeckerbibliothek, Entdeckersonntagen und Projektwerkstatt. */
+/** Umschalter zwischen Entdeckerbibliothek, Entdeckersonntagen und Projektwerkstatt, Schach und Heldenwelt. */
 export function ExploreTabs() {
   const { pathname } = useLocation();
   const sundays = EXPLORER_PATHS.some((p) => pathname.startsWith(p));
@@ -14,6 +14,7 @@ export function ExploreTabs() {
       <NavLink to="/entdecken/sonntage" className={() => cls(sundays)}>🗓️ Entdeckersonntage</NavLink>
       <NavLink to="/projekte" className={({ isActive }) => cls(isActive)}>🛠️ Projektwerkstatt</NavLink>
       <NavLink to="/entdecken/schach" className={({ isActive }) => cls(isActive)}>♟️ Schach</NavLink>
+      <NavLink to="/entdecken/helden" className={({ isActive }) => cls(isActive)}>🐉 Heldenwelt</NavLink>
     </nav>
   );
 }

@@ -258,6 +258,10 @@ export interface AppSettings {
   mealCategories?: MealCategory[];
   /** Suppenküche im Winter. Fehlt = an, alle 2 Wochen sonntags, Oktober bis März. */
   soupKitchen?: SoupKitchenSettings;
+  /** Heldenwelt: an diesen Tagen öffnet sich eine neue Mission. Fehlt = Mittwoch und Samstag. Leer = jeden Tag. */
+  heroMissionDays?: Weekday[];
+  /** Sanfte Spielzeitgrenze für Heldenwelt und Schach in Minuten pro Kind und Tag. Fehlt = 15. 0 = aus. */
+  playLimitMinutes?: number;
   createdAt: string;
 }
 
@@ -917,5 +921,70 @@ export interface ChessProgress {
   released?: boolean;
   /** Übungen, die am echten Brett gelöst wurden. */
   realBoard?: number;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------- Heldenwelt
+
+/** Wie die Heldenfigur eines Kindes aussieht. */
+export interface HeroLook {
+  color: string;
+  cape: string;
+  mask: boolean;
+  symbol: string;
+  power?: string;
+  /** Gewählter Gruß (Bild-Id) oder eigener Gruß in Worten. */
+  greeting?: string;
+  greetingText?: string;
+}
+
+/** Heldenwelt-Profil eines Kindes. */
+export interface HeroProfile {
+  childId: string;
+  look?: HeroLook;
+  /** Wann Momo Hilfe anbietet: früh nach 2, normal nach 3, spät nach 5 Versuchen. */
+  helpLevel: 'early' | 'normal' | 'late';
+  /** Leichtere Aufgaben (z. B. kürzere Brücke). */
+  easy: boolean;
+  /** Wie oft ein Ort betreten wurde. */
+  placeVisits: Record<string, number>;
+  updatedAt: string;
+}
+
+/** Stand eines Kindes in einer Mission. */
+export interface HeroMission {
+  /** `${childId}|${missionId}` */
+  id: string;
+  childId: string;
+  missionId: string;
+  /** Laufender Durchgang: Schritt und Spielstand, damit man später weitermachen kann. */
+  current?: { step: number; data: Record<string, unknown>; startedAt: string };
+  firstCompletedAt?: string;
+  completedAt?: string;
+  /** Abgeschlossene Durchgänge. Mehr als 1 = freiwillig wiederholt. */
+  runs: number;
+  /** Gewählte Lösungswege, z. B. bridge, boat, animal. */
+  solutions: string[];
+  /** Wie oft Hilfe genutzt wurde (Tipp, Gemeinsam). Nur zur Info, keine Bewertung. */
+  helpUsed: number;
+  /** Aufgabe in der echten Welt: erledigt oder auf später verschoben. */
+  realDoneAt?: string;
+  realLater?: boolean;
+  /** Eigene Idee des Kindes, von Mama oder Papa eingetragen und als Lösung bestätigt. */
+  ownIdeas?: { text: string; confirmedAt: string }[];
+  /** Von Mama oder Papa vorzeitig freigegeben. */
+  released?: boolean;
+  updatedAt: string;
+}
+
+/** Spielzeit eines Kindes an einem Tag in Heldenwelt und Schach (sanfte Grenze). */
+export interface PlayTime {
+  /** `${childId}|${date}` */
+  id: string;
+  childId: string;
+  date: DateKey;
+  ms: number;
+  /** Von Mama oder Papa mit PIN verlängert. */
+  extraMs: number;
   updatedAt: string;
 }
