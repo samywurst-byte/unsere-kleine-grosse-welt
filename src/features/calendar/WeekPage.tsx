@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
-import { useChildren, useChoreDefinitions, useMembers, useOccurrences, useSettings } from '../../hooks/useData';
+import { useChildren, useChoreDefinitions, useMealPlans, useMembers, useOccurrences, useSettings } from '../../hooks/useData';
 import { useNow } from '../../hooks/useNow';
 import { possessive, upcomingBirthdays } from '../../services/calendar';
 import { choreDefinitionsFor } from '../../services/chores';
@@ -23,6 +23,8 @@ export function WeekPage() {
   const children = useChildren();
   const members = useMembers();
   const settings = useSettings();
+  const plans = useMealPlans();
+  const plan = plans?.find((p) => p.id === start);
   const [selected, setSelected] = useState<EventOccurrence | null>(null);
 
   const kw = getISOWeek(fromDateKey(start));
@@ -46,6 +48,7 @@ export function WeekPage() {
           const list = occ?.filter((o) => o.date === d) ?? [];
           const chores = choreDefs ? choreDefinitionsFor(choreDefs, d) : [];
           const isToday = d === today;
+          const meal = plan?.days.find((m) => m.date === d);
           return (
             <section key={d} className={`week__day ${isToday ? 'week__day--today' : ''}`}>
               <Link to={`/woche/${d}`} className="week__head">
@@ -53,6 +56,12 @@ export function WeekPage() {
                 <span className="week__date">{fromDateKey(d).getDate()}.</span>
                 {isToday && <span className="week__today">Heute</span>}
               </Link>
+              {meal && (
+                <p className="week__meal" title={meal.title}>
+                  <span aria-hidden="true">{meal.emoji ?? '🍽️'}</span>
+                  <span className="week__meal-text">{meal.title}</span>
+                </p>
+              )}
               {chores.length > 0 && (
                 <Link to={`/woche/${d}`} className="week__chores" aria-label="Haushaltstag">
                   <Icon name="house" size={16} />
