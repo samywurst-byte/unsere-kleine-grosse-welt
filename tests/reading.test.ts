@@ -88,7 +88,7 @@ describe('Lese- und Schreibblätter', () => {
 
     const pack = { id: 'p', weekStart: today, letter: 'N', createdAt: '', prints: [], children: [{ childId: 'k1', track: 'letters' as const, math: false }] };
     const plan = planPack({ pack, children: [kid()], statesByChild: new Map([['k1', states]]), today });
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das N', 'Finde das N', 'Wörter schreiben', 'Lesen und malen', 'Schreib, was du hörst']);
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das N', 'Finde das N', 'Wörter schreiben', 'Lesen und malen', 'Schreib, was du hörst', expect.stringMatching(/^Schwungblatt/)]);
     const o = pagesForScope(plan, 'observation')[0].spec;
     expect(o.kind === 'observation' && o.rows[0].goals.map((g) => g.goalId)).toEqual(expect.arrayContaining(['read.words', 'read.write-sounds']));
   });

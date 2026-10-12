@@ -10,6 +10,8 @@ import { fromDateKey } from '../utils/dates';
 import type { PackPlan, PageSpec, PlannedPage } from './learningPack';
 import type { MathSpec, TaskPart } from './mathSheets';
 import { plain, type ReadingSpec } from './reading';
+import { PATTERN_NAME, SWING_INSTRUCTION, SWING_VARIANTS, type SwingRow } from '../data/swingExercises';
+import { strokesUpTo, strokeToPath, swingStrokes, type Stroke } from './swing';
 
 /**
  * Echte A4-PDFs für die Lernpakete: Vektorgrafik und eingebettete Schriften, druckerfreundliches Schwarzweiß.
@@ -455,6 +457,84 @@ function renderPage(c: Ctx, spec: PageSpec) {
     case 'math': return mathPage(c, spec.title, spec.math);
     case 'reading': return readingPage(c, spec.title, spec.reading);
     case 'math-memory': return mathMemory(c, spec.heading, spec.cards);
+    case 'swing': return swingPage(c, spec);
+  }
+}
+
+// ------------------------------------------------------------- Schwungübungen
+
+/** Striche zeichnen: gestrichelt grau zum Nachfahren oder schwarz als Vorlage. Ursprung = linke obere Ecke. */
+function drawStrokes(c: Ctx, strokes: Stroke[], x: number, top: number, mode: 'trace' | 'model', thickness: number, dash: number[]) {
+  for (const s of strokes) {
+    c.page.drawSvgPath(strokeToPath(s), {
+      x, y: Y(top), borderColor: mode === 'model' ? BLACK : TRACE, borderWidth: thickness,
+      borderDashArray: mode === 'trace' ? dash : undefined, borderLineCap: LineCapStyle.Round,
+    });
+  }
+}
+
+/** Startpunkt: hier geht es los. */
+function startDot(c: Ctx, strokes: Stroke[], x: number, top: number, r: number) {
+  const p = strokes[0]?.[0];
+  if (p) c.page.drawCircle({ x: x + p[0], y: Y(top + p[1]), size: r, color: BLACK });
+}
+
+/** Eine Schwungzeile: alles gestrichelt (trace) oder nur der Anfang vorgemalt und dann frei (start). */
+function swingRow(c: Ctx, row: SwingRow, x: number, top: number, width: number, thickness: number, dash: number[], dot: number) {
+  const strokes = swingStrokes(row.pattern, width, row.height, row.period || width);
+  if (row.style === 'trace') {
+    drawStrokes(c, strokes, x, top, 'trace', thickness, dash);
+  } else {
+    const first = strokesUpTo(strokes, Math.max(row.period, 1));
+    drawStrokes(c, first, x, top, 'model', thickness * 0.8, dash);
+    // Ober- und Unterkante als Hilfe zum Weitermalen
+    hline(c, x, x + width, top, { color: LINE, thickness: 0.5, dash: [2, 3] });
+    hline(c, x, x + width, top + row.height, { color: LINE, thickness: 0.5, dash: [2, 3] });
+  }
+  if (row.pattern !== 'dots') startDot(c, strokes, x, top, dot);
+}
+
+function swingPage(c: Ctx, spec: Extract<PageSpec, { kind: 'swing' }>) {
+  const { sheet, level, variant } = spec;
+  const top = header(c, `Schwungblatt ${variant + 1} von ${SWING_VARIANTS}: ${sheet.title}`, SWING_INSTRUCTION[level], true) + 14;
+  const bottom = H - 50;
+
+  if (level === 'letters') {
+    const capH = 30;
+    const lines = [...sheet.rows.map((r) => ({ swing: r })), ...(sheet.letters ?? []).map((l) => ({ glyph: l })), ...(sheet.digits ?? []).map((d) => ({ glyph: d }))];
+    const pitch = (bottom - top) / lines.length;
+    lines.forEach((line, i) => {
+      const base = top + i * pitch + capH + 8;
+      if ('swing' in line && line.swing) {
+        // Schwung groß über die ganze Schreibhöhe, mit Hilfslinien oben und unten
+        const row = { ...line.swing, height: capH, period: line.swing.period * 1.5 };
+        if (row.style === 'trace') {
+          hline(c, M, M + CW, base - capH, { color: LINE, thickness: 0.5, dash: [2, 3] });
+          hline(c, M, M + CW, base, { color: LINE, thickness: 0.5, dash: [2, 3] });
+        }
+        swingRow(c, row, M + 8, base - capH, CW - 16, 1.8, [4, 3], 2.8);
+      } else if ('glyph' in line && line.glyph) {
+        traceRow(c, [{ text: line.glyph, style: 'model' }, ...repeat(line.glyph, 14)], M, base, CW, capH);
+      }
+    });
+    return;
+  }
+
+  const toddler = level === 'toddler';
+  const captionH = 18;
+  const total = sheet.rows.reduce((n, r) => n + r.height + captionH, 0);
+  const gap = Math.max(10, (bottom - top - total) / sheet.rows.length);
+  let t = top;
+  for (const row of sheet.rows) {
+    text(c, row.style === 'start' ? `${PATTERN_NAME[row.pattern]}: selbst weitermalen` : PATTERN_NAME[row.pattern], M, t + 11, 11, { color: MUTED });
+    t += captionH;
+    const pic = toddler && (row.from || row.to) ? Math.min(row.height, 70) : 0;
+    const x = M + (row.from ? pic + 12 : 0);
+    const width = CW - (row.from ? pic + 12 : 0) - (row.to ? pic + 12 : 0);
+    if (row.from) illustration(c, row.from, M, t + (row.height - pic) / 2, pic, 2);
+    if (row.to) illustration(c, row.to, W - M - pic, t + (row.height - pic) / 2, pic, 2);
+    swingRow(c, row, x, t, width, toddler ? 5 : 2.4, toddler ? [10, 8] : [6, 5], toddler ? 6 : 3.5);
+    t += row.height + gap;
   }
 }
 

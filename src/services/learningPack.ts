@@ -2,12 +2,14 @@ import type { FamilyDatabase } from '../database/db';
 import { ALL_ILLUSTRATIONS, ILLUSTRATIONS, THEME_ILLUSTRATION, illustrationsStartingWith, type Illustration } from '../data/illustrations';
 import { LETTERS, letterGoalId, type LetterInfo } from '../data/readingCurriculum';
 import type { ChildProfile, DateKey, LearningPack, LearningRelease, PackTrack } from '../types';
-import { ageInYears } from '../utils/dates';
+import { ageInYears, fromDateKey } from '../utils/dates';
 import { newId } from '../utils/id';
 import { pathPhase, todaysLetter, suggestions, type GoalState } from './learning';
 import { currentMathGoals, mathStates } from './math';
 import { extraMathPage, mathMemoryPairs, mathPageFor, type MathPage, type MathSpec } from './mathSheets';
 import type { LearningGoal } from '../data/readingCurriculum';
+import { SWING_SHEETS, swingLevelForTrack, swingVariantForWeek, type SwingLevel, type SwingSheet } from '../data/swingExercises';
+import { getISOWeek } from 'date-fns';
 import { readingPages, readsWords, type ReadingSpec } from './reading';
 
 /**
@@ -41,7 +43,8 @@ export type PageSpec =
   | { kind: 'math'; title: string; math: MathSpec }
   | { kind: 'reading'; title: string; reading: ReadingSpec }
   | { kind: 'math-memory'; heading: string; cards: string[] }
-  | { kind: 'observation'; rows: SheetChild[] };
+  | { kind: 'observation'; rows: SheetChild[] }
+  | { kind: 'swing'; level: SwingLevel; variant: number; sheet: SwingSheet };
 
 /** Eine Zeile im Beobachtungsbogen. Ohne Lernziel ("free.…") wird sie nur für euch festgehalten. */
 export interface SheetRow { label: string; goalId: string }
@@ -340,6 +343,11 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
       goals.push(...m.goals.filter((g) => !goals.some((x) => x.goalId === g.id)).map((g) => ({ label: g.title, goalId: g.id })));
       mathGoals.push(...m.goals);
     }
+    const swing = swingLevelForTrack(track);
+    if (swing) {
+      const variant = swingVariantForWeek(getISOWeek(fromDateKey(pack.weekStart)));
+      specs.push({ kind: 'swing', level: swing, variant, sheet: SWING_SHEETS[swing][variant] });
+    }
     specs.forEach((spec, i) => pages.push({
       id: `${childId}-${i + 1}`, section: 'child', childId, childName: child.name, title: pageTitle(spec, letter), spec,
     }));
@@ -379,6 +387,7 @@ export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
     case 'reading': return spec.title;
     case 'math-memory': return 'Rechen-Memory';
     case 'observation': return 'Beobachtungsbogen';
+    case 'swing': return `Schwungblatt ${spec.variant + 1}: ${spec.sheet.title}`;
   }
 }
 
