@@ -47,15 +47,15 @@ describe('Lernpaket planen', () => {
     expect(defaultTrack(small, later, [])).toBe('preschool');
   });
 
-  it('erzeugt das Wochenpaket aus dem Konzept: 3 + 2 + 1 Seiten und je ein Schwungblatt, Memory und Beobachtungsbogen', () => {
+  it('erzeugt das Wochenpaket aus dem Konzept: 3 + 2 + 1 Seiten und je ein Schwungblatt, Bastelvorlage, Ausmalbild, Memory und Beobachtungsbogen', () => {
     const plan = planPack({ pack: pack(), children, statesByChild: statesFor([]) });
     expect(plan.title).toBe('M wie Maus');
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.spec.kind)).toEqual(['letter-intro', 'letter-hunt', 'word-trace', 'swing']);
-    expect(pagesForScope(plan, 'child:k2').map((p) => p.spec.kind)).toEqual(['counting', 'syllable-onset', 'swing']);
-    expect(pagesForScope(plan, 'child:k3').map((p) => p.spec.kind)).toEqual(['coloring', 'swing']);
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.spec.kind)).toEqual(['letter-intro', 'letter-hunt', 'word-trace', 'swing', 'craft', 'picture']);
+    expect(pagesForScope(plan, 'child:k2').map((p) => p.spec.kind)).toEqual(['counting', 'syllable-onset', 'swing', 'craft', 'picture']);
+    expect(pagesForScope(plan, 'child:k3').map((p) => p.spec.kind)).toEqual(['coloring', 'swing', 'craft', 'picture']);
     expect(pagesForScope(plan, 'game')).toHaveLength(1);
     expect(pagesForScope(plan, 'observation')).toHaveLength(1);
-    expect(plan.pages).toHaveLength(11);
+    expect(plan.pages).toHaveLength(17);
   });
 
   it('gibt Paketen von vor dem Rechenpfad die Rechenblätter dazu', () => {
@@ -134,7 +134,7 @@ describe('Arbeitsblätter als PDF', () => {
   it('druckt nur die gewählten Seiten', async () => {
     const plan = planPack({ pack: pack(), children, statesByChild: statesFor([]) });
     const doc = await PDFDocument.load(await renderWorksheets(plan, pagesForScope(plan, 'child:k2'), fonts()));
-    expect(doc.getPageCount()).toBe(3);
+    expect(doc.getPageCount()).toBe(5);
   });
 });
 

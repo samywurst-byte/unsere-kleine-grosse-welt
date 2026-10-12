@@ -12,6 +12,7 @@ import type { MathSpec, TaskPart } from './mathSheets';
 import { plain, type ReadingSpec } from './reading';
 import { PATTERN_NAME, SWING_INSTRUCTION, SWING_VARIANTS, type SwingRow } from '../data/swingExercises';
 import { strokesUpTo, strokeToPath, swingStrokes, type Stroke } from './swing';
+import type { Drawing } from '../data/drawKit';
 
 /**
  * Echte A4-PDFs für die Lernpakete: Vektorgrafik und eingebettete Schriften, druckerfreundliches Schwarzweiß.
@@ -458,7 +459,47 @@ function renderPage(c: Ctx, spec: PageSpec) {
     case 'reading': return readingPage(c, spec.title, spec.reading);
     case 'math-memory': return mathMemory(c, spec.heading, spec.cards);
     case 'swing': return swingPage(c, spec);
+    case 'picture': return picturePage(c, spec);
+    case 'craft': return craftPage(c, spec);
   }
+}
+
+// ------------------------------------------------------------- Ausmalbilder und Bastelvorlagen
+
+/** Zeichnung mittig in ein Feld (Ursprung oben links) einpassen. Linienstärke 1 entspricht `line` pt im Druck. */
+function drawDrawing(c: Ctx, drawing: Drawing, x: number, top: number, width: number, height: number, line = 2.6) {
+  const s = Math.min(width / drawing.width, height / drawing.height);
+  const ox = x + (width - drawing.width * s) / 2;
+  const oy = top + (height - drawing.height * s) / 2;
+  for (const sh of drawing.shapes) {
+    const w = (line * (sh.weight ?? 1)) / s;
+    c.page.drawSvgPath(sh.d, {
+      x: ox, y: Y(oy), scale: s,
+      color: sh.fill === 'black' ? BLACK : sh.fill === 'none' ? undefined : WHITE,
+      borderColor: BLACK, borderWidth: w,
+      borderDashArray: sh.dashed ? [7 / s, 5 / s] : undefined,
+      borderLineCap: LineCapStyle.Round,
+    });
+  }
+}
+
+function picturePage(c: Ctx, spec: Extract<PageSpec, { kind: 'picture' }>) {
+  const top = header(c, `Ausmalbild: ${spec.title}`, `${spec.theme} · Bild ${spec.index + 1} von 3. Ausmalen, wie du magst.`, true) + 10;
+  drawDrawing(c, spec.drawing, M, top, CW, H - 50 - top);
+}
+
+function craftPage(c: Ctx, spec: Extract<PageSpec, { kind: 'craft' }>) {
+  const { craft } = spec;
+  let top = header(c, `Basteln: ${craft.title}`, craft.intro, true) + 4;
+  text(c, 'Ihr braucht:', M, top + 12, 11.5, { font: c.bold });
+  top = paragraph(c, craft.materials.join(', '), M + 78, top + 12, 11.5, CW - 78) + 2;
+  craft.steps.forEach((step, i) => {
+    text(c, `${i + 1}.`, M, top + 12, 11.5, { font: c.bold });
+    top = paragraph(c, step, M + 18, top + 12, 11.5, CW - 18) + 2;
+  });
+  top += 6;
+  text(c, '- - - ausschneiden', W - M, top + 2, 9.5, { color: MUTED, align: 'right' });
+  drawDrawing(c, craft.drawing, M, top + 8, CW, H - 50 - top - 8, 2.4);
 }
 
 // ------------------------------------------------------------- Schwungübungen

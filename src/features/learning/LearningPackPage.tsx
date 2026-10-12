@@ -169,10 +169,11 @@ function PackView({ pack, children, statesByChild, mathStatesByChild, today, obs
   useEffect(() => () => { if (result) URL.revokeObjectURL(result.url); }, [result]);
 
   const scopes: { scope: PrintScope; label: string }[] = [
-    { scope: 'all', label: 'Alles' },
+    { scope: 'all', label: 'Wochenmappe' },
     ...pack.children.filter((c) => c.track !== 'skip').map((c) => ({
       scope: `child:${c.childId}` as PrintScope, label: `Nur ${children.find((k) => k.id === c.childId)?.name ?? 'Kind'}`,
     })),
+    { scope: 'extras', label: 'Nur Basteln und Ausmalen' },
     { scope: 'game', label: 'Nur Memory' },
     { scope: 'observation', label: 'Nur Beobachtungsbogen' },
   ];
@@ -283,7 +284,7 @@ function groupPages(plan: PackPlan) {
 
 function fileName(plan: PackPlan, scope: PrintScope, children: ChildProfile[]): string {
   const kw = getISOWeek(fromDateKey(plan.pack.weekStart));
-  const who = scope === 'all' ? 'alle' : scope === 'game' ? 'Memory' : scope === 'observation' ? 'Beobachtungsbogen'
+  const who = scope === 'all' ? 'Wochenmappe' : scope === 'extras' ? 'Basteln-Ausmalen' : scope === 'game' ? 'Memory' : scope === 'observation' ? 'Beobachtungsbogen'
     : children.find((c) => `child:${c.id}` === scope)?.name ?? 'Kind';
   const safe = (s: string) => s.replace(/[^A-Za-z0-9ÄÖÜäöüß-]+/g, '-');
   return `Lernpaket-KW${kw}-${safe(plan.letter.upper)}-${safe(who)}.pdf`;

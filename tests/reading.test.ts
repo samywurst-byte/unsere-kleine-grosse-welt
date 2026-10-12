@@ -88,7 +88,7 @@ describe('Lese- und Schreibblätter', () => {
 
     const pack = { id: 'p', weekStart: today, letter: 'N', createdAt: '', prints: [], children: [{ childId: 'k1', track: 'letters' as const, math: false }] };
     const plan = planPack({ pack, children: [kid()], statesByChild: new Map([['k1', states]]), today });
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das N', 'Finde das N', 'Wörter schreiben', 'Lesen und malen', 'Schreib, was du hörst', expect.stringMatching(/^Schwungblatt/)]);
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das N', 'Finde das N', 'Wörter schreiben', 'Lesen und malen', 'Schreib, was du hörst', expect.stringMatching(/^Schwungblatt/), expect.stringMatching(/^Basteln/), expect.stringMatching(/^Ausmalbild/)]);
     const o = pagesForScope(plan, 'observation')[0].spec;
     expect(o.kind === 'observation' && o.rows[0].goals.map((g) => g.goalId)).toEqual(expect.arrayContaining(['read.words', 'read.write-sounds']));
   });
@@ -98,7 +98,7 @@ describe('Lese- und Schreibblätter', () => {
     expect(defaultTrack(kid({ schoolEntryDate: '2026-09-01', schoolPractice: true }), today, states)).toBe('reading');
     const pack = { id: 'p', weekStart: today, letter: 'M', createdAt: '', prints: [], children: [{ childId: 'k1', track: 'reading' as const, math: false }] };
     const plan = planPack({ pack, children: [kid()], statesByChild: new Map([['k1', states]]), today });
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Lesen und malen', 'Wörter abschreiben']);
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Lesen und malen', 'Wörter abschreiben', expect.stringMatching(/^Basteln/), expect.stringMatching(/^Ausmalbild/)]);
   });
 
   it('zeigt die Lesekiste erst ab dem Silbenlesen', () => {

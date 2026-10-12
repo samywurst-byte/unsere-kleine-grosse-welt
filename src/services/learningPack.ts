@@ -10,6 +10,9 @@ import { extraMathPage, mathMemoryPairs, mathPageFor, type MathPage, type MathSp
 import type { LearningGoal } from '../data/readingCurriculum';
 import { SWING_SHEETS, swingLevelForTrack, swingVariantForWeek, type SwingLevel, type SwingSheet } from '../data/swingExercises';
 import { getISOWeek } from 'date-fns';
+import { coloringForWeek } from '../data/coloringPages';
+import { craftForWeek, type Craft } from '../data/crafts';
+import type { Drawing } from '../data/drawKit';
 import { readingPages, readsWords, type ReadingSpec } from './reading';
 
 /**
@@ -44,7 +47,9 @@ export type PageSpec =
   | { kind: 'reading'; title: string; reading: ReadingSpec }
   | { kind: 'math-memory'; heading: string; cards: string[] }
   | { kind: 'observation'; rows: SheetChild[] }
-  | { kind: 'swing'; level: SwingLevel; variant: number; sheet: SwingSheet };
+  | { kind: 'swing'; level: SwingLevel; variant: number; sheet: SwingSheet }
+  | { kind: 'picture'; theme: string; index: number; title: string; drawing: Drawing }
+  | { kind: 'craft'; craft: Craft };
 
 /** Eine Zeile im Beobachtungsbogen. Ohne Lernziel ("free.…") wird sie nur für euch festgehalten. */
 export interface SheetRow { label: string; goalId: string }
@@ -69,12 +74,13 @@ export interface PackPlan {
 }
 
 /** Druckauswahl: alles, ein Kind, nur das Spiel oder nur der Beobachtungsbogen. */
-export type PrintScope = 'all' | 'game' | 'observation' | `child:${string}`;
+export type PrintScope = 'all' | 'game' | 'observation' | 'extras' | `child:${string}`;
 
 export function pagesForScope(plan: PackPlan, scope: PrintScope): PlannedPage[] {
   if (scope === 'all') return plan.pages;
   if (scope === 'game') return plan.pages.filter((p) => p.section === 'game');
   if (scope === 'observation') return plan.pages.filter((p) => p.section === 'observation');
+  if (scope === 'extras') return plan.pages.filter((p) => p.spec.kind === 'craft' || p.spec.kind === 'picture');
   const childId = scope.slice('child:'.length);
   return plan.pages.filter((p) => p.childId === childId);
 }
@@ -348,6 +354,8 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
       const variant = swingVariantForWeek(getISOWeek(fromDateKey(pack.weekStart)));
       specs.push({ kind: 'swing', level: swing, variant, sheet: SWING_SHEETS[swing][variant] });
     }
+    // Für alle Kinder dieselbe Bastelvorlage und dasselbe Ausmalbild, jedes Kind bekommt sein eigenes Blatt
+    if (track !== 'math') specs.push(...weeklyExtras(pack.weekStart));
     specs.forEach((spec, i) => pages.push({
       id: `${childId}-${i + 1}`, section: 'child', childId, childName: child.name, title: pageTitle(spec, letter), spec,
     }));
@@ -373,6 +381,18 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
   return { pack, letter, title: themeTitle(letter), pages };
 }
 
+/** Bastelvorlage und Ausmalbild der Woche. */
+export function weeklyExtras(weekStart: DateKey): PageSpec[] {
+  const date = fromDateKey(weekStart);
+  const kw = getISOWeek(date);
+  const { theme, index } = coloringForWeek(kw);
+  const pic = theme.pictures[index];
+  return [
+    { kind: 'craft', craft: craftForWeek(kw, date.getMonth()) },
+    { kind: 'picture', theme: theme.name, index, title: pic.title, drawing: pic.drawing },
+  ];
+}
+
 export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
   switch (spec.kind) {
     case 'letter-intro': return `Das ${letter.upper}`;
@@ -388,6 +408,8 @@ export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
     case 'math-memory': return 'Rechen-Memory';
     case 'observation': return 'Beobachtungsbogen';
     case 'swing': return `Schwungblatt ${spec.variant + 1}: ${spec.sheet.title}`;
+    case 'craft': return `Basteln: ${spec.craft.title}`;
+    case 'picture': return `Ausmalbild: ${spec.title}`;
   }
 }
 

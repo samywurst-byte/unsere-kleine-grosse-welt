@@ -132,7 +132,7 @@ describe('Rechenblätter im Lernpaket', () => {
     const k1 = pagesForScope(plan, 'child:k1').map((p) => p.title);
     expect(k1.slice(0, 4)).toEqual(['Das M', 'Finde das M', 'Wörter schreiben', 'Plus bis 10']);
     expect(['Rechengeschichten', 'Aufgabenfamilien', 'Rechenmauern']).toContain(k1[4]);
-    expect(pagesForScope(plan, 'child:k2')).toHaveLength(3);
+    expect(pagesForScope(plan, 'child:k2')).toHaveLength(5);
     expect(pagesForScope(plan, 'game').map((p) => p.title)).toEqual(['Memory für alle', 'Rechen-Memory']);
     const o = pagesForScope(plan, 'observation')[0].spec;
     expect(o.kind === 'observation' && o.rows[0].goals.map((g) => g.label)).toContain('Plus bis 10');
@@ -140,7 +140,7 @@ describe('Rechenblätter im Lernpaket', () => {
 
   it('nimmt ohne Freigabe das erste passende Ziel und rendert alles als PDF', async () => {
     const plan = planPack({ pack, children, statesByChild: new Map(), mathStatesByChild: new Map(), today });
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das M', 'Finde das M', 'Wörter schreiben', 'Das Zehnerfeld', 'Zahlenhäuser', expect.stringMatching(/^Schwungblatt/)]);
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.title)).toEqual(['Das M', 'Finde das M', 'Wörter schreiben', 'Das Zehnerfeld', 'Zahlenhäuser', expect.stringMatching(/^Schwungblatt/), expect.stringMatching(/^Basteln/), expect.stringMatching(/^Ausmalbild/)]);
     const f = (n: string) => readFileSync(`public/fonts/${n}`);
     const bytes = await renderWorksheets(plan, plan.pages, { regular: f('andika-regular.ttf'), bold: f('andika-bold.ttf'), school: f('grundschrift.ttf') });
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(plan.pages.length);
