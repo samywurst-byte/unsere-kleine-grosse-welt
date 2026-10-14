@@ -11,10 +11,11 @@ import { NinjaPathStep, orderEmojis } from './NinjaPath';
 import { PauseGate, useCheckpoint, usePlayClock } from './playTime';
 import { RescueStep } from './RescueGames';
 import type { HelpState, StepProps } from './stepTypes';
+import { CalmStep, ChoiceStep, FeelingsStep, TryAgainStep } from './AcademySteps';
 import { DesignStep, GreetingStep, PathsStep, SymbolStep } from './WelcomeSteps';
 
-const AT_REST: HeroStep['kind'][] = ['say', 'real', 'reveal', 'symbol', 'greeting'];
-const WITH_HELP: HeroStep['kind'][] = ['paths', 'rescue', 'parcours'];
+const AT_REST: HeroStep['kind'][] = ['say', 'real', 'reveal', 'symbol', 'greeting', 'feelings', 'choice', 'calm'];
+const WITH_HELP: HeroStep['kind'][] = ['paths', 'rescue', 'parcours', 'feelings', 'choice', 'tryagain'];
 
 const sayOf = (s: HeroStep): string | undefined => ('say' in s ? s.say : undefined);
 
@@ -38,7 +39,8 @@ export function MissionPlayer({ child, def, profile }: { child: ChildProfile; de
       setDataState(r.current?.data ?? {});
     });
     return () => { alive = false; };
-  }, [child.id, def]);
+    // Nur bei einer anderen Mission neu betreten (def wird mit dem Namen des Partners neu erzeugt)
+  }, [child.id, def.id]);
 
   const current = step === null ? undefined : def.steps[step];
   useEffect(() => { const s = current && sayOf(current); if (s) speak(s); }, [step]);
@@ -133,6 +135,10 @@ export function MissionPlayer({ child, def, profile }: { child: ChildProfile; de
           {current.kind === 'greeting' && (<><MomoSays text={current.say} size={80} /><GreetingStep {...props} /></>)}
           {current.kind === 'rescue' && <RescueStep {...props} />}
           {current.kind === 'parcours' && <NinjaPathStep {...props} />}
+          {current.kind === 'feelings' && <FeelingsStep key={step} {...props} k={`s${step}`} scenes={current.scenes} />}
+          {current.kind === 'choice' && <ChoiceStep key={step} {...props} k={`s${step}`} say={current.say} scene={current.scene} options={current.options} />}
+          {current.kind === 'calm' && <CalmStep key={step} {...props} k={`s${step}`} />}
+          {current.kind === 'tryagain' && <TryAgainStep key={step} {...props} k={`s${step}`} variant={current.variant} />}
           {current.kind === 'real' && (
             <section className="card hero-activity">
               <MomoSays text={current.say} />

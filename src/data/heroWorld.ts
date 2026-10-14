@@ -1,9 +1,12 @@
+import { ACADEMY_MISSIONS, type AbilityId, type ChoiceOption, type FeelingScene } from './heroAcademy';
+
 /**
  * Taavis Heldenwelt – Die Hüter des Wunderwaldes. Phase 1: Weltkarte, Momo und vier Pilotmissionen.
+ * Danach die Heldenakademie (heroAcademy.ts): fünf Heldenfähigkeiten in acht Missionen.
  * Es gibt kein Richtig oder Falsch beim Gestalten. Aufgaben in der echten Welt sind immer freiwillig und mit Mama oder Papa.
  */
 
-export type HeroPlaceId = 'village' | 'rescue' | 'ninja' | 'cave' | 'stories';
+export type HeroPlaceId = 'village' | 'rescue' | 'ninja' | 'cave' | 'stories' | 'academy';
 
 export interface HeroPlace {
   id: HeroPlaceId;
@@ -23,6 +26,7 @@ export const HERO_PLACES: HeroPlace[] = [
   { id: 'rescue', name: 'Rettungsdorf', emoji: '🏝️', friend: 'Fino', x: 76, y: 70 },
   { id: 'ninja', name: 'Ninja-Wald', emoji: '🌲', friend: 'Balu', x: 48, y: 30 },
   { id: 'cave', name: 'Erfinderhöhle', emoji: '⛰️', friend: 'Kiko', x: 82, y: 24, soon: 'Kiko der Roboter baut gerade an seinen Erfindungen. Bald darfst du mitbauen!' },
+  { id: 'academy', name: 'Heldenakademie', emoji: '🏰', friend: 'Momo', x: 50, y: 56 },
   { id: 'stories', name: 'Geschichtenportal', emoji: '🌀', friend: 'Momo', x: 15, y: 25, soon: 'Hinter dem Portal warten bald Geschichten, die du selbst weitererzählst.' },
 ];
 
@@ -102,7 +106,15 @@ export type HeroStep =
   | { kind: 'rescue' }
   | { kind: 'parcours' }
   | RealTask
-  | { kind: 'reveal'; say: string };
+  | { kind: 'reveal'; say: string }
+  /** Heldenakademie: Gefühle erkennen. */
+  | { kind: 'feelings'; scenes: FeelingScene[] }
+  /** Heldenakademie: eine Entscheidung. Fast alles ist eine gute Idee, nur Wehtun nicht. */
+  | { kind: 'choice'; say: string; scene: string; options: ChoiceOption[] }
+  /** Heldenakademie: Stoppzeichen und Drachenatem. */
+  | { kind: 'calm' }
+  /** Heldenakademie: etwas klappt erst nach mehreren Versuchen. */
+  | { kind: 'tryagain'; variant: 'parcours' | 'climb' };
 
 export interface HeroMissionDef {
   id: string;
@@ -114,9 +126,12 @@ export interface HeroMissionDef {
   /** Kurz für Mama und Papa: worum es geht. Keine Bewertung. */
   parents: string;
   steps: HeroStep[];
+  /** Nur Heldenakademie: welche Heldenfähigkeit geübt wird und in welcher Woche. */
+  ability?: AbilityId;
+  week?: number;
 }
 
-export const HERO_MISSIONS: HeroMissionDef[] = [
+const PHASE_ONE: HeroMissionDef[] = [
   {
     id: 'welcome',
     number: 1,
@@ -185,6 +200,9 @@ export const HERO_MISSIONS: HeroMissionDef[] = [
     ],
   },
 ];
+
+/** Alle Missionen in Reihenfolge: erst die vier Pilotmissionen, dann die Heldenakademie. */
+export const HERO_MISSIONS: HeroMissionDef[] = [...PHASE_ONE, ...ACADEMY_MISSIONS];
 
 export const HERO_MISSION_BY_ID = new Map(HERO_MISSIONS.map((m) => [m.id, m]));
 

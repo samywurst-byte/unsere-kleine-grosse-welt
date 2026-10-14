@@ -14,7 +14,7 @@ const rec = (missionId: string, patch: Partial<HeroMission> = {}): HeroMission =
 
 describe('Heldenwelt: Inhalte', () => {
   it('hat vier Pilotmissionen an bestehenden Orten, jede endet mit einem Abschluss', () => {
-    expect(HERO_MISSIONS.map((m) => m.id)).toEqual(['welcome', 'my-hero', 'rescue-fino', 'ninja-path']);
+    expect(HERO_MISSIONS.map((m) => m.id).slice(0, 4)).toEqual(['welcome', 'my-hero', 'rescue-fino', 'ninja-path']);
     for (const m of HERO_MISSIONS) {
       expect(HERO_PLACE_BY_ID.has(m.place)).toBe(true);
       expect(m.steps.at(-1)?.kind).toBe('reveal');
@@ -38,7 +38,7 @@ describe('Heldenwelt: Missionstage', () => {
   });
   it('öffnet die nächste Mission am nächsten Missionstag und lässt sie danach offen', () => {
     const done = [rec('welcome', { firstCompletedAt: '2026-10-12T10:00:00.000Z', runs: 1 })];
-    expect(missionStates(HERO_MISSIONS, done, 'k', '2026-10-13', [3, 6]).map((s) => s.status)).toEqual(['done', 'waiting', 'locked', 'locked']);
+    expect(missionStates(HERO_MISSIONS, done, 'k', '2026-10-13', [3, 6]).map((s) => s.status).slice(0, 4)).toEqual(['done', 'waiting', 'locked', 'locked']);
     expect(missionStates(HERO_MISSIONS, done, 'k', '2026-10-13', [3, 6])[1].opensOn).toBe('2026-10-14');
     expect(missionStates(HERO_MISSIONS, done, 'k', '2026-10-14', [3, 6])[1].status).toBe('open');
     expect(missionStates(HERO_MISSIONS, done, 'k', '2026-10-20', [3, 6])[1].status).toBe('open');
@@ -46,7 +46,7 @@ describe('Heldenwelt: Missionstage', () => {
   });
   it('zeigt angefangene Missionen und Freigaben, andere Kinder zählen nicht', () => {
     const r = [rec('welcome', { current: { step: 2, data: {}, startedAt: 'x' } }), rec('ninja-path', { released: true }), { ...rec('my-hero', { firstCompletedAt: 'x' }), childId: 'other' }];
-    expect(missionStates(HERO_MISSIONS, r, 'k', '2026-10-12', [3, 6]).map((s) => s.status)).toEqual(['progress', 'locked', 'locked', 'open']);
+    expect(missionStates(HERO_MISSIONS, r, 'k', '2026-10-12', [3, 6]).map((s) => s.status).slice(0, 4)).toEqual(['progress', 'locked', 'locked', 'open']);
   });
 });
 

@@ -2,6 +2,7 @@ import { ArrowLeft, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
+import { ABILITIES, ACADEMY_WEEKS, partnerName, personalize } from '../../data/heroAcademy';
 import { FRIENDS, HERO_MISSION_BY_ID, HERO_MISSIONS, HERO_PLACES, type HeroPlace } from '../../data/heroWorld';
 import { db } from '../../database/db';
 import { useChildren, useHeroData, useSettings } from '../../hooks/useData';
@@ -101,6 +102,7 @@ export function HeroMapPage() {
     navigate(`/entdecken/helden/${child.id}/${missionId}`);
   };
   const badges = HERO_MISSIONS.filter((m) => records.some((r) => r.missionId === m.id && r.firstCompletedAt));
+  const academyStarted = HERO_MISSIONS.some((m, i) => m.ability && states[i].status !== 'locked');
 
   return (
     <div>
@@ -112,7 +114,7 @@ export function HeroMapPage() {
       <div className="stack">
         <section className="hero-map" aria-label="Weltkarte">
           <svg className="hero-map__paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M22 70 Q35 45 48 30" /><path d="M22 70 Q50 82 76 70" /><path d="M48 30 Q66 18 82 24" /><path d="M22 70 Q12 48 15 25" />
+            <path d="M22 70 Q35 45 48 30" /><path d="M22 70 Q36 60 50 56" /><path d="M50 56 Q62 66 76 70" /><path d="M22 70 Q50 82 76 70" /><path d="M48 30 Q66 18 82 24" /><path d="M22 70 Q12 48 15 25" />
             <path className="hero-map__river" d="M58 100 Q62 80 70 62 Q80 45 100 42" />
           </svg>
           {HERO_PLACES.map((p) => {
@@ -148,6 +150,24 @@ export function HeroMapPage() {
             </div>
           ) : <p className="muted">Nach jeder Mission bekommst du ein Abzeichen.</p>}
         </section>
+
+        {academyStarted && (
+          <section className="card">
+            <h2 className="card__title">🏰 Meine Heldenfähigkeiten</h2>
+            <div className="hero-abilities">
+              {ABILITIES.map((a) => {
+                const practiced = badges.some((m) => m.ability === a.id);
+                return (
+                  <div key={a.id} className={`hero-ability ${practiced ? 'is-on' : ''}`}>
+                    <span className="hero-ability__emoji" aria-hidden="true">{a.emoji}</span>
+                    <span className="hero-ability__name">{a.name}</span>
+                    <span className="hero-ability__text">{practiced ? a.kid : 'Kommt in der Heldenakademie'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       {place && (
@@ -161,7 +181,8 @@ export function HeroMapPage() {
                 <p className="muted">Hier wohnt {place.friend === 'Momo' ? 'Momo' : `${place.friend}, ${FRIENDS[place.friend].text}`} {FRIENDS[place.friend].emoji}</p>
                 <ul className="hero-place-panel__list">
                   {HERO_MISSIONS.map((m, i) => ({ m, s: states[i], r: records.find((r) => r.missionId === m.id) })).filter((x) => x.m.place === place.id).map(({ m, s, r }) => (
-                    <MissionRow key={m.id} title={m.title} emoji={m.emoji} state={s} record={r} onStart={(fresh) => void start(m.id, fresh)} />
+                    <MissionRow key={m.id} title={m.title} emoji={m.emoji} state={s} record={r} onStart={(fresh) => void start(m.id, fresh)}
+                      week={m.week ? `Woche ${m.week}: ${ACADEMY_WEEKS[m.week - 1].title}` : undefined} />
                   ))}
                 </ul>
               </>
@@ -175,12 +196,13 @@ export function HeroMapPage() {
   );
 }
 
-function MissionRow({ title, emoji, state, record, onStart }: { title: string; emoji: string; state: MissionState; record?: HeroMission; onStart: (fresh: boolean) => void }) {
+function MissionRow({ title, emoji, state, record, onStart, week }: { title: string; emoji: string; state: MissionState; record?: HeroMission; onStart: (fresh: boolean) => void; week?: string }) {
   const playable = isPlayable(state.status);
   return (
     <li className={`hero-mission-row hero-mission-row--${state.status}`}>
       <span className="hero-mission-row__emoji" aria-hidden="true">{playable ? emoji : <Lock size={26} />}</span>
       <span className="hero-mission-row__main">
+        {week && <span className="hero-mission-row__week">{week}</span>}
         <span className="hero-mission-row__title">{title}</span>
         <span className={`chess-stop__state hero-state--${state.status}`}>
           {state.status === 'waiting' && state.opensOn ? `Ab ${formatWeekday(state.opensOn)}` : MISSION_STATUS_TEXT[state.status]}
@@ -205,9 +227,10 @@ export function HeroMissionPage() {
   const state = useHeroState(childId);
   if (!children || !state) return null;
   const child = children.find((c) => c.id === childId);
-  const def = missionId ? HERO_MISSION_BY_ID.get(missionId) : undefined;
-  if (!child || !def) return <p className="card">Diese Mission gibt es nicht.</p>;
-  const s = state.states[HERO_MISSIONS.indexOf(def)];
+  const raw = missionId ? HERO_MISSION_BY_ID.get(missionId) : undefined;
+  if (!child || !raw) return <p className="card">Diese Mission gibt es nicht.</p>;
+  const def = personalize(raw, partnerName(child, children));
+  const s = state.states[HERO_MISSIONS.indexOf(raw)];
   if (!isPlayable(s.status)) {
     return (
       <div className="stack">
