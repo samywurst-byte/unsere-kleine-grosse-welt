@@ -104,6 +104,12 @@ const ROW_CHECKS: Record<string, RowCheck> = {
   heroProfiles: (r) => (!isStr(r.childId) || !['early', 'normal', 'late'].includes(String(r.helpLevel)) || typeof r.placeVisits !== 'object' ? 'Heldenwelt-Profil ungültig' : null),
   heroMissions: (r) => (!isStr(r.childId) || !isStr(r.missionId) || typeof r.runs !== 'number' || !Array.isArray(r.solutions) ? 'Heldenwelt-Mission ungültig' : null),
   playTimes: (r) => (!isStr(r.childId) || !isValidDateKey(r.date) || typeof r.ms !== 'number' || typeof r.extraMs !== 'number' ? 'Spielzeit ungültig' : null),
+  kidCompany: (r) => (r.id !== 'company' || typeof r.name !== 'string' || !Array.isArray(r.ideas) || !Array.isArray(r.seasons) || typeof r.split !== 'object'
+    || (r.foundedAt !== undefined && !isValidDateKey(r.foundedAt)) ? 'Kinderfirma ungültig' : null),
+  companyProducts: (r) => (!isStr(r.name) || typeof r.costCents !== 'number' || typeof r.priceCents !== 'number' || typeof r.sold !== 'number'
+    || (r.photo !== undefined && !isImageData(r.photo)) ? 'Produkt der Kinderfirma ungültig' : null),
+  companyEntries: (r) => (!isValidDateKey(r.date) || !['income', 'material', 'cost', 'payout'].includes(String(r.kind)) || typeof r.cents !== 'number' || r.cents < 0
+    ? 'Eintrag der Firmenkasse ungültig' : null),
   discoveries: (r) => (!isStr(r.topicId) || !isStr(r.missionId) || !isValidDateKey(r.date) ? 'Forscherauftrag ungültig' : null),
   rituals: (r) => (!isStr(r.title) || !Array.isArray(r.materials) || (r.status !== 'planned' && r.status !== 'done')
     || (r.date !== undefined && !isValidDateKey(r.date)) ? 'Ritual ungültig' : null),

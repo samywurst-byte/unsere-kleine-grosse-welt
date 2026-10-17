@@ -988,3 +988,90 @@ export interface PlayTime {
   extraMs: number;
   updatedAt: string;
 }
+
+// ---------------------------------------------------------------- Kinderfirma
+
+/** Eine Geschäftsidee der Kinder, von Mama oder Papa als kurzer Text notiert. */
+export interface CompanyIdea {
+  id: Id;
+  text: string;
+  emoji: string;
+  /** Kinder, die für diese Idee gestimmt haben. */
+  votes: Id[];
+  createdAt: string;
+}
+
+/** Eine Verkaufssaison, z. B. die Weihnachtswerkstatt 2026. Der Zeitplan steht in den Daten (planId). */
+export interface CompanySeason {
+  id: Id;
+  planId: string;
+  title: string;
+  startDate: DateKey;
+  goalCents: number;
+  /** Abgehakte Punkte des Zeitplans (Ids aus dem Plan). */
+  checked: string[];
+}
+
+/** Unsere Kinderfirma. Es gibt genau eine (id 'company'). */
+export interface KidCompany {
+  id: 'company';
+  name: string;
+  /** Gegründet im Familienrat. Fehlt, solange die Gründung noch aussteht. */
+  foundedAt?: DateKey;
+  founderIds: Id[];
+  /** Reiseziel, für das die Firma gerade spart. */
+  tripId?: Id;
+  /** Aufteilung des Gewinns in Prozent, zusammen 100. */
+  split: { trip: number; materials: number };
+  ideas: CompanyIdea[];
+  seasons: CompanySeason[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CompanyProductStatus = 'idea' | 'sample' | 'selling' | 'paused';
+
+/** Ein Produkt aus unserem kleinen Laden. Beträge in Cent. */
+export interface CompanyProduct {
+  id: Id;
+  name: string;
+  emoji: string;
+  photo?: string;
+  materials: string[];
+  /** Materialkosten je Stück. */
+  costCents: number;
+  /** Geplanter Verkaufspreis je Stück. */
+  priceCents: number;
+  orders: number;
+  made: number;
+  sold: number;
+  status: CompanyProductStatus;
+  seasonId?: Id;
+  /** Aus dem Katalog übernommen. */
+  catalogId?: string;
+  order: number;
+  createdAt: string;
+}
+
+/**
+ * Eine Zeile in der Firmenkasse. income = Einnahme, material/cost = Ausgaben, payout = verteilter Gewinn
+ * (cents für die Reisekasse, reserveCents für neue Materialien). Material aus der Materialkasse (fromReserve)
+ * mindert nicht noch einmal den Gewinn, sondern die Materialkasse.
+ */
+export interface CompanyEntry {
+  id: Id;
+  date: DateKey;
+  kind: 'income' | 'material' | 'cost' | 'payout';
+  cents: number;
+  note: string;
+  productId?: Id;
+  /** Bei Einnahmen: so viele Stück verkauft. */
+  pieces?: number;
+  seasonId?: Id;
+  fromReserve?: boolean;
+  reserveCents?: number;
+  /** Buchung in der Reisekasse (Kassenbuch der Geldwelt). */
+  txId?: Id;
+  tripId?: Id;
+  createdAt: string;
+}

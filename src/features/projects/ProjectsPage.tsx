@@ -70,7 +70,7 @@ export function ProjectsPage() {
           </div>
           {moneyFolder ? (
             <p className="muted pj-lead">
-              Hier verdienen die Kinder Geld für ein Ziel, zum Beispiel einen Urlaub oder ein Wochenende im Ferienpark. Am Ende kommt der Überschuss in die <Link to="/reisekasse">Reisekasse</Link> oder in die Schatzkammer. Helfen im Alltag bleibt unbezahlt.
+              Hier verdienen die Kinder Geld für ein Ziel, zum Beispiel einen Urlaub oder ein Wochenende im Ferienpark. Am Ende kommt der Überschuss in die <Link to="/reisekasse">Reisekasse</Link> oder in die Schatzkammer. Helfen im Alltag bleibt unbezahlt. Unsere Kinderfirma mit Laden und Firmenkasse findet ihr in der <Link to="/kinderfirma">Firmenzentrale</Link>.
             </p>
           ) : (
             <p className="muted pj-lead">Jedes Kind bekommt im selben Projekt eigene Aufgaben, passend zu dem, was es gerade lernt.</p>

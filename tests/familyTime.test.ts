@@ -65,11 +65,11 @@ describe('Mama-Zeit, Familienrat und Erinnerungen', () => {
   it('Familienrat: Tagesordnung änderbar, Beschluss wird Termin', async () => {
     const db = await openDb();
     expect(councilDate('2026-10-10')).toBe('2026-10-11');
-    expect(councilAgenda(await db.settings.get('app'))).toHaveLength(6);
+    expect(councilAgenda(await db.settings.get('app'))).toHaveLength(7);
     await saveCouncilAgenda(db, ['Schönstes Erlebnis', ' ', 'Wünsche']);
-    expect(councilAgenda(await db.settings.get('app'))).toEqual(['Schönstes Erlebnis', 'Wünsche', 'Familienprojekte']);
-    expect(councilAgenda({ councilAgenda: ['Termine', 'Nächstes Abenteuer'] })).toEqual(['Termine', 'Familienprojekte', 'Nächstes Abenteuer']);
-    expect(councilAgenda({ councilAgenda: ['Unsere Projekte', 'Wünsche'] })).toEqual(['Unsere Projekte', 'Wünsche']);
+    expect(councilAgenda(await db.settings.get('app'))).toEqual(['Schönstes Erlebnis', 'Wünsche', 'Familienprojekte', 'Was gibt es Neues aus unserer Kinderfirma?']);
+    expect(councilAgenda({ councilAgenda: ['Termine', 'Nächstes Abenteuer'] })).toEqual(['Termine', 'Familienprojekte', 'Was gibt es Neues aus unserer Kinderfirma?', 'Nächstes Abenteuer']);
+    expect(councilAgenda({ councilAgenda: ['Unsere Projekte', 'Wünsche'] })).toEqual(['Unsere Projekte', 'Was gibt es Neues aus unserer Kinderfirma?', 'Wünsche']);
 
     await updateCouncil(db, '2026-10-11', (n) => addDecision({ ...n, highlights: { 'child-1': 'Laternenumzug' } }, 'Samstag Zoo'));
     const note = (await db.familyCouncilNotes.get('2026-10-11'))!;

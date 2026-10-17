@@ -37,7 +37,7 @@ describe('Datenbank', () => {
 
     const upgraded = new FamilyDatabase(name);
     await upgraded.open();
-    expect(upgraded.verno).toBe(15);
+    expect(upgraded.verno).toBe(16);
     expect(await upgraded.tripGoals.count()).toBe(3);
     expect(await upgraded.recipes.count()).toBeGreaterThan(20);
     const settings = await upgraded.settings.get('app');

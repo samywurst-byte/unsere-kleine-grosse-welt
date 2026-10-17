@@ -1,13 +1,13 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AppSettings, CalendarEvent, ChoreDefinition, ChoreOccurrence, Country, CountryUnlock, DeviceMeta, EventException,
-  FamilyCouncilNote, FamilyMemory, MealPlan, Recipe, ShoppingItem, CookSession, FreezerItem, FamilyProject, Discovery, MoneyTransaction, SavingsGoal, TripGoal, MoneyRequest, SimDepot, DepotValuation, ExplorerSunday, ExplorerEntry, JarQuestion, ChessProgress, HeroProfile, HeroMission, PlayTime, FamilyRitual, RitualFavorite, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
+  FamilyCouncilNote, FamilyMemory, MealPlan, Recipe, ShoppingItem, CookSession, FreezerItem, FamilyProject, Discovery, MoneyTransaction, SavingsGoal, TripGoal, MoneyRequest, SimDepot, DepotValuation, ExplorerSunday, ExplorerEntry, JarQuestion, ChessProgress, HeroProfile, HeroMission, PlayTime, KidCompany, CompanyProduct, CompanyEntry, FamilyRitual, RitualFavorite, FamilyTimeSession, WeekendAdventure, LearningObservation, LearningPack, LearningRelease, LearningActivity, LearningProgress, Member, MissionCompletion,
   OptionalMission, ParentAuth, PassportStamp, RoutineDefinition, RoutineOccurrence, SpecialDayMode,
   RoutineDefinition as RoutineDef, SafetyCopy, StarTransaction, TimerPreset, TimerState, Weekday,
 } from '../types';
 import { buildSeed } from '../data/seed';
 import { toDateKey } from '../utils/dates';
-import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15 } from './schema';
+import { DB_NAME, SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16 } from './schema';
 import { defaultTrips } from '../data/money';
 import { defaultRecipes } from '../data/meals';
 import { WORLD } from '../data/countries';
@@ -65,6 +65,9 @@ export class FamilyDatabase extends Dexie {
   heroProfiles!: Table<HeroProfile, string>;
   heroMissions!: Table<HeroMission, string>;
   playTimes!: Table<PlayTime, string>;
+  kidCompany!: Table<KidCompany, string>;
+  companyProducts!: Table<CompanyProduct, string>;
+  companyEntries!: Table<CompanyEntry, string>;
 
   constructor(name: string = DB_NAME, options?: { seedDate?: Date }) {
     super(name);
@@ -123,6 +126,8 @@ export class FamilyDatabase extends Dexie {
 
     this.version(15).stores(SCHEMA_V15);
 
+    this.version(16).stores(SCHEMA_V16);
+
     // Läuft ausschließlich, wenn die Datenbank zum allerersten Mal angelegt wird.
     this.on('populate', async (tx) => {
       const seed = buildSeed(toDateKey(options?.seedDate ?? new Date()));
@@ -142,4 +147,4 @@ export class FamilyDatabase extends Dexie {
 export const db = new FamilyDatabase();
 
 /** Alle Tabellen in fester Reihenfolge, z. B. für Export und Import. */
-export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6), ...Object.keys(SCHEMA_V7), ...Object.keys(SCHEMA_V8), ...Object.keys(SCHEMA_V9), ...Object.keys(SCHEMA_V10), ...Object.keys(SCHEMA_V11), ...Object.keys(SCHEMA_V12), ...Object.keys(SCHEMA_V13), ...Object.keys(SCHEMA_V14), ...Object.keys(SCHEMA_V15)] as const;
+export const TABLE_NAMES = [...Object.keys(SCHEMA_V1), ...Object.keys(SCHEMA_V2), ...Object.keys(SCHEMA_V3), ...Object.keys(SCHEMA_V4), ...Object.keys(SCHEMA_V5), ...Object.keys(SCHEMA_V6), ...Object.keys(SCHEMA_V7), ...Object.keys(SCHEMA_V8), ...Object.keys(SCHEMA_V9), ...Object.keys(SCHEMA_V10), ...Object.keys(SCHEMA_V11), ...Object.keys(SCHEMA_V12), ...Object.keys(SCHEMA_V13), ...Object.keys(SCHEMA_V14), ...Object.keys(SCHEMA_V15), ...Object.keys(SCHEMA_V16)] as const;

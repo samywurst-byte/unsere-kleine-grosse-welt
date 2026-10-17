@@ -54,5 +54,6 @@ export const DEFAULT_COUNCIL_AGENDA = [
   'Essensplan',
   'Einkaufsliste',
   'Familienprojekte',
+  'Was gibt es Neues aus unserer Kinderfirma?',
   'Nächstes Wochenendabenteuer',
 ];

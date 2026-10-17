@@ -1,4 +1,5 @@
 import type { FamilyDatabase } from '../database/db';
+import { COMPANY_COUNCIL_ITEM } from '../data/kidCompany';
 import { ADVENTURE_IDEAS, DEFAULT_COUNCIL_AGENDA, type AdventureIdea } from '../data/familyTime';
 import type {
   AdventureStatus, AppSettings, CalendarEvent, CouncilDecision, DateKey, FamilyCouncilNote, FamilyMemory, FamilyTimeSession,
@@ -173,13 +174,21 @@ export function councilDate(date: DateKey): DateKey {
 /** Fester Punkt: die Projektwerkstatt wird in jedem Familienrat besprochen (Samiras Wunsch). */
 export const COUNCIL_PROJECTS_ITEM = 'Familienprojekte';
 const isProjectsItem = (t: string) => t.toLowerCase().includes('projekt');
+export const isCompanyItem = (t: string) => t.toLowerCase().includes('kinderfirma');
 
 export function councilAgenda(settings: Pick<AppSettings, 'councilAgenda'> | undefined): string[] {
-  const agenda = settings?.councilAgenda?.length ? settings.councilAgenda : DEFAULT_COUNCIL_AGENDA;
-  if (agenda.some(isProjectsItem)) return agenda;
-  // Vor dem Wochenendabenteuer einreihen, sonst ans Ende
-  const at = agenda.findIndex((t) => t.toLowerCase().includes('abenteuer'));
-  return at < 0 ? [...agenda, COUNCIL_PROJECTS_ITEM] : [...agenda.slice(0, at), COUNCIL_PROJECTS_ITEM, ...agenda.slice(at)];
+  let agenda = settings?.councilAgenda?.length ? settings.councilAgenda : DEFAULT_COUNCIL_AGENDA;
+  if (!agenda.some(isProjectsItem)) {
+    // Vor dem Wochenendabenteuer einreihen, sonst ans Ende
+    const at = agenda.findIndex((t) => t.toLowerCase().includes('abenteuer') && !isCompanyItem(t));
+    agenda = at < 0 ? [...agenda, COUNCIL_PROJECTS_ITEM] : [...agenda.slice(0, at), COUNCIL_PROJECTS_ITEM, ...agenda.slice(at)];
+  }
+  if (!agenda.some(isCompanyItem)) {
+    // Direkt nach den Familienprojekten
+    const at = agenda.findIndex(isProjectsItem);
+    agenda = [...agenda.slice(0, at + 1), COMPANY_COUNCIL_ITEM, ...agenda.slice(at + 1)];
+  }
+  return agenda;
 }
 
 export async function saveCouncilAgenda(db: FamilyDatabase, agenda: string[]): Promise<void> {

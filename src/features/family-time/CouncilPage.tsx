@@ -6,7 +6,7 @@ import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
 import { DEFAULT_COUNCIL_AGENDA } from '../../data/familyTime';
 import { db } from '../../database/db';
-import { useChildren, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useProjects, useExplorerSundays, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
+import { useChildren, useCompany, useCouncilNote, useDeviceMeta, useMealPlans, useMembers, useOccurrences, useRecipes, useProjects, useExplorerSundays, useSettings, useShoppingItems, useWeekendAdventures } from '../../hooks/useData';
 import { nextStep, projectProgress } from '../../services/projects';
 import { nextSunday } from '../../services/explorer';
 import { SundayControl } from '../explorer/explorerParts';
@@ -20,13 +20,16 @@ import {
 } from '../../services/familyTime';
 import type { CouncilDecision, FamilyCouncilNote, Member } from '../../types';
 import { addDaysKey, formatDayMonth, formatWeekday, formatWeekdayShort, toDateKey } from '../../utils/dates';
+import { FOUNDING_TITLE } from '../../data/kidCompany';
+import { CompanyCouncil } from '../company/CompanyCouncil';
 import './familyTime.css';
 
-type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'shopping' | 'projects' | 'notes';
+type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'shopping' | 'projects' | 'company' | 'notes';
 
 /** Welche Hilfe ein Tagesordnungspunkt bekommt; erkannt am Titel, damit eigene Punkte einfach Notizen sind. */
 function itemKind(title: string): ItemKind {
   const t = title.toLowerCase();
+  if (t.includes('kinderfirma')) return 'company';
   if (t.includes('erlebnis') || t.includes('schönst')) return 'highlights';
   if (t.includes('termin')) return 'events';
   if (t.includes('abenteuer')) return 'adventure';
@@ -43,8 +46,9 @@ export function CouncilPage() {
   const settings = useSettings();
   const note = useCouncilNote(date);
   const members = useMembers();
+  const company = useCompany();
   const [editAgenda, setEditAgenda] = useState(false);
-  if (!settings || note === undefined || !members) return null;
+  if (!settings || note === undefined || !members || company === undefined) return null;
   const agenda = councilAgenda(settings);
   const current: FamilyCouncilNote = note ?? { id: date, date };
   const change = (fn: (n: FamilyCouncilNote) => FamilyCouncilNote) => void updateCouncil(db, date, fn);
@@ -72,7 +76,7 @@ export function CouncilPage() {
             <li key={`${i}-${title}`} className={`card ft-item ${done ? 'is-done' : ''}`}>
               <div className="ft-item__head">
                 <span className="ft-item__num" aria-hidden="true">{i + 1}</span>
-                <h2 className="ft-item__title">{title}</h2>
+                <h2 className="ft-item__title">{itemKind(title) === 'company' && !company?.foundedAt ? FOUNDING_TITLE : title}</h2>
                 <button type="button" className={`btn btn--small ${done ? 'btn--sage' : ''}`} aria-pressed={done} onClick={() => toggleDone(i)}>
                   <Check size={16} aria-hidden="true" /> {done ? 'Besprochen' : 'Abhaken'}
                 </button>
@@ -123,6 +127,7 @@ function ItemBody({ kind, itemKey, note, date, members, today, change }: {
   if (kind === 'meals') return <><MealWishes weekStart={addDaysKey(date, 1)} />{notes}</>;
   if (kind === 'shopping') return <><ShoppingQuick />{notes}</>;
   if (kind === 'projects') return <><ProjectsQuick /><ExplorerQuick today={today} />{notes}</>;
+  if (kind === 'company') return <><CompanyCouncil today={today} />{notes}</>;
   return notes;
 }
 

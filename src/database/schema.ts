@@ -115,4 +115,11 @@ export const SCHEMA_V15 = {
   playTimes: 'id, childId, date',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 15;
+/** Version 16: Kinderfirma (Firma, Produkte, Firmenkasse). */
+export const SCHEMA_V16 = {
+  kidCompany: 'id',
+  companyProducts: 'id, order',
+  companyEntries: 'id, date, productId',
+} as const;
+
+export const CURRENT_SCHEMA_VERSION = 16;

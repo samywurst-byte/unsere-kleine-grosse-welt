@@ -19,6 +19,7 @@ export function MoneyTabs() {
     <nav className="seg lib-tabs" aria-label="Geld">
       <NavLink to="/geld" className={cls}>🐷 Meine Geldwelt</NavLink>
       <NavLink to="/reisekasse" className={cls}>🧳 Reisekasse</NavLink>
+      <NavLink to="/kinderfirma" className={cls}>🏪 Kinderfirma</NavLink>
     </nav>
   );
 }

@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { db } from '../database/db';
+import { CompanyPage } from '../features/company/CompanyPage';
+import { FoundingPage } from '../features/company/FoundingPage';
 import { FirstRunSetup } from './FirstRunSetup';
 import { AppShell } from './AppShell';
 import { ParentSessionProvider } from './ParentSession';
@@ -87,6 +89,8 @@ export function App() {
             <Route path="geld/:childId" element={<ChildMoneyPage />} />
             <Route path="reisekasse" element={<TravelPage />} />
             <Route path="reisekasse/:tripId" element={<TripPage />} />
+            <Route path="kinderfirma" element={<CompanyPage />} />
+            <Route path="kinderfirma/gruendung" element={<FoundingPage />} />
             <Route path="familienzeit" element={<FamilyTimePage />} />
             <Route path="familienzeit/abenteuer" element={<AdventurePage />} />
             <Route path="familienzeit/familienrat" element={<CouncilPage />} />

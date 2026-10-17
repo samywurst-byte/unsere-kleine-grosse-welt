@@ -246,3 +246,16 @@ export function useHeroData() {
     return { profiles, missions };
   }, []);
 }
+
+/** Unsere Kinderfirma; null, solange es noch keine gibt. */
+export function useCompany() {
+  return useLiveQuery(async () => (await db.kidCompany.get('company')) ?? null, []);
+}
+
+export function useCompanyProducts() {
+  return useLiveQuery(() => db.companyProducts.orderBy('order').toArray(), []);
+}
+
+export function useCompanyEntries() {
+  return useLiveQuery(() => db.companyEntries.orderBy('date').toArray(), []);
+}
