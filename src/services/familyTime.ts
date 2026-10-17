@@ -170,8 +170,16 @@ export function councilDate(date: DateKey): DateKey {
   return addDaysKey(weekStartKey(date), 6);
 }
 
+/** Fester Punkt: die Projektwerkstatt wird in jedem Familienrat besprochen (Samiras Wunsch). */
+export const COUNCIL_PROJECTS_ITEM = 'Familienprojekte';
+const isProjectsItem = (t: string) => t.toLowerCase().includes('projekt');
+
 export function councilAgenda(settings: Pick<AppSettings, 'councilAgenda'> | undefined): string[] {
-  return settings?.councilAgenda?.length ? settings.councilAgenda : DEFAULT_COUNCIL_AGENDA;
+  const agenda = settings?.councilAgenda?.length ? settings.councilAgenda : DEFAULT_COUNCIL_AGENDA;
+  if (agenda.some(isProjectsItem)) return agenda;
+  // Vor dem Wochenendabenteuer einreihen, sonst ans Ende
+  const at = agenda.findIndex((t) => t.toLowerCase().includes('abenteuer'));
+  return at < 0 ? [...agenda, COUNCIL_PROJECTS_ITEM] : [...agenda.slice(0, at), COUNCIL_PROJECTS_ITEM, ...agenda.slice(at)];
 }
 
 export async function saveCouncilAgenda(db: FamilyDatabase, agenda: string[]): Promise<void> {

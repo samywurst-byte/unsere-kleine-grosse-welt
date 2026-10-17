@@ -67,7 +67,9 @@ describe('Mama-Zeit, Familienrat und Erinnerungen', () => {
     expect(councilDate('2026-10-10')).toBe('2026-10-11');
     expect(councilAgenda(await db.settings.get('app'))).toHaveLength(6);
     await saveCouncilAgenda(db, ['Schönstes Erlebnis', ' ', 'Wünsche']);
-    expect(councilAgenda(await db.settings.get('app'))).toEqual(['Schönstes Erlebnis', 'Wünsche']);
+    expect(councilAgenda(await db.settings.get('app'))).toEqual(['Schönstes Erlebnis', 'Wünsche', 'Familienprojekte']);
+    expect(councilAgenda({ councilAgenda: ['Termine', 'Nächstes Abenteuer'] })).toEqual(['Termine', 'Familienprojekte', 'Nächstes Abenteuer']);
+    expect(councilAgenda({ councilAgenda: ['Unsere Projekte', 'Wünsche'] })).toEqual(['Unsere Projekte', 'Wünsche']);
 
     await updateCouncil(db, '2026-10-11', (n) => addDecision({ ...n, highlights: { 'child-1': 'Laternenumzug' } }, 'Samstag Zoo'));
     const note = (await db.familyCouncilNotes.get('2026-10-11'))!;

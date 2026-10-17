@@ -240,7 +240,7 @@ function AgendaModal({ agenda, onClose }: { agenda: string[]; onClose: () => voi
         <button type="button" className="btn btn--primary" onClick={() => void saveCouncilAgenda(db, text.split('\n')).then(onClose)}>Speichern</button>
       </>}
     >
-      <Field label="Ein Punkt pro Zeile" hint="Punkte mit „Erlebnis“, „Termine“ oder „Abenteuer“ im Namen bekommen ihre Hilfen automatisch, alle anderen ein Notizfeld.">
+      <Field label="Ein Punkt pro Zeile" hint="Punkte mit „Erlebnis“, „Termine“ oder „Abenteuer“ im Namen bekommen ihre Hilfen automatisch, alle anderen ein Notizfeld. „Familienprojekte“ mit der Projektwerkstatt ist ein fester Punkt und kommt immer wieder dazu.">
         <textarea className="input" rows={8} value={text} onChange={(e) => setText(e.target.value)} />
       </Field>
     </Modal>
