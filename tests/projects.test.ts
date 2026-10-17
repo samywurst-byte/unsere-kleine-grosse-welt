@@ -237,3 +237,19 @@ describe('Projektblätter', () => {
     expect(childProjects(await db.projects.toArray(), 'child-1')).toHaveLength(0);
   });
 });
+
+describe('Ordner Geld verdienen', () => {
+  it('enthält alle Verdienst-Ideen mit eindeutigen ids', () => {
+    const ids = PROJECT_IDEAS.map((i) => i.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    const money = PROJECT_IDEAS.filter((i) => i.money).map((i) => i.id);
+    for (const id of ['farm-shop', 'lemonade', 'flea-market', 'bird-food-shop', 'christmas-workshop', 'seed-shop', 'insect-hotel-shop', 'flowerpot-atelier', 'seed-bombs', 'advent-decor']) {
+      expect(money).toContain(id);
+    }
+    for (const id of ['bird-food-shop', 'christmas-workshop', 'seed-shop', 'insect-hotel-shop', 'flowerpot-atelier', 'seed-bombs', 'advent-decor']) {
+      const idea = PROJECT_IDEA_BY_ID.get(id)!;
+      expect(idea.stand).toBe(true);
+      expect(ideaSteps(idea).make.at(-1)).toBe('Verkauf mit Mama oder Papa');
+    }
+  });
+});

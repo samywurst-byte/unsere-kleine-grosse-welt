@@ -37,7 +37,15 @@ export function ProjectsPage() {
   const active = projects.filter((p) => p.status === 'active').sort((a, b) => a.startDate.localeCompare(b.startDate));
   const paused = projects.filter((p) => p.status === 'paused');
   const done = chronicle(projects, chronicleChild);
-  const ideas = ideasForNow(today);
+  const allIdeas = ideasForNow(today);
+  const moneyFolder = params.get('ordner') === 'geld';
+  const moneyCount = allIdeas.filter((i) => i.money).length;
+  const ideas = allIdeas.filter((i) => !!i.money === moneyFolder);
+  const openFolder = (money: boolean) => {
+    const next = new URLSearchParams(params);
+    if (money) next.set('ordner', 'geld'); else next.delete('ordner');
+    setParams(next, { replace: true });
+  };
   const running = new Set(active.map((p) => p.ideaId));
 
   return (
@@ -56,7 +64,17 @@ export function ProjectsPage() {
 
         <section className="card">
           <h2 className="card__title">Ideen für unser nächstes Projekt</h2>
-          <p className="muted pj-lead">Jedes Kind bekommt im selben Projekt eigene Aufgaben, passend zu dem, was es gerade lernt.</p>
+          <div className="seg pj-folders" role="group" aria-label="Ideen-Ordner">
+            <button type="button" className="seg__item" aria-pressed={!moneyFolder} onClick={() => openFolder(false)}>💡 Ideen ({allIdeas.length - moneyCount})</button>
+            <button type="button" className="seg__item" aria-pressed={moneyFolder} onClick={() => openFolder(true)}>💰 Geld verdienen ({moneyCount})</button>
+          </div>
+          {moneyFolder ? (
+            <p className="muted pj-lead">
+              Hier verdienen die Kinder Geld für ein Ziel, zum Beispiel einen Urlaub oder ein Wochenende im Ferienpark. Am Ende kommt der Überschuss in die <Link to="/reisekasse">Reisekasse</Link> oder in die Schatzkammer. Helfen im Alltag bleibt unbezahlt.
+            </p>
+          ) : (
+            <p className="muted pj-lead">Jedes Kind bekommt im selben Projekt eigene Aufgaben, passend zu dem, was es gerade lernt.</p>
+          )}
           <div className="pj-ideas">
             {ideas.map((i) => (
               <button key={i.id} type="button" className={`pj-idea ${isInSeason(i, today) && i.months.length ? 'pj-idea--season' : ''}`} onClick={() => setStarting({ idea: i })}>

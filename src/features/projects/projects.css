@@ -93,3 +93,4 @@
 .pj-split__head { margin: 0 0 4px; font-weight: 800; }
 .pj-split ul { margin: 0; padding-left: 1.2em; }
 .pj-split__stand { grid-column: 1 / -1; margin: 0; }
+.pj-folders { margin-bottom: var(--space-3); }
