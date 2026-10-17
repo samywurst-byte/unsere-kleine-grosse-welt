@@ -316,3 +316,98 @@ export const YEAR_RHYTHM: { months: number[]; emoji: string; title: string; text
   { months: [9, 10], emoji: '🍂', title: 'September und Oktober', text: 'Herbstprodukte und die Weihnachtswerkstatt planen' },
   { months: [11, 12], emoji: '🎄', title: 'November und Dezember', text: 'Weihnachtsverkauf, Jahresabschluss und gemeinsam feiern' },
 ];
+
+// ---------------------------------------------------------------- Werkstatt
+
+export type StepWho = 'kids' | 'parents' | 'together';
+export const WHO_LABEL: Record<StepWho, string> = { kids: 'Das schafft ihr allein', parents: 'Mama oder Papa', together: 'Zusammen' };
+export const WHO_EMOJI: Record<StepWho, string> = { kids: '🧒', parents: '👩', together: '👪' };
+
+export interface WorkStep { emoji: string; text: string; who: StepWho }
+
+/** Bebilderte Arbeitsschritte je Produkt; kurz genug zum Vorlesen. */
+export const PRODUCT_STEPS: Record<string, WorkStep[]> = {
+  'bead-trees': [
+    { emoji: '🧺', text: 'Perlen nach Farben sortieren', who: 'kids' },
+    { emoji: '🪡', text: 'Draht zu einem Baum biegen', who: 'parents' },
+    { emoji: '🟢', text: 'Grüne Perlen auffädeln, ab und zu eine bunte', who: 'kids' },
+    { emoji: '⭐', text: 'Den Stern oben aufstecken', who: 'kids' },
+    { emoji: '🎀', text: 'Band zum Aufhängen anknoten', who: 'together' },
+  ],
+  'wood-gnomes': [
+    { emoji: '🪚', text: 'Holzklötze zusägen', who: 'parents' },
+    { emoji: '🧽', text: 'Kanten mit Schleifpapier glatt reiben', who: 'kids' },
+    { emoji: '🎩', text: 'Filzmütze aufkleben', who: 'kids' },
+    { emoji: '🧔', text: 'Bart aus Fell oder Wolle ankleben', who: 'kids' },
+    { emoji: '🔴', text: 'Holzkugel als Nase aussuchen und ankleben', who: 'kids' },
+  ],
+  'wood-village': [
+    { emoji: '🪚', text: 'Häuser-Rohlinge zusägen', who: 'parents' },
+    { emoji: '🎨', text: 'Häuser mit Farbe anmalen', who: 'kids' },
+    { emoji: '🧽', text: 'Mit dem Schwamm Schnee auf das Dach tupfen', who: 'kids' },
+    { emoji: '🪟', text: 'Fenster und Türen stempeln', who: 'kids' },
+    { emoji: '📦', text: 'Drei Häuser zu einem Set zusammenlegen', who: 'together' },
+  ],
+  'peg-snowflakes': [
+    { emoji: '🔧', text: 'Federn aus den Klammern nehmen', who: 'parents' },
+    { emoji: '🧩', text: 'Je zwei Hälften mit dem Rücken zusammenkleben', who: 'kids' },
+    { emoji: '❄️', text: 'Acht Teile zu einem Stern legen', who: 'kids' },
+    { emoji: '🫙', text: 'In der Mitte festkleben und trocknen lassen', who: 'together' },
+    { emoji: '🎀', text: 'Band zum Aufhängen anknoten', who: 'together' },
+  ],
+  'slice-reindeer': [
+    { emoji: '🪵', text: 'Baumscheiben aussuchen', who: 'kids' },
+    { emoji: '👀', text: 'Augen aufkleben oder malen', who: 'kids' },
+    { emoji: '🔴', text: 'Die rote Nase aufkleben', who: 'kids' },
+    { emoji: '🌿', text: 'Geweih aus Zweigen ankleben', who: 'together' },
+    { emoji: '🎀', text: 'Band zum Aufhängen befestigen', who: 'together' },
+  ],
+  'thumb-snowmen': [
+    { emoji: '🪵', text: 'Holzscheibe hinlegen', who: 'kids' },
+    { emoji: '👍', text: 'Finger in weiße Farbe tupfen und zwei Abdrücke machen', who: 'kids' },
+    { emoji: '⏳', text: 'Gut trocknen lassen', who: 'kids' },
+    { emoji: '✏️', text: 'Gesicht, Knöpfe und Schal malen', who: 'together' },
+    { emoji: '🎀', text: 'Band zum Aufhängen anknoten', who: 'together' },
+  ],
+  'nature-ornaments': [
+    { emoji: '🌲', text: 'Zapfen, Zimt und Sternanis sammeln und sortieren', who: 'kids' },
+    { emoji: '🎨', text: 'Holzscheiben bemalen', who: 'kids' },
+    { emoji: '🧷', text: 'Naturschätze aufkleben', who: 'together' },
+    { emoji: '🎀', text: 'Band durch das Loch fädeln', who: 'kids' },
+  ],
+  'beeswax-candles': [
+    { emoji: '📏', text: 'Wachsplatte und Docht zuschneiden', who: 'parents' },
+    { emoji: '✋', text: 'Wachsplatte mit warmen Händen weich machen', who: 'kids' },
+    { emoji: '🕯️', text: 'Fest um den Docht rollen', who: 'together' },
+    { emoji: '🏷️', text: 'Banderole mit Brennhinweis umlegen', who: 'together' },
+  ],
+  'bird-food': [
+    { emoji: '🔥', text: 'Fett schmelzen', who: 'parents' },
+    { emoji: '🥄', text: 'Körner einrühren', who: 'together' },
+    { emoji: '🌲', text: 'Zapfen oder Förmchen füllen', who: 'kids' },
+    { emoji: '❄️', text: 'Kalt werden lassen', who: 'kids' },
+    { emoji: '🎀', text: 'Schnur anknoten und in Tütchen packen', who: 'together' },
+  ],
+  'gift-set': [
+    { emoji: '🧺', text: 'Zwei fertige Stücke aussuchen', who: 'kids' },
+    { emoji: '💌', text: 'Dankeskarte malen', who: 'kids' },
+    { emoji: '🛍️', text: 'Alles in die Tüte legen', who: 'kids' },
+    { emoji: '🎀', text: 'Band zubinden', who: 'together' },
+  ],
+};
+
+export const GENERIC_STEPS: WorkStep[] = [
+  { emoji: '🧺', text: 'Material holen und bereitlegen', who: 'kids' },
+  { emoji: '🔨', text: 'Ein Stück herstellen', who: 'together' },
+  { emoji: '🔍', text: 'Anschauen: Ist es schön geworden?', who: 'kids' },
+  { emoji: '🎁', text: 'Verpacken', who: 'kids' },
+];
+
+/** Dauer einer Werkstatt-Einheit in Minuten; danach darf Pause sein. */
+export const WORK_UNIT_MINUTES = 15;
+
+// ---------------------------------------------------------------- Erfolge
+
+export interface Milestone { id: string; emoji: string; title: string }
+
+export const PROFIT_MILESTONES = [1000, 2500, 5000, 10000, 15000, 20000];

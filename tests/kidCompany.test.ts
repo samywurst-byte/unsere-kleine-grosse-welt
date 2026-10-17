@@ -82,3 +82,41 @@ describe('Kinderfirma', () => {
     expect(backup.ok).toBe(true);
   });
 });
+
+describe('Kinderfirma Paket 2', () => {
+  it('Werkstattauftrag, Erfolge und Jahresabschluss', async () => {
+    const { addJob, jobPiece, milestones, openJobs, saveClosingMemory, saveReviewAnswer, stepsFor, recordSale: sale, foundCompany: found, toggleFirstProduct: pick } = await import('../src/services/kidCompany');
+    const db = await openDb();
+    await found(db, { name: 'Sternenfabrik', date: '2026-10-18', founderIds: ['child-1'] });
+    await pick(db, 'bead-trees', 'xmas-2026');
+    expect(stepsFor({ catalogId: 'bead-trees' })[0].text).toContain('Perlen');
+    expect(stepsFor({ catalogId: undefined }).length).toBeGreaterThan(2);
+
+    await addJob(db, 'product-bead-trees', { count: 2, childIds: ['child-2'] });
+    let p = (await db.companyProducts.get('product-bead-trees'))!;
+    const job = p.jobs![0];
+    await jobPiece(db, p.id, job.id, 1);
+    await jobPiece(db, p.id, job.id, 1);
+    await jobPiece(db, p.id, job.id, 1);
+    p = (await db.companyProducts.get(p.id))!;
+    expect([p.made, p.jobs![0].done, !!p.jobs![0].doneAt]).toEqual([2, 2, true]);
+    expect(openJobs([p])).toHaveLength(0);
+    await jobPiece(db, p.id, job.id, -1);
+    expect((await db.companyProducts.get(p.id))!.made).toBe(1);
+
+    await sale(db, { productId: p.id, pieces: 3, cents: 1500, date: '2026-11-25' });
+    const c = (await db.kidCompany.get('company'))!;
+    const ids = milestones(c, await db.companyProducts.toArray(), await db.companyEntries.toArray()).map((m) => m.id);
+    expect(ids).toEqual(expect.arrayContaining(['founded', 'sample', 'sale', 'profit-1000']));
+    expect(ids).not.toContain('profit-2500');
+
+    await saveReviewAnswer(db, 'xmas-2026', 'Was hat uns besonders viel Spaß gemacht?', 'Perlen fädeln');
+    const id = await saveClosingMemory(db, 'xmas-2026', '2026-12-20');
+    const again = await saveClosingMemory(db, 'xmas-2026', '2026-12-21');
+    expect(again).toBe(id);
+    const mem = (await db.familyMemories.get(id!))!;
+    expect(mem).toMatchObject({ date: '2026-12-20', source: { kind: 'company', id: 'xmas-2026' } });
+    expect(mem.text).toContain('Perlen fädeln');
+    expect(await db.familyMemories.count()).toBe(1);
+  });
+});

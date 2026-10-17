@@ -1,10 +1,10 @@
 import type { FamilyDatabase } from '../database/db';
 import { defaultTrips } from '../data/money';
 import {
-  CHRISTMAS_PRODUCTS, DEFAULT_COMPANY_SPLIT, SEASON_PLANS, XMAS_2026, holidayParkTrip, type CompanyBand, type SeasonPhase, type SeasonPlan,
+  CHRISTMAS_PRODUCTS, DEFAULT_COMPANY_SPLIT, GENERIC_STEPS, PRODUCT_STEPS, PROFIT_MILESTONES, type Milestone, type WorkStep, SEASON_PLANS, XMAS_2026, holidayParkTrip, type CompanyBand, type SeasonPhase, type SeasonPlan,
 } from '../data/kidCompany';
 import type {
-  ChildProfile, CompanyEntry, CompanyProduct, CompanySeason, DateKey, Id, KidCompany, MoneyHolding, MoneyTransaction,
+  ChildProfile, CompanyEntry, CompanyProduct, CompanySeason, DateKey, FamilyMemory, Id, KidCompany, MoneyHolding, MoneyTransaction, ProductionJob,
 } from '../types';
 import { ageInYears } from '../utils/dates';
 import { bookTransactions, reversedIds, tripAccount, type BookResult } from './money';
@@ -273,5 +273,111 @@ export async function bookPayout(
     return { ok: true } as const;
   });
 }
+
+// ---------------------------------------------------------------- Werkstatt
+
+export function stepsFor(p: Pick<CompanyProduct, 'catalogId'>): WorkStep[] {
+  return (p.catalogId && PRODUCT_STEPS[p.catalogId]) || GENERIC_STEPS;
+}
+
+export function openJobs(products: CompanyProduct[]): { product: CompanyProduct; job: ProductionJob }[] {
+  return products.flatMap((product) => (product.jobs ?? []).filter((j) => j.done < j.count).map((job) => ({ product, job })));
+}
+
+export async function addJob(db: FamilyDatabase, productId: Id, input: { count: number; childIds: Id[] }): Promise<void> {
+  await db.transaction('rw', db.companyProducts, async () => {
+    const p = await db.companyProducts.get(productId);
+    if (!p || input.count < 1) return;
+    const job: ProductionJob = { id: newId(), count: input.count, done: 0, childIds: input.childIds, createdAt: new Date().toISOString() };
+    await db.companyProducts.put({ ...p, jobs: [...(p.jobs ?? []), job] });
+  });
+}
+
+/** Ein Stück im Auftrag fertig (oder zurück). Zählt auch beim Produkt als hergestellt. */
+export async function jobPiece(db: FamilyDatabase, productId: Id, jobId: Id, delta: 1 | -1): Promise<void> {
+  await db.transaction('rw', db.companyProducts, async () => {
+    const p = await db.companyProducts.get(productId);
+    const job = p?.jobs?.find((j) => j.id === jobId);
+    if (!p || !job) return;
+    const done = Math.max(0, Math.min(job.count, job.done + delta));
+    if (done === job.done) return;
+    const next: ProductionJob = { ...job, done, doneAt: done === job.count ? new Date().toISOString() : undefined };
+    await db.companyProducts.put({ ...p, made: Math.max(0, p.made + (done - job.done)), jobs: p.jobs!.map((j) => (j.id === jobId ? next : j)) });
+  });
+}
+
+export async function removeJob(db: FamilyDatabase, productId: Id, jobId: Id): Promise<void> {
+  await db.transaction('rw', db.companyProducts, async () => {
+    const p = await db.companyProducts.get(productId);
+    if (p) await db.companyProducts.put({ ...p, jobs: (p.jobs ?? []).filter((j) => j.id !== jobId) });
+  });
+}
+
+// ---------------------------------------------------------------- Erfolge
+
+export interface ReachedMilestone extends Milestone { date?: DateKey }
+
+/** Was die Firma schon geschafft hat, mit Datum, soweit es sich aus den Einträgen ergibt. Ohne Vergleich zwischen den Kindern. */
+export function milestones(company: Pick<KidCompany, 'foundedAt'> | undefined, products: CompanyProduct[], entries: CompanyEntry[]): ReachedMilestone[] {
+  const out: ReachedMilestone[] = [];
+  if (company?.foundedAt) out.push({ id: 'founded', emoji: '🎉', title: 'Firma gegründet', date: company.foundedAt });
+  const firstSample = products.filter((p) => p.status !== 'idea').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+  if (firstSample) out.push({ id: 'sample', emoji: '🧪', title: 'Erstes Muster', date: firstSample.createdAt.slice(0, 10) });
+  if (products.some((p) => p.orders > 0)) out.push({ id: 'order', emoji: '📬', title: 'Erste Bestellung' });
+  const sorted = [...entries].sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt));
+  const firstSale = sorted.find((e) => e.kind === 'income');
+  if (firstSale) out.push({ id: 'sale', emoji: '🛍️', title: 'Erster Verkauf', date: firstSale.date });
+  const firstPayout = sorted.find((e) => e.kind === 'payout' && e.cents > 0);
+  if (firstPayout) out.push({ id: 'payout', emoji: '🧳', title: 'Erstes Geld in der Reisekasse', date: firstPayout.date });
+  let profit = 0, pieces = 0;
+  const reached = new Set<number>();
+  const piecesReached = new Set<number>();
+  for (const e of sorted) {
+    if (e.kind === 'income') { profit += e.cents; pieces += e.pieces ?? 0; }
+    else if ((e.kind === 'material' || e.kind === 'cost') && !e.fromReserve) profit -= e.cents;
+    for (const m of PROFIT_MILESTONES) if (profit >= m && !reached.has(m)) { reached.add(m); out.push({ id: `profit-${m}`, emoji: '💶', title: `${m / 100} € Gewinn`, date: e.date }); }
+    for (const n of [10, 25, 50, 100]) if (pieces >= n && !piecesReached.has(n)) { piecesReached.add(n); out.push({ id: `pieces-${n}`, emoji: '📦', title: `${n} Stück verkauft`, date: e.date }); }
+  }
+  return out;
+}
+
+export function companyMemories(memories: FamilyMemory[]): FamilyMemory[] {
+  return memories.filter((m) => m.source?.kind === 'company').sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export async function saveReviewAnswer(db: FamilyDatabase, seasonId: Id, question: string, answer: string): Promise<void> {
+  await updateCompany(db, (c) => ({ ...c, seasons: c.seasons.map((s) => (s.id !== seasonId ? s : { ...s, review: { ...s.review, [question]: answer } })) }));
+}
+
+/** Jahresabschluss als Erinnerung ins Familienarchiv; eine je Saison, beim nächsten Mal aufgefrischt. */
+export async function saveClosingMemory(db: FamilyDatabase, seasonId: Id, date: DateKey): Promise<Id | undefined> {
+  return db.transaction('rw', [db.kidCompany, db.companyEntries, db.companyProducts, db.familyMemories], async () => {
+    const company = await db.kidCompany.get('company');
+    const season = company?.seasons.find((s) => s.id === seasonId);
+    if (!company || !season) return undefined;
+    const products = (await db.companyProducts.toArray()).filter((p) => p.seasonId === seasonId);
+    const t = companyTotals(await db.companyEntries.toArray(), seasonId);
+    const made = products.reduce((n, p) => n + p.made, 0);
+    const sold = products.reduce((n, p) => n + p.sold, 0);
+    const answers = Object.entries(season.review ?? {}).filter(([, a]) => a.trim()).map(([q, a]) => `${q} ${a.trim()}`);
+    const text = [
+      `${company.name || 'Unsere Kinderfirma'}: ${made} Stück hergestellt, ${sold} verkauft, ${formatCents(t.income)} eingenommen, ${formatCents(t.materials + t.costs)} Material und Kosten, ${formatCents(t.profit)} Gewinn.`,
+      `Hergestellt: ${products.map((p) => p.name).join(', ') || 'noch nichts'}.`,
+      ...answers,
+    ].join('\n');
+    const id = `memory-company-${seasonId}`;
+    // Schon da: Text auffrischen, später hinzugefügte Fotos behalten
+    const existing = await db.familyMemories.get(id);
+    await db.familyMemories.put({
+      id, date: existing?.date ?? date, title: `Jahresabschluss ${season.title}`, text,
+      photos: existing?.photos ?? products.map((p) => p.photo).filter((x): x is string => !!x).slice(0, 8),
+      memberIds: company.founderIds, source: { kind: 'company', id: seasonId }, createdAt: existing?.createdAt ?? new Date().toISOString(),
+    });
+    await db.kidCompany.put({ ...company, seasons: company.seasons.map((s) => (s.id === seasonId ? { ...s, memoryId: id } : s)), updatedAt: new Date().toISOString() });
+    return id;
+  });
+}
+
+const formatCents = (c: number) => `${(c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
 export { newId as companyId };

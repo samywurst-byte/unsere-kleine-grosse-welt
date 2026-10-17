@@ -187,3 +187,55 @@
   .kc-dots { display: none; }
   .kc-review { columns: 1; }
 }
+
+/* Werkstatt */
+.kc-jobs-list { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-3); }
+.kc-jobcard { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-m); background: var(--c-terracotta-soft); }
+.kc-jobcard__main { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.kc-jobcard__main h3 { margin: 0; font-size: var(--fs-m); }
+.kc-jobcard__actions { display: flex; align-items: center; gap: var(--space-2); }
+.kc-pieces { display: flex; flex-wrap: wrap; gap: 6px; }
+.kc-piece {
+  width: 34px; height: 34px; border-radius: 50%; border: 2px dashed var(--ink-faint); background: var(--card);
+  cursor: pointer; font-size: 1.1rem; padding: 0; display: grid; place-items: center;
+}
+.kc-piece.is-done { border: 2px solid var(--done); background: var(--done-soft); animation: kc-pop var(--dur) var(--ease); }
+.kc-pieces--big .kc-piece { width: 64px; height: 64px; font-size: 2rem; }
+.kc-ws-head { display: flex; align-items: center; gap: var(--space-5); }
+.kc-ws-photo { width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius-m); }
+.kc-ws-timer { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+.kc-steps { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-3); }
+.kc-step {
+  position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center;
+  padding: var(--space-4) var(--space-3); border-radius: var(--radius-l); border: 3px solid var(--line); background: var(--card); font: inherit; color: inherit; cursor: pointer;
+}
+.kc-step.is-on { border-color: var(--gold); background: var(--c-gold-soft); transform: scale(1.03); }
+.kc-step.is-past { opacity: 0.6; }
+.kc-step__num { position: absolute; top: 8px; left: 12px; font-weight: 800; color: var(--ink-faint); }
+.kc-step__emoji { font-size: 3.4rem; line-height: 1; }
+.kc-step__text { font-weight: 700; font-size: var(--fs-m); }
+.kc-step__who { font-size: var(--fs-xs); font-weight: 700; padding: 2px 10px; border-radius: var(--radius-round); background: var(--c-sky-soft); color: var(--c-sky-ink); }
+.kc-step__who--parents { background: var(--c-rose-soft); color: var(--c-rose-ink); }
+.kc-step__who--together { background: var(--c-lavender-soft); color: var(--c-lavender-ink); }
+.kc-ws-job { margin-bottom: var(--space-3); }
+
+/* Erfolge */
+.kc-badges { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.kc-badge { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 120px; padding: var(--space-3) var(--space-2); border-radius: var(--radius-m); background: var(--c-gold-soft); text-align: center; }
+.kc-badge__emoji { font-size: 2.4rem; }
+.kc-badge__title { font-weight: 800; font-size: var(--fs-s); }
+.kc-badge__date { font-size: var(--fs-xs); color: var(--ink-soft); }
+.kc-gallery { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.kc-gallery figure { margin: 0; width: 120px; }
+.kc-gallery img { width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius-s); display: block; }
+.kc-gallery figcaption { font-size: var(--fs-xs); color: var(--ink-soft); }
+.kc-memories { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.kc-memory { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2); border-radius: var(--radius-m); background: var(--card-sunk); }
+.kc-memory img, .kc-memory__blank { width: 64px; height: 64px; border-radius: var(--radius-s); object-fit: cover; flex: none; display: grid; place-items: center; background: var(--card); font-size: 1.8rem; }
+.kc-memory div { display: flex; flex-direction: column; }
+.kc-memory p { margin: 2px 0 0; }
+
+/* Jahresabschluss */
+.kc-stats--big .kc-stat__value { font-size: var(--fs-xl); }
+.kc-closing-products { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.kc-closing-products li { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }

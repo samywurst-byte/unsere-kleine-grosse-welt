@@ -15,6 +15,8 @@ import { formatDayMonth, formatLong, toDateKey } from '../../utils/dates';
 import { MoneyTabs, Progress, formatEuro } from '../money/parts';
 import { CompanyCash } from './CompanyCash';
 import { CompanyShop } from './CompanyShop';
+import { CompanySuccess } from './CompanySuccess';
+import { CompanyWorkshop } from './CompanyWorkshop';
 import { Stat, Votes } from './parts';
 import './company.css';
 
@@ -51,9 +53,13 @@ export function CompanyPage() {
 
         <CompanyShop products={products} entries={entries} season={season} />
 
+        <CompanyWorkshop products={products} kids={children} />
+
         <CompanyCash company={company ?? undefined} entries={entries} products={products} season={season} today={today} />
 
         <TripCard company={company ?? undefined} />
+
+        <CompanySuccess company={company ?? undefined} products={products} entries={entries} today={today} />
 
         <IdeasCard company={company ?? undefined} kids={children} />
 
@@ -117,6 +123,8 @@ function SeasonCard({ season, kids, today, entries, products }: { season: Compan
       <div className="kc-season__head">
         <h2 className="card__title"><span aria-hidden="true">{plan.emoji}</span> {season.title}</h2>
         <span className="muted">seit {formatDayMonth(season.startDate)}</span>
+        <div className="spacer" />
+        <Link to={`/kinderfirma/abschluss/${season.id}`} className={`btn btn--small ${now.review ? 'btn--primary' : 'btn--ghost'}`}>🏆 {now.review ? 'Jahresabschluss feiern' : 'Zwischenbilanz'}</Link>
       </div>
       <div className="kc-goal">
         <p className="kc-goal__sum"><strong>{formatEuro(Math.max(0, totals.profit))}</strong> Gewinn von {formatEuro(goal)}</p>

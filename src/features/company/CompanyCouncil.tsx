@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { COUNCIL_QUESTIONS } from '../../data/kidCompany';
 import { useCompany, useCompanyEntries, useCompanyProducts, useMoneyTransactions, useTripGoals } from '../../hooks/useData';
-import { activeSeason, companyTotals, currentPhase, seasonPlan, tripEarnings } from '../../services/kidCompany';
+import { activeSeason, companyTotals, currentPhase, openJobs, seasonPlan, tripEarnings } from '../../services/kidCompany';
 import { formatEuro } from '../../services/projects';
 import { Progress } from '../money/parts';
 import { ProductArt } from './ProductArt';
@@ -44,7 +44,8 @@ export function CompanyCouncil({ today }: { today: string }) {
       {season && phase && (
         <p><strong>{phase.emoji} Diese Woche: {phase.title}.</strong> {phase.tasks.filter((t) => !season.checked.includes(t.id)).slice(0, 3).map((t) => t.text).join(', ')}</p>
       )}
-      {phase?.review && <p className="notice notice--ok">Heute ist unser Jahresabschluss: In der Firmenzentrale stehen alle Zahlen zum gemeinsamen Anschauen.</p>}
+      {phase?.review && season && <p className="notice notice--ok">Heute feiern wir unseren Jahresabschluss! <Link to={`/kinderfirma/abschluss/${season.id}`}>🏆 Jahresabschluss öffnen</Link></p>}
+      {openJobs(products).length > 0 && <p className="small">🔨 Offene Werkstattaufträge: {openJobs(products).map(({ product, job }) => `${job.count - job.done} × ${product.name}`).join(', ')}</p>}
       {selling.length > 0 && (
         <div className="kc-council__products">
           {selling.map((p) => (

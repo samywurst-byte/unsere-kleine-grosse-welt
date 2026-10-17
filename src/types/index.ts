@@ -407,7 +407,7 @@ export interface FamilyMemory {
   /** Ältere Erinnerungen (Version 0.7.0) hatten nur ein Foto. */
   photo?: string;
   memberIds: Id[];
-  source?: { kind: 'adventure' | 'council' | 'mama-time' | 'project' | 'explorer'; id: Id };
+  source?: { kind: 'adventure' | 'council' | 'mama-time' | 'project' | 'explorer' | 'company'; id: Id };
   createdAt: string;
 }
 
@@ -1010,6 +1010,20 @@ export interface CompanySeason {
   goalCents: number;
   /** Abgehakte Punkte des Zeitplans (Ids aus dem Plan). */
   checked: string[];
+  /** Antworten im Jahresabschluss, je Frage. */
+  review?: Record<string, string>;
+  /** Jahresabschluss als Erinnerung im Familienarchiv. */
+  memoryId?: Id;
+}
+
+/** Ein Werkstattauftrag: so viele Stück stellen diese Kinder her. */
+export interface ProductionJob {
+  id: Id;
+  count: number;
+  done: number;
+  childIds: Id[];
+  createdAt: string;
+  doneAt?: string;
 }
 
 /** Unsere Kinderfirma. Es gibt genau eine (id 'company'). */
@@ -1049,6 +1063,7 @@ export interface CompanyProduct {
   seasonId?: Id;
   /** Aus dem Katalog übernommen. */
   catalogId?: string;
+  jobs?: ProductionJob[];
   order: number;
   createdAt: string;
 }

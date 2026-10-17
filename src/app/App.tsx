@@ -3,6 +3,8 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { db } from '../database/db';
 import { CompanyPage } from '../features/company/CompanyPage';
 import { FoundingPage } from '../features/company/FoundingPage';
+import { WorkshopPage } from '../features/company/CompanyWorkshop';
+import { ClosingPage } from '../features/company/ClosingPage';
 import { FirstRunSetup } from './FirstRunSetup';
 import { AppShell } from './AppShell';
 import { ParentSessionProvider } from './ParentSession';
@@ -91,6 +93,8 @@ export function App() {
             <Route path="reisekasse/:tripId" element={<TripPage />} />
             <Route path="kinderfirma" element={<CompanyPage />} />
             <Route path="kinderfirma/gruendung" element={<FoundingPage />} />
+            <Route path="kinderfirma/werkstatt/:productId" element={<WorkshopPage />} />
+            <Route path="kinderfirma/abschluss/:seasonId" element={<ClosingPage />} />
             <Route path="familienzeit" element={<FamilyTimePage />} />
             <Route path="familienzeit/abenteuer" element={<AdventurePage />} />
             <Route path="familienzeit/familienrat" element={<CouncilPage />} />
