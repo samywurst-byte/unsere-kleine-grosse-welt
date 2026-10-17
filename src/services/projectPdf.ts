@@ -1,6 +1,6 @@
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
-import { LEVEL_LABEL, PHASES } from '../data/projects';
+import { LEVEL_LABEL, PHASES, PROJECT_IDEA_BY_ID } from '../data/projects';
 import type { DiscoverTopic } from '../data/discover';
 import type { ChildProfile, FamilyProject } from '../types';
 import { formatLong } from '../utils/dates';
@@ -179,6 +179,83 @@ function childPage(c: Ctx, p: FamilyProject, child: ChildProfile) {
   }
 }
 
+// ------------------------------------------------------------- Verkaufsstand
+
+function bigCentered(c: Ctx, s: string, top: number, maxSize: number, color: RGB) {
+  const t = clean(s, c.bold);
+  let size = maxSize;
+  while (c.bold.widthOfTextAtSize(t, size) > CW && size > 20) size -= 2;
+  const x = M + (CW - c.bold.widthOfTextAtSize(t, size)) / 2;
+  // Hellgrau, damit die Kinder die Buchstaben bunt übermalen können
+  c.page.drawText(t, { x, y: Y(top + size * 0.8), size, font: c.bold, color });
+  return top + size;
+}
+
+/** Verkaufsschild zum Ausmalen. */
+function saleSignPage(c: Ctx) {
+  let top = 60;
+  top = bigCentered(c, 'VERKAUF', top, 120, rgb(0.85, 0.85, 0.85)) + 10;
+  text(c, 'Heute verkaufen wir:', M, top + 18, 16, { font: c.bold });
+  hline(c, top + 60);
+  top += 80;
+  const boxH = H - 60 - top - 130;
+  framedBox(c, 'Hier malen, was es gibt', top, boxH);
+  top += boxH + 30;
+  text(c, 'Preis:', M, top + 24, 22, { font: c.bold });
+  c.page.drawLine({ start: { x: M + 80, y: Y(top + 28) }, end: { x: M + 220, y: Y(top + 28) }, thickness: 1, color: LINE });
+  text(c, '€', M + 228, top + 24, 22, { font: c.bold });
+  text(c, 'Zutaten (bei Essen):', M + 280, top + 22, 11, { color: MUTED });
+  c.page.drawLine({ start: { x: M + 280, y: Y(top + 50) }, end: { x: W - M, y: Y(top + 50) }, thickness: 0.8, color: LINE });
+  c.page.drawLine({ start: { x: M + 280, y: Y(top + 74) }, end: { x: W - M, y: Y(top + 74) }, thickness: 0.8, color: LINE });
+}
+
+/** Preisschilder zum Ausschneiden, Kassenzettel und Abrechnung. */
+function salePricePage(c: Ctx) {
+  let top = header(c, 'Preisschilder und Kasse');
+  text(c, 'Ausschneiden, Preis eintragen und so viele Münzen ausmalen, wie das Schild kostet.', M, top - 2, 11, { color: MUTED });
+  top += 10;
+  const cols = 4;
+  const tagW = (CW - (cols - 1) * 10) / cols;
+  const tagH = 92;
+  for (let i = 0; i < 8; i++) {
+    const x = M + (i % cols) * (tagW + 10);
+    const t = top + Math.floor(i / cols) * (tagH + 10);
+    c.page.drawRectangle({ x, y: Y(t + tagH), width: tagW, height: tagH, borderColor: BLACK, borderWidth: 1, borderDashArray: [4, 3] });
+    c.page.drawLine({ start: { x: x + 12, y: Y(t + 42) }, end: { x: x + tagW - 40, y: Y(t + 42) }, thickness: 0.8, color: LINE });
+    text(c, '€', x + tagW - 32, t + 40, 22, { font: c.bold });
+    for (let k = 0; k < 5; k++) c.page.drawCircle({ x: x + 18 + k * ((tagW - 30) / 4), y: Y(t + 68), size: 8, borderColor: BLACK, borderWidth: 0.9 });
+  }
+  top += 2 * (tagH + 10) + 14;
+
+  text(c, 'Kassenzettel: für jedes verkaufte Stück ein Strich', M, top + 14, 14, { font: c.bold });
+  top += 26;
+  const colsX = [M, M + 190, M + 270, M + 420, W - M];
+  const heads = ['Was', 'Preis', 'Verkauft (Striche)', 'Zusammen'];
+  heads.forEach((h, i) => text(c, h, colsX[i] + 6, top + 14, 11, { font: c.bold }));
+  const rows = 5;
+  const rowH = 30;
+  for (let r = 0; r <= rows + 1; r++) c.page.drawLine({ start: { x: M, y: Y(top + r * rowH) }, end: { x: W - M, y: Y(top + r * rowH) }, thickness: 0.8, color: r <= 1 ? BLACK : LINE });
+  for (const x of colsX) c.page.drawLine({ start: { x, y: Y(top) }, end: { x, y: Y(top + (rows + 1) * rowH) }, thickness: 0.8, color: LINE });
+  top += (rows + 1) * rowH + 22;
+
+  text(c, 'Abrechnung', M, top + 14, 14, { font: c.bold });
+  top += 24;
+  const lines = [
+    'Wechselgeld am Anfang in der Kasse:',
+    'Geld am Ende in der Kasse:',
+    'Eingenommen (Ende minus Anfang):',
+    'Kosten (Zutaten, Material):',
+    'Übrig geblieben (eingenommen minus Kosten):',
+  ];
+  for (const l of lines) {
+    if (top > H - 70) break;
+    text(c, l, M, top + 16, 12);
+    c.page.drawLine({ start: { x: W - M - 120, y: Y(top + 20) }, end: { x: W - M - 26, y: Y(top + 20) }, thickness: 0.8, color: LINE });
+    text(c, '€', W - M - 18, top + 16, 12);
+    top += 28;
+  }
+}
+
 export async function renderProjectSheets(p: FamilyProject, kids: ChildProfile[], fonts: WorksheetFonts): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
@@ -190,7 +267,8 @@ export async function renderProjectSheets(p: FamilyProject, kids: ChildProfile[]
     doc.embedFont(fonts.bold, { subset: true }),
     doc.embedFont(fonts.school, { subset: true }),
   ]);
-  const total = 1 + kids.length;
+  const stand = PROJECT_IDEA_BY_ID.get(p.ideaId)?.stand ?? false;
+  const total = 1 + kids.length + (stand ? 2 : 0);
   const ctx = (): Ctx => ({ page: doc.addPage([W, H]), regular, bold, school });
   const first = ctx();
   familyPage(first, p);
@@ -200,6 +278,14 @@ export async function renderProjectSheets(p: FamilyProject, kids: ChildProfile[]
     childPage(c, p, k);
     footer(c, p, i + 2, total);
   });
+  if (stand) {
+    const sign = ctx();
+    saleSignPage(sign);
+    footer(sign, p, total - 1, total);
+    const prices = ctx();
+    salePricePage(prices);
+    footer(prices, p, total, total);
+  }
   return doc.save();
 }
 

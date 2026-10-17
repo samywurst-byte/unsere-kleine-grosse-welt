@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { PDFDocument } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
-import { PROJECT_IDEA_BY_ID, PROJECT_IDEAS } from '../src/data/projects';
+import { ideaSteps, PROJECT_IDEA_BY_ID, PROJECT_IDEAS } from '../src/data/projects';
 import { exportData, validateBackup } from '../src/services/backup';
 import { goalStates } from '../src/services/learning';
 import { renderProjectSheets } from '../src/services/projectPdf';
@@ -191,6 +191,27 @@ describe('Projektblätter', () => {
     const bytes = await renderProjectSheets(p, [taro, talisa], { regular: f('andika-regular.ttf'), bold: f('andika-bold.ttf'), school: f('grundschrift.ttf') });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(3);
+  });
+
+  it('Verkaufsprojekte bekommen den Verkaufsstand und zwei Druckblätter dazu', async () => {
+    const db = await openDb();
+    const idea = PROJECT_IDEA_BY_ID.get('cookie-sale')!;
+    const p = await startProject(db, { idea, title: idea.title, emoji: idea.emoji, children: setups, startDate: TODAY });
+    const labels = p.steps.map((s) => s.label);
+    expect(labels.some((l) => l.startsWith('Wechselgeld vorbereiten'))).toBe(true);
+    expect(labels.some((l) => l.startsWith('Kasse basteln'))).toBe(true);
+    expect(p.steps.filter((s) => s.phase === 'make').at(-1)?.label).toBe('Verkauf mit Mama oder Papa');
+    expect(p.materials.some((m) => m.label.includes('Wechselgeld'))).toBe(true);
+    // Hoflädchen hat „Preise gemeinsam festlegen“ schon: nicht doppelt
+    const farm = ideaSteps(PROJECT_IDEA_BY_ID.get('farm-shop')!);
+    expect(farm.plan.filter((l) => l.startsWith('Preise gemeinsam festlegen'))).toHaveLength(1);
+    expect(farm.make.filter((l) => l.startsWith('Verkauf mit'))).toHaveLength(1);
+    // Ohne Stand (Pfandsammler) bleibt alles, wie es ist
+    expect(ideaSteps(PROJECT_IDEA_BY_ID.get('deposit-bottles')!)).toEqual(PROJECT_IDEA_BY_ID.get('deposit-bottles')!.steps);
+    const f = (n: string) => readFileSync(`public/fonts/${n}`);
+    const bytes = await renderProjectSheets(p, [taro, talisa], { regular: f('andika-regular.ttf'), bold: f('andika-bold.ttf'), school: f('grundschrift.ttf') });
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(5);
+    if (process.env.SALE_PDF) writeFileSync(process.env.SALE_PDF, bytes);
   });
 
   it('zeigt Kindern ihre Projektaufgaben; gemeldet wird erst nach Bestätigung erledigt', async () => {

@@ -5,6 +5,7 @@ import { ExploreTabs } from '../library/ExploreTabs';
 import { Avatar } from '../../components/Avatar';
 import { Field } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
+import { AloneTogether } from './AloneTogether';
 import { AREA_LABEL, LEVEL_LABEL, PHASES, PROJECT_IDEA_BY_ID, type ProjectIdea } from '../../data/projects';
 import { db } from '../../database/db';
 import { useAllLearning, useChildren, useProjects } from '../../hooks/useData';
@@ -193,6 +194,7 @@ function StartModal({ idea, title: initialTitle, copyFrom, kids: children, today
       <div className="stack">
         {idea && <p className="muted">{idea.summary}</p>}
         {idea?.note && <p className="notice notice--info">{idea.note}</p>}
+        {idea && <AloneTogether idea={idea} />}
         {idea && <p className="small">{idea.areas.map((a) => <span key={a} className="chip pj-area">{AREA_LABEL[a] ?? a}</span>)}</p>}
         {!idea && (
           <div className="row row--wrap">

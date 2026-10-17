@@ -52,12 +52,63 @@ export interface ProjectIdea {
   note?: string;
   /** Projekt mit Einnahmen und Ausgaben. */
   money?: boolean;
+  /** Mit Verkaufsstand: bekommt den Baustein SALE_STAND (Schild, Preise, Kasse, Wechselgeld). */
+  stand?: boolean;
   /** Ab welchem Niveau sinnvoll, z. B. Referat erst für Schulkinder. */
   minLevel?: ProjectLevel;
+  /** Was die Kinder allein schaffen. */
+  alone?: string[];
+  /** Was ihr zusammen macht (Erwachsene dabei). */
+  together?: string[];
 }
 
 const SALE_NOTE = 'Verkauf nur gelegentlich, beaufsichtigt und auf eigenem Grundstück. Vorher bei der Gemeinde klären, was erlaubt ist; '
   + 'bei Lebensmitteln auch die Lebensmittelüberwachung fragen. Die Kinder verkaufen nie allein an Fremde.';
+
+const FOOD_SALE_NOTE = 'Bei Selbstgebackenem: Zutatenliste auf das Schild (Allergene wie Nüsse, Ei, Milch, Weizen), Hände waschen, Ware abgedeckt. ' + SALE_NOTE;
+
+/**
+ * Baustein „Unser Verkaufsstand“: steckt in jedem Projekt mit Verkaufsstand (stand: true).
+ * Gleiche Texte wie in den Ideen werden nicht doppelt übernommen.
+ */
+export const SALE_STAND: { steps: Partial<Record<ProjectPhase, string[]>>; materials: string[] } = {
+  steps: {
+    plan: [
+      'Verkaufsstand planen: Was verkaufen wir, wann und wo?',
+      'Preise gemeinsam festlegen: runde Beträge wie 50 ct, 1 € oder 2 €',
+      'Wechselgeld vorbereiten und zählen, z. B. 10 × 50 ct, 6 × 1 €, 2 × 2 € (zusammen 15 €)',
+      'Vorher vereinbaren, wofür das Geld ist und wer wie viel bekommt',
+    ],
+    make: [
+      'Verkaufsschild malen (Druckvorlage unter „Projektblätter“)',
+      'Preisschilder malen',
+      'Kasse basteln: Schuhkarton mit Schlitz oder Dose',
+      'Tisch mit Tischdecke aufbauen, Schild gut sichtbar aufhängen',
+      'Verkaufen üben: „Möchten Sie etwas kaufen?“, Münzen hinlegen, „Danke!“',
+      'Verkauf mit Mama oder Papa',
+    ],
+    document: ['Kassenzettel führen: für jedes verkaufte Stück ein Strich'],
+    finish: ['Kasse zählen, Wechselgeld abziehen, dann die Kosten: Was ist übrig geblieben?'],
+  },
+  materials: ['Tisch und Tischdecke', 'Pappe und Stifte für das Verkaufsschild', 'Schuhkarton oder Dose als Kasse', 'Wechselgeld'],
+};
+
+/** Schritte einer Idee, bei Verkaufsprojekten mit dem Verkaufsstand. */
+export function ideaSteps(idea: Pick<ProjectIdea, 'steps' | 'stand'>): Record<ProjectPhase, string[]> {
+  if (!idea.stand) return idea.steps;
+  const out = { ...idea.steps };
+  for (const { id } of PHASES) {
+    const extra = (SALE_STAND.steps[id] ?? []).filter((l) => !out[id].some((x) => x.split(':')[0] === l.split(':')[0]));
+    // Der Verkauf selbst bleibt am Ende von „Machen“, die Vorbereitung davor
+    out[id] = id === 'make' ? [...out[id].filter((x) => !x.startsWith('Verkauf mit')), ...extra.filter((x) => !x.startsWith('Verkauf mit')), 'Verkauf mit Mama oder Papa'] : [...out[id], ...extra];
+  }
+  return out;
+}
+
+export function ideaMaterials(idea: Pick<ProjectIdea, 'materials' | 'stand'>): string[] {
+  if (!idea.stand) return idea.materials;
+  return [...idea.materials, ...SALE_STAND.materials.filter((m) => !idea.materials.some((x) => x.toLowerCase().includes(m.split(' ')[0].toLowerCase())))];
+}
 
 export const PROJECT_IDEAS: ProjectIdea[] = [
   {
@@ -187,7 +238,7 @@ export const PROJECT_IDEAS: ProjectIdea[] = [
     trip: 'Museumsbesuch',
   },
   {
-    id: 'farm-shop', title: 'Obsternte und Hoflädchen', emoji: '🧺', weeks: 3, months: [8, 9, 10], money: true,
+    id: 'farm-shop', title: 'Obsternte und Hoflädchen', emoji: '🧺', weeks: 3, months: [8, 9, 10], money: true, stand: true,
     summary: 'Ernten, sortieren, wiegen, Preise überlegen und Einnahmen und Kosten einzeln aufschreiben.',
     areas: ['math', 'money', 'nature', 'planning'],
     steps: {
@@ -208,7 +259,7 @@ export const PROJECT_IDEAS: ProjectIdea[] = [
     note: SALE_NOTE,
   },
   {
-    id: 'lemonade', title: 'Limonadenprojekt', emoji: '🍋', weeks: 1, months: [5, 6, 7, 8], money: true,
+    id: 'lemonade', title: 'Limonadenprojekt', emoji: '🍋', weeks: 1, months: [5, 6, 7, 8], money: true, stand: true,
     summary: 'Rezept ausprobieren, abmessen, abschmecken und vielleicht in kleinem Rahmen anbieten.',
     areas: ['math', 'money', 'planning'],
     steps: {
@@ -229,7 +280,7 @@ export const PROJECT_IDEAS: ProjectIdea[] = [
     note: 'Für den Verkauf gelten bei Getränken Hygieneregeln. ' + SALE_NOTE,
   },
   {
-    id: 'flea-market', title: 'Flohmarkt', emoji: '🧸', weeks: 2, months: [3, 4, 5, 6, 7, 8, 9, 10], money: true,
+    id: 'flea-market', title: 'Flohmarkt', emoji: '🧸', weeks: 2, months: [3, 4, 5, 6, 7, 8, 9, 10], money: true, stand: true,
     summary: 'Aussortieren, Preise überlegen, verkaufen und gemeinsam zählen, was zusammengekommen ist.',
     areas: ['money', 'planning', 'language', 'math'],
     steps: {
@@ -655,6 +706,348 @@ export const PROJECT_IDEAS: ProjectIdea[] = [
     words: ['LAUB', 'ZAPFEN', 'STEIN', 'MOOS', 'BLATT'],
     materials: ['Tablett oder Brett', 'Körbchen zum Sammeln', 'Kleine Kärtchen'],
     presentation: 'Jahresrückblick mit den Fotos',
+  },
+  {
+    id: 'chestnuts', title: 'Kastanienwerkstatt', emoji: '🌰', weeks: 1, months: [9, 10, 11],
+    summary: 'Kastanien sammeln und daraus Männchen, Tiere und Bilder machen.',
+    areas: ['nature', 'creativity', 'math'],
+    steps: {
+      discover: ['Kastanien, Eicheln und Zapfen sammeln', 'Anschauen: Wie sieht die stachelige Hülle aus?'],
+      plan: ['Überlegen, welche Figuren wir bauen: Männchen, Igel, Spinne, Schlange'],
+      make: ['Löcher vorbohren (nur Erwachsene)', 'Figuren mit Zahnstochern zusammenstecken', 'Kastanien-Rollbild malen', 'Kastanien zählen und sortieren'],
+      document: ['Foto von der Kastanienfamilie'],
+      finish: ['Ausstellung auf dem Jahreszeitentisch'],
+    },
+    tasks: {
+      toddler: ['Kastanien in einen Korb sammeln', 'Kastanien in Farbe in einem Karton hin und her rollen'],
+      preschool: ['Ein Kastanientier zusammenstecken', 'Zehn Kastanien abzählen', 'Nach Größe sortieren: klein, mittel, groß'],
+      reader: ['Eine Kastanienfamilie bauen und jedem einen Namen geben', 'Namensschilder schreiben', 'Wörter lesen'],
+      school: ['Kastanien wiegen und vergleichen', 'Eine Bauanleitung für die Geschwister malen und schreiben'],
+    },
+    words: ['NUSS', 'IGEL', 'ZAPFEN', 'BAUM'],
+    materials: ['Kastanien', 'Zahnstocher oder Streichhölzer ohne Kopf', 'Handbohrer oder Nagel (nur Erwachsene)', 'Wackelaugen und Kleber', 'Karton und Fingerfarbe'],
+    alone: ['Sammeln und sortieren', 'Vorgebohrte Kastanien zusammenstecken', 'Rollbild im Karton'],
+    together: ['Löcher bohren', 'Spaziergang zum Kastanienbaum'],
+    note: 'Löcher bohren nur Erwachsene. Kastanien sind nicht zum Essen: Bei Talisa aufpassen, dass nichts in den Mund kommt, Zahnstocher nur für die Großen.',
+  },
+  {
+    id: 'cookie-sale', title: 'Keksbasar', emoji: '🍪', weeks: 1, months: [], money: true, stand: true,
+    summary: 'Kekse backen, einen Verkaufsstand aufbauen, Preise festlegen und am Ende die Kasse zählen.',
+    areas: ['math', 'money', 'planning', 'language'],
+    steps: {
+      discover: ['Lieblingskekse aussuchen', 'Überlegen: Wer könnte unsere Kekse kaufen? Nachbarn, Familie, Kita-Fest?'],
+      plan: ['Mit der Gemeinde oder dem Fest klären, was erlaubt ist', 'Zutaten aufschreiben und Kosten ausrechnen'],
+      make: ['Teig machen, ausstechen, backen', 'Je 3 Kekse in ein Tütchen packen', 'Zutatenliste für das Schild schreiben'],
+      document: ['Fotos vom Backen und vom Stand'],
+      finish: ['Entscheiden, wofür das Geld ist (z. B. Reisekasse oder Spende)'],
+    },
+    tasks: {
+      toddler: ['Teig ausstechen', 'Tütchen an die Kunden geben und Danke sagen'],
+      preschool: ['Je 3 Kekse in jedes Tütchen zählen', 'Münzen passend zum Preisschild hinlegen', 'Tütchen zählen'],
+      reader: ['Preisschilder schreiben', 'Das Verkaufsschild schreiben', 'Striche auf dem Kassenzettel machen', 'Wörter lesen'],
+      school: ['Kosten pro Tütchen ausrechnen', 'Wechselgeld herausgeben', 'Einnahmen minus Kosten rechnen'],
+    },
+    words: ['KEKS', 'EURO', 'TEIG', 'DANKE'],
+    materials: ['Mehl', 'Butter', 'Zucker', 'Eier', 'Ausstechformen', 'Kleine Tüten und Band'],
+    alone: ['Kekse in Tütchen zählen', 'Schild und Preisschilder malen', 'Kasse basteln'],
+    together: ['Backen am Ofen', 'Verkaufen am Stand', 'Kasse am Ende zählen'],
+    note: FOOD_SALE_NOTE,
+  },
+  {
+    id: 'salt-dough', title: 'Salzteig-Werkstatt', emoji: '🧂', weeks: 1, months: [],
+    summary: 'Salzteig kneten, Anhänger und Handabdrücke formen, trocknen lassen und bemalen.',
+    areas: ['creativity', 'math'],
+    steps: {
+      discover: ['Fühlen: Mehl, Salz, Wasser. Was passiert beim Mischen?'],
+      plan: ['Überlegen, was entstehen soll: Handabdruck, Anhänger, Figuren'],
+      make: ['Teig mischen: 2 Tassen Mehl, 1 Tasse Salz, knapp 1 Tasse Wasser', 'Formen, ausstechen, Loch für das Band', 'Im Ofen trocknen (Erwachsene)', 'Bemalen'],
+      document: ['Foto von allen Werken'],
+      finish: ['Verschenken, z. B. an Oma und Opa'],
+    },
+    tasks: {
+      toddler: ['Kneten und plattdrücken', 'Handabdruck in den Teig drücken'],
+      preschool: ['Tassen abzählen beim Mischen', 'Formen ausstechen', 'Kugeln rollen: groß und klein'],
+      reader: ['Den eigenen Namen in den Teig ritzen', 'Geschenkanhänger schreiben', 'Wörter lesen'],
+      school: ['Rezept für die doppelte Menge ausrechnen', 'Trocknungszeit messen und aufschreiben'],
+    },
+    words: ['SALZ', 'MEHL', 'HAND', 'HERZ'],
+    materials: ['Mehl', 'Salz', 'Wasser', 'Ausstechformen', 'Strohhalm für Löcher', 'Wasserfarben', 'Band'],
+    alone: ['Kneten, formen, ausstechen', 'Bemalen, wenn es trocken ist'],
+    together: ['Teig abmessen', 'Ofen'],
+    note: 'Salzteig ist nicht zum Essen. Bei Talisa dabeibleiben.',
+  },
+  {
+    id: 'cress-heads', title: 'Kresse-Köpfe', emoji: '🌱', weeks: 1, months: [],
+    summary: 'Gesichter auf Eierschalen oder Becher malen, Kresse säen und nach ein paar Tagen „Haare schneiden“.',
+    areas: ['nature', 'time', 'creativity'],
+    steps: {
+      discover: ['Kressesamen anschauen: winzig!'],
+      plan: ['Für jeden einen Becher oder eine Eierschale aussuchen'],
+      make: ['Gesicht aufmalen', 'Watte rein, nass machen, Samen streuen', 'Jeden Tag gießen und schauen'],
+      document: ['Jeden Tag ein Foto: Wie lang sind die Haare?'],
+      finish: ['Haare schneiden und auf ein Butterbrot essen'],
+    },
+    tasks: {
+      toddler: ['Samen streuen', 'Mit der Sprühflasche gießen'],
+      preschool: ['Tage zählen, bis es grün wird', 'Ein Gesicht aufmalen'],
+      reader: ['Ein Namensschild schreiben', 'Wachstum jeden Tag ankreuzen', 'Wörter lesen'],
+      school: ['Höhe jeden Tag messen und in eine Tabelle schreiben', 'Ausprobieren: ein Becher im Dunkeln, einer am Fenster'],
+    },
+    words: ['KRESSE', 'HAARE', 'WASSER', 'SAMEN'],
+    materials: ['Kressesamen', 'Eierschalen oder Joghurtbecher', 'Watte', 'Sprühflasche', 'Stifte'],
+    alone: ['Jeden Tag gießen und nachschauen', 'Gesicht malen'],
+    together: ['Säen', 'Haare schneiden mit der Schere'],
+  },
+  {
+    id: 'cardboard-city', title: 'Kartonstadt', emoji: '📦', weeks: 2, months: [],
+    summary: 'Aus großen und kleinen Kartons eine Burg, Höhle oder Garage bauen und bemalen.',
+    areas: ['creativity', 'planning', 'math'],
+    steps: {
+      discover: ['Kartons sammeln: groß, klein, Röhren', 'Überlegen: Burg, Höhle, Garage oder ganze Stadt?'],
+      plan: ['Einen Plan malen', 'Platz aussuchen, wo die Stadt stehen bleiben darf'],
+      make: ['Fenster und Türen aufschneiden (Erwachsene)', 'Zusammenkleben', 'Bemalen und bekleben', 'Darin spielen'],
+      document: ['Fotos von innen und außen'],
+      finish: ['Führung durch die Kartonstadt für Oma, Opa oder Freunde'],
+    },
+    tasks: {
+      toddler: ['Kartons stapeln', 'Mit dicken Stiften bemalen', 'Durch den Tunnel krabbeln'],
+      preschool: ['Kartons nach Größe sortieren', 'Fenster zählen', 'Ein Schild für die Tür malen'],
+      reader: ['Schilder schreiben: BURG, TOR, AUTO', 'Wörter lesen'],
+      school: ['Einen Plan mit Maßen zeichnen', 'Eine Brücke bauen, die ein Kuscheltier trägt'],
+    },
+    words: ['BURG', 'TOR', 'TURM', 'AUTO'],
+    materials: ['Große Kartons', 'Klopapierrollen', 'Klebeband', 'Cutter (nur Erwachsene)', 'Farben oder Stifte'],
+    alone: ['Bemalen und bekleben', 'Darin spielen und umbauen'],
+    together: ['Aufschneiden mit dem Cutter', 'Große Teile zusammenkleben'],
+    presentation: 'Führung durch die Kartonstadt',
+  },
+  {
+    id: 'bubbles', title: 'Seifenblasen-Labor', emoji: '🫧', weeks: 1, months: [4, 5, 6, 7, 8, 9],
+    summary: 'Seifenblasenlauge selbst rühren, Pustestäbe biegen und ausprobieren, welche Blasen am größten werden.',
+    areas: ['nature', 'math'],
+    steps: {
+      discover: ['Seifenblasen anschauen: Welche Farben siehst du?'],
+      plan: ['Lauge rühren: Wasser, Spülmittel, etwas Zucker, über Nacht stehen lassen'],
+      make: ['Pustestäbe aus Draht oder Strohhalmen biegen', 'Ausprobieren: rund, eckig, Herz', 'Riesenblasen mit zwei Stäben und Schnur'],
+      document: ['Fotos und Videos von den größten Blasen'],
+      finish: ['Seifenblasen-Fest im Garten'],
+    },
+    tasks: {
+      toddler: ['Blasen fangen und platzen lassen', 'Pusten üben'],
+      preschool: ['Blasen zählen, bevor sie platzen', 'Formen ausprobieren: Ist die Blase dann eckig?'],
+      reader: ['Rezept lesen', 'Ein Schild „Labor“ schreiben', 'Wörter lesen'],
+      school: ['Rezepte vergleichen und aufschreiben, welches am besten ist', 'Größe der Blasen schätzen'],
+    },
+    words: ['BLASE', 'WIND', 'SEIFE', 'RUND'],
+    materials: ['Wasser', 'Spülmittel', 'Zucker oder Glycerin', 'Schüssel', 'Draht oder Strohhalme', 'Zwei Stöcke und Schnur'],
+    alone: ['Pusten und Blasen fangen', 'Eigene Formen biegen (weicher Draht)'],
+    together: ['Lauge rühren', 'Riesenblasen'],
+    note: 'Lauge nicht trinken, nicht in die Augen. Für Talisa am besten eine auslaufsichere Seifenblasendose.',
+  },
+  {
+    id: 'shadow-theater', title: 'Schattentheater', emoji: '🔦', weeks: 1, months: [10, 11, 12, 1, 2, 3],
+    summary: 'Figuren aus Pappe ausschneiden, mit der Taschenlampe Schatten machen und eine kleine Geschichte spielen.',
+    areas: ['creativity', 'language'],
+    steps: {
+      discover: ['Mit der Taschenlampe Schatten mit den Händen machen: Hase, Vogel, Hund'],
+      plan: ['Eine kurze Geschichte ausdenken', 'Leintuch oder weiße Wand aussuchen'],
+      make: ['Figuren aufmalen und ausschneiden', 'An Holzstäbchen kleben', 'Proben'],
+      document: ['Video von der Vorstellung'],
+      finish: ['Vorstellung für die Familie im dunklen Zimmer'],
+    },
+    tasks: {
+      toddler: ['Die Taschenlampe halten', 'Hand-Schatten machen'],
+      preschool: ['Eine Figur ausschneiden', 'Erzählen, was die Figur macht'],
+      reader: ['Eintrittskarten schreiben', 'Wörter lesen'],
+      school: ['Die Geschichte aufschreiben', 'Ausprobieren: Wann wird der Schatten groß, wann klein?'],
+    },
+    words: ['LICHT', 'HASE', 'NACHT', 'MOND'],
+    materials: ['Taschenlampe', 'Pappe', 'Schere', 'Holzstäbchen', 'Leintuch'],
+    alone: ['Hand-Schatten', 'Figuren malen', 'Mit den Figuren spielen'],
+    together: ['Ausschneiden schwieriger Formen', 'Die Vorstellung'],
+    presentation: 'Schattentheater-Vorstellung',
+  },
+  {
+    id: 'gnome-house', title: 'Wichtelhaus im Wald', emoji: '🍄', weeks: 1, months: [3, 4, 5, 6, 7, 8, 9, 10, 11],
+    summary: 'Im Wald oder Garten aus Stöcken, Moos, Rinde und Steinen ein kleines Haus für Wichtel bauen.',
+    areas: ['nature', 'creativity'],
+    steps: {
+      discover: ['Im Wald einen guten Platz suchen: an einer Baumwurzel'],
+      plan: ['Überlegen: Was braucht ein Wichtel? Bett, Tür, Weg'],
+      make: ['Material sammeln, nur was am Boden liegt', 'Haus bauen', 'Einen Weg aus Steinen legen'],
+      document: ['Foto vom Wichtelhaus'],
+      finish: ['Nach einer Woche nachschauen: Steht es noch?'],
+    },
+    tasks: {
+      toddler: ['Moos und Steine sammeln', 'Einen Stein auf den Weg legen'],
+      preschool: ['Stöcke nach Länge sortieren', 'Die Tür bauen'],
+      reader: ['Ein Schild für den Wichtel schreiben', 'Wörter lesen'],
+      school: ['Einen Lageplan malen, damit wir es wiederfinden'],
+    },
+    words: ['MOOS', 'HAUS', 'WALD', 'STEIN'],
+    materials: ['Korb zum Sammeln', 'Gummistiefel'],
+    alone: ['Sammeln und bauen', 'Eigene Ideen für das Haus'],
+    together: ['Weg in den Wald', 'Nachschauen nach einer Woche'],
+    note: 'Nur nehmen, was am Boden liegt. Keine Pilze anfassen oder essen.',
+  },
+  {
+    id: 'stone-monsters', title: 'Steinmonster', emoji: '🪨', weeks: 1, months: [],
+    summary: 'Glatte Steine sammeln, waschen und als Monster, Marienkäfer oder Gesichter bemalen.',
+    areas: ['creativity', 'nature', 'math'],
+    steps: {
+      discover: ['Steine sammeln: glatt, rund, flach'],
+      plan: ['Überlegen: Monster, Tiere oder ein Steine-Memory?'],
+      make: ['Steine waschen und trocknen', 'Bemalen', 'Mit Klarlack schützen (Erwachsene)'],
+      document: ['Foto von allen Steinmonstern'],
+      finish: ['Eine Steinschlange im Garten oder ein Steine-Memory spielen'],
+    },
+    tasks: {
+      toddler: ['Steine in den Eimer sammeln', 'Mit dem Pinsel Farbe auftupfen'],
+      preschool: ['Steine nach Größe in eine Reihe legen', 'Punkte auf den Marienkäfer malen und zählen'],
+      reader: ['Buchstaben auf Steine malen und Wörter legen', 'Wörter lesen'],
+      school: ['Ein Steine-Memory mit Paaren malen', 'Steine wiegen und ordnen'],
+    },
+    words: ['STEIN', 'MONSTER', 'ROT', 'AUGE'],
+    materials: ['Glatte Steine', 'Acrylfarben oder Steinmalstifte', 'Pinsel', 'Klarlack (nur Erwachsene)'],
+    alone: ['Sammeln, waschen, bemalen', 'Steinschlange legen'],
+    together: ['Lackieren'],
+  },
+  {
+    id: 'marble-run', title: 'Kugelbahn an der Wand', emoji: '🎢', weeks: 1, months: [],
+    summary: 'Klopapierrollen an die Wand oder Tür kleben und eine Bahn bauen, durch die eine Kugel rollt.',
+    areas: ['math', 'planning', 'creativity'],
+    steps: {
+      discover: ['Ausprobieren: Wie schnell rollt eine Kugel bergab?'],
+      plan: ['Rollen sammeln', 'Eine Wand oder Tür aussuchen, die Klebeband verträgt'],
+      make: ['Rollen halbieren und an die Wand kleben', 'Testen und umbauen', 'Einen Becher als Ziel unten hinstellen'],
+      document: ['Video von der längsten Fahrt'],
+      finish: ['Wettrennen: Welche Kugel ist am schnellsten?'],
+    },
+    tasks: {
+      toddler: ['Die Kugel oben reinwerfen', 'Rufen, wenn sie unten ankommt'],
+      preschool: ['Rollen zählen', 'Ausprobieren: Wo fällt die Kugel raus? Rolle versetzen'],
+      reader: ['START und ZIEL auf Schilder schreiben', 'Wörter lesen'],
+      school: ['Zeit stoppen und vergleichen', 'Die Bahn so bauen, dass sie dreimal die Richtung wechselt'],
+    },
+    words: ['START', 'ZIEL', 'BALL', 'ROLLE'],
+    materials: ['Klopapier- und Küchenrollen', 'Malerkrepp', 'Tischtennisbälle', 'Becher'],
+    alone: ['Kugeln laufen lassen', 'Rollen umkleben und ausprobieren'],
+    together: ['Rollen aufschneiden', 'Hoch oben an der Wand kleben'],
+    note: 'Für Talisa keine Murmeln: Verschluckungsgefahr. Tischtennisbälle nehmen.',
+  },
+  {
+    id: 'photo-safari', title: 'Fotosafari', emoji: '📸', weeks: 1, months: [],
+    summary: 'Mit dem iPad oder einer Kinderkamera auf Suche gehen: fünf Dinge in einer Farbe, Formen oder Tiere.',
+    areas: ['nature', 'language', 'math'],
+    steps: {
+      discover: ['Eine Aufgabe ziehen: Farbe, Form, Buchstabe oder Tier'],
+      plan: ['Wohin geht die Safari? Garten, Spielplatz, Wald'],
+      make: ['Fotos machen', 'Zu Hause die besten aussuchen'],
+      document: ['Ein Fotobuch oder eine Collage machen'],
+      finish: ['Die Fotos der Familie zeigen und erzählen'],
+    },
+    tasks: {
+      toddler: ['Etwas Rotes zeigen, Mama macht das Foto', 'Auf den Auslöser drücken'],
+      preschool: ['Fünf Dinge in einer Farbe finden', 'Runde und eckige Dinge fotografieren'],
+      reader: ['Dinge mit dem Anfangsbuchstaben des eigenen Namens finden', 'Wörter lesen'],
+      school: ['Zu jedem Foto einen Satz schreiben', 'Eine Fotosafari für die Geschwister ausdenken'],
+    },
+    words: ['ROT', 'BLAU', 'RUND', 'FOTO'],
+    materials: ['iPad oder Kinderkamera', 'Liste mit Aufgaben'],
+    alone: ['Fotos machen im Garten', 'Die besten Fotos aussuchen'],
+    together: ['Safari auf dem Spielplatz oder im Wald', 'Fotobuch machen'],
+  },
+  {
+    id: 'deposit-bottles', title: 'Pfandsammler', emoji: '♻️', weeks: 2, months: [], money: true,
+    summary: 'Pfandflaschen sammeln, zählen, selbst in den Automaten stecken und den Bon in Geld für die Reisekasse tauschen.',
+    areas: ['money', 'math', 'nature'],
+    steps: {
+      discover: ['Das Pfandzeichen auf Flaschen und Dosen suchen', 'Überlegen: Wofür sparen wir? Ein Bild vom Ziel aufhängen'],
+      plan: ['Eine Sammelkiste aufstellen', 'Fragen, ob Oma, Opa oder Nachbarn ihre Flaschen spenden'],
+      make: ['Flaschen sammeln und sortieren: Glas, Plastik, Dose', 'Zählen, wie viele es sind', 'Zum Automaten bringen und selbst einwerfen', 'Bon an der Kasse in Geld tauschen'],
+      document: ['Den Betrag eintragen und das Sparziel ausmalen'],
+      finish: ['Geld in die Reisekasse legen: Wie viel fehlt noch?'],
+    },
+    tasks: {
+      toddler: ['Flaschen in die Kiste stellen', 'Eine Flasche in den Automaten schieben'],
+      preschool: ['Flaschen zählen', 'Das Pfandzeichen finden', 'Nach Art sortieren'],
+      reader: ['Den Betrag auf dem Bon lesen', 'Die Sammelkiste beschriften', 'Wörter lesen'],
+      school: ['Ausrechnen: 25 ct pro Flasche, wie viel bekommen wir?', 'Ausrechnen, wie viele Flaschen bis zum Ziel fehlen'],
+    },
+    words: ['PFAND', 'EURO', 'DOSE', 'GLAS'],
+    materials: ['Sammelkiste', 'Tasche oder Bollerwagen', 'Bild vom Sparziel'],
+    alone: ['Flaschen sammeln, sortieren und zählen', 'Einwerfen am Automaten'],
+    together: ['Fahrt zum Supermarkt', 'Bon an der Kasse einlösen'],
+    note: 'Nur Flaschen von zu Hause oder von Bekannten, nicht aus Mülleimern. Glas tragen die Großen.',
+  },
+  {
+    id: 'extra-jobs', title: 'Sonderjob-Woche', emoji: '🧽', weeks: 1, months: [], money: true,
+    summary: 'Extra-Aufgaben, die über das normale Helfen hinausgehen, mit vorher vereinbartem Lohn. So lernen die Kinder: Arbeit bringt Geld.',
+    areas: ['money', 'planning', 'math'],
+    steps: {
+      discover: ['Reden: Was ist normales Helfen (ohne Geld) und was ist ein Sonderjob?'],
+      plan: ['Eine Jobtafel malen: Job, Bild, Lohn', 'Lohn vorher ausmachen, z. B. 50 ct oder 1 €', 'Sparziel aussuchen'],
+      make: ['Jobs erledigen: Auto waschen, Laub rechen, Unkraut zupfen, Fahrräder putzen', 'Nach jedem Job: Lohn auszahlen und Strich auf der Tafel'],
+      document: ['Verdientes Geld eintragen'],
+      finish: ['Zählen und entscheiden: Ausgeben, Sparen oder in die Reisekasse?'],
+    },
+    tasks: {
+      toddler: ['Mit dem Schwamm das Auto mitwaschen', 'Blätter in den Eimer sammeln'],
+      preschool: ['Laub in den Sack füllen', 'Münzen vom Lohn zählen', 'Striche auf der Jobtafel zählen'],
+      reader: ['Die Jobtafel beschriften', 'Wörter lesen'],
+      school: ['Ausrechnen, wie viele Jobs bis zum Sparziel fehlen', 'Einen eigenen Job vorschlagen und einen Preis verhandeln'],
+    },
+    words: ['JOB', 'LOHN', 'AUTO', 'LAUB'],
+    materials: ['Jobtafel (Pappe)', 'Eimer und Schwämme', 'Kinderrechen', 'Handschuhe'],
+    alone: ['Kleine Jobs wie Fahrräder putzen', 'Striche auf der Jobtafel machen'],
+    together: ['Auto waschen', 'Lohn auszahlen und zählen'],
+    note: 'Normales Helfen im Haushalt bleibt ohne Geld. Bezahlt werden nur Extra-Jobs, die ihr vorher vereinbart. Kein Kind muss mitmachen.',
+  },
+  {
+    id: 'seedling-sale', title: 'Pflanzenmarkt', emoji: '🪴', weeks: 6, months: [2, 3, 4, 5], money: true, stand: true,
+    summary: 'Tomaten, Kräuter oder Sonnenblumen aus Samen ziehen, pflegen und als Pflänzchen verkaufen.',
+    areas: ['nature', 'money', 'time', 'math'],
+    steps: {
+      discover: ['Samen anschauen: Welche sind groß, welche winzig?'],
+      plan: ['Aussuchen, was wir ziehen', 'Kosten für Erde, Töpfe und Samen aufschreiben'],
+      make: ['Säen und beschriften', 'Jeden Tag gießen', 'Umtopfen, wenn sie größer sind'],
+      document: ['Jede Woche ein Foto: Wie groß sind sie?'],
+      finish: ['Ein Pflänzchen für uns behalten und selbst ernten'],
+    },
+    tasks: {
+      toddler: ['Erde in Töpfe füllen', 'Gießen mit der kleinen Kanne'],
+      preschool: ['Samen in jedes Loch zählen', 'Töpfe zählen'],
+      reader: ['Pflanzenschilder schreiben', 'Wörter lesen'],
+      school: ['Wachstum messen und eintragen', 'Ausrechnen: Kosten pro Topf und Preis'],
+    },
+    words: ['SAMEN', 'TOPF', 'ERDE', 'TOMATE'],
+    materials: ['Samen', 'Anzuchterde', 'Kleine Töpfe oder Eierkartons', 'Holzstäbchen für Schilder', 'Gießkanne'],
+    alone: ['Gießen und beobachten', 'Schilder malen'],
+    together: ['Säen und umtopfen', 'Verkaufen'],
+    note: SALE_NOTE,
+  },
+  {
+    id: 'craft-market', title: 'Bastelbasar', emoji: '🎨', weeks: 2, months: [], money: true, stand: true,
+    summary: 'Selbstgebasteltes (Kastanienfiguren, Steinmonster, Salzteig-Anhänger, Karten) auf einem Basar oder vor dem Haus verkaufen.',
+    areas: ['creativity', 'money', 'math', 'planning'],
+    steps: {
+      discover: ['Aussuchen, was wir gut basteln können und was anderen gefallen könnte'],
+      plan: ['Einen Basar finden: Kita, Schule, Weihnachtsmarkt oder vor dem Haus', 'Material und Kosten aufschreiben'],
+      make: ['Basteln: jedes Kind macht seine Lieblingssachen', 'Hübsch verpacken'],
+      document: ['Fotos von allen Sachen und vom Stand'],
+      finish: ['Entscheiden, wofür das Geld ist'],
+    },
+    tasks: {
+      toddler: ['Steine bemalen oder Sticker kleben', 'Sachen auf den Tisch legen'],
+      preschool: ['Sachen zählen und in Reihen legen', 'Münzen passend zum Preis hinlegen'],
+      reader: ['Preisschilder schreiben', 'Wörter lesen'],
+      school: ['Ausrechnen, was ein Stück kostet und was übrig bleibt', 'Wechselgeld herausgeben'],
+    },
+    words: ['BASAR', 'EURO', 'KARTE', 'STEIN'],
+    materials: ['Bastelmaterial je nach Idee', 'Tütchen oder Kartons zum Verpacken'],
+    alone: ['Basteln', 'Preisschilder malen'],
+    together: ['Basar aussuchen und anmelden', 'Verkaufen'],
+    note: SALE_NOTE,
   },
 ];
 

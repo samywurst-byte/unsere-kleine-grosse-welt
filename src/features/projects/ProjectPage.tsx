@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
 import { Field, Toggle } from '../../components/FormControls';
 import { Modal } from '../../components/Modal';
+import { AloneTogether } from './AloneTogether';
 import { AREA_LABEL, LEVEL_LABEL, PHASES, PROJECT_IDEA_BY_ID } from '../../data/projects';
 import { db } from '../../database/db';
 import { useAllLearning, useChildren, useProjects } from '../../hooks/useData';
@@ -65,6 +66,7 @@ export function ProjectPage() {
         <p className="pj-desc">{p.description} {p.areas.map((a) => <span key={a} className="chip pj-area">{AREA_LABEL[a] ?? a}</span>)}</p>
       )}
       {idea?.note && <p className="notice notice--info">{idea.note}</p>}
+      {idea && <AloneTogether idea={idea} />}
       {done && p.reflection && <div className="card pj-reflection"><p className="card__eyebrow">Das haben wir herausgefunden</p><p>{p.reflection}</p>
         {p.memoryId && <Link to="/familienzeit/erinnerungen" className="small">Steht bei unseren Erinnerungen</Link>}</div>}
 

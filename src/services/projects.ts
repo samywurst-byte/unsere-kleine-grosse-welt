@@ -1,6 +1,6 @@
 import type { FamilyDatabase } from '../database/db';
 import { guessSection } from '../data/meals';
-import { OWN_PROJECT_STEPS, PHASES, PROJECT_IDEAS, type ProjectIdea } from '../data/projects';
+import { ideaMaterials, ideaSteps, OWN_PROJECT_STEPS, PHASES, PROJECT_IDEAS, type ProjectIdea } from '../data/projects';
 import { LETTERS } from '../data/readingCurriculum';
 import type {
   CalendarEvent, ChildProfile, DateKey, FamilyProject, ProjectLevel, ProjectPhase, ProjectStep, ProjectTask, TimeOfDay,
@@ -103,11 +103,11 @@ export interface NewProject {
 
 export async function startProject(db: FamilyDatabase, p: NewProject): Promise<FamilyProject> {
   const now = new Date().toISOString();
-  const stepsSource = p.idea?.steps ?? OWN_PROJECT_STEPS;
+  const stepsSource = p.idea ? ideaSteps(p.idea) : OWN_PROJECT_STEPS;
   const steps: ProjectStep[] = p.copyFrom && !p.idea
     ? p.copyFrom.steps.map((s) => ({ id: newId('step'), phase: s.phase, label: s.label, done: false }))
     : PHASES.flatMap(({ id }) => stepsSource[id].map((label) => ({ id: newId('step'), phase: id, label, done: false })));
-  const materialLabels = p.copyFrom && !p.idea ? p.copyFrom.materials.map((m) => m.label) : p.idea?.materials ?? [];
+  const materialLabels = p.copyFrom && !p.idea ? p.copyFrom.materials.map((m) => m.label) : (p.idea ? ideaMaterials(p.idea) : []);
   const tasks: ProjectTask[] = p.idea
     ? p.children.flatMap(({ child, level, known }) => tasksFor(p.idea!, level, known).map((label) => ({ id: newId('task'), childId: child.id, label, done: false })))
     : [];
