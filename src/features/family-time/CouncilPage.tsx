@@ -11,7 +11,7 @@ import { nextStep, projectProgress } from '../../services/projects';
 import { nextSunday } from '../../services/explorer';
 import { SundayControl } from '../explorer/explorerParts';
 import { guessSection } from '../../data/meals';
-import { addShoppingItem, emptyPlan, mealCategories, setWish, wishOptions } from '../../services/meals';
+import { addShoppingItem, emptyPlan, mealCategories, setPlanDay, setWish, wishOptions } from '../../services/meals';
 import { backupIsDue } from '../../services/backup';
 import { exportBackupFile } from '../../services/backupExport';
 import { useNow } from '../../hooks/useNow';
@@ -306,8 +306,43 @@ function MealWishes({ weekStart }: { weekStart: string }) {
           </div>
         );
       })}
+      <OwnDish weekStart={weekStart} planned={plan.days.map((d) => d.date)} />
       {plan.days.length > 0 && <p className="small muted">Schon geplant: {plan.days.map((d) => `${formatWeekdayShort(d.date)} ${d.emoji ?? ''} ${d.title}`).join(' · ')}</p>}
       <Link to="/eltern/essen" className="btn btn--small ft-card__more">Zum Wochenplan (Eltern)</Link>
+    </div>
+  );
+}
+
+/** Eigenes Gericht per Freitext direkt auf einen Tag der nächsten Woche. */
+function OwnDish({ weekStart, planned }: { weekStart: string; planned: string[] }) {
+  const days = Array.from({ length: 7 }, (_, i) => addDaysKey(weekStart, i));
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const chosen = date ?? days.find((d) => !planned.includes(d)) ?? days[0];
+  const add = async () => {
+    const t = title.trim();
+    if (!t) return;
+    await setPlanDay(db, chosen, { date: chosen, title: t, emoji: '🍽️', categories: [] });
+    setSaved(`${t} steht am ${formatWeekday(chosen)} im Plan.`);
+    setTitle(''); setDate(null);
+  };
+  return (
+    <div className="stack ft-own-dish">
+      <p className="ft-card__lead"><strong>Eigenes Gericht</strong> <span className="muted">· einfach eintippen, es muss kein Rezept geben</span></p>
+      <div className="row row--wrap">
+        <input className="input" value={title} placeholder="z. B. Omas Linsensuppe" aria-label="Eigenes Gericht" onChange={(e) => { setTitle(e.target.value); setSaved(null); }} onKeyDown={(e) => { if (e.key === 'Enter') void add(); }} />
+        <button type="button" className="btn" disabled={!title.trim()} onClick={() => void add()}><Plus size={18} aria-hidden="true" /> Eintragen</button>
+      </div>
+      <div className="seg" role="group" aria-label="An welchem Tag?">
+        {days.map((d) => (
+          <button key={d} type="button" className="seg__item" aria-pressed={d === chosen} onClick={() => setDate(d)}>
+            {formatWeekdayShort(d)}{planned.includes(d) ? ' ✓' : ''}
+          </button>
+        ))}
+      </div>
+      {planned.includes(chosen) && title.trim() && <p className="small muted">An diesem Tag steht schon etwas; es wird ersetzt.</p>}
+      {saved && <p className="notice notice--ok">{saved}</p>}
     </div>
   );
 }
