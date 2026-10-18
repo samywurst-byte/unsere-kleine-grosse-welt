@@ -22,6 +22,7 @@ import type { CouncilDecision, FamilyCouncilNote, Member } from '../../types';
 import { addDaysKey, formatDayMonth, formatWeekday, formatWeekdayShort, toDateKey } from '../../utils/dates';
 import { FOUNDING_TITLE } from '../../data/kidCompany';
 import { CompanyCouncil } from '../company/CompanyCouncil';
+import { EventEditor } from '../parent-settings/EventEditor';
 import './familyTime.css';
 
 type ItemKind = 'highlights' | 'events' | 'adventure' | 'meals' | 'shopping' | 'projects' | 'company' | 'notes';
@@ -122,7 +123,7 @@ function ItemBody({ kind, itemKey, note, date, members, today, change }: {
       </div>
     );
   }
-  if (kind === 'events') return <><NextWeekEvents from={addDaysKey(date, 1)} />{notes}</>;
+  if (kind === 'events') return <><NextWeekEvents from={addDaysKey(date, 1)} members={members} />{notes}</>;
   if (kind === 'adventure') return <><NextAdventure council={date} today={today} />{notes}</>;
   if (kind === 'meals') return <><MealWishes weekStart={addDaysKey(date, 1)} />{notes}</>;
   if (kind === 'shopping') return <><ShoppingQuick />{notes}</>;
@@ -150,18 +151,27 @@ function DraftText({ value, onSave, label, placeholder, multiline }: { value: st
     : <input {...props} onChange={(e) => onChange(e.target.value)} />;
 }
 
-function NextWeekEvents({ from }: { from: string }) {
+function NextWeekEvents({ from, members }: { from: string; members: Member[] }) {
   const to = addDaysKey(from, 6);
   const occ = useOccurrences(from, to);
+  const [adding, setAdding] = useState(false);
   if (!occ) return null;
   const list = occ.filter((o) => o.event.category !== 'holiday' || o.date === from).sort((a, b) => (a.date + (a.startTime ?? '')).localeCompare(b.date + (b.startTime ?? '')));
-  if (!list.length) return <p className="muted">Nächste Woche stehen noch keine Termine im Kalender.</p>;
   return (
-    <ul className="ft-events">
-      {list.map((o) => (
-        <li key={o.key}><strong>{formatWeekdayShort(o.date)} {formatDayMonth(o.date)}</strong>{o.startTime ? ` · ${o.startTime}` : ''} · {o.event.title}</li>
-      ))}
-    </ul>
+    <>
+      {list.length === 0 && <p className="muted">Nächste Woche stehen noch keine Termine im Kalender.</p>}
+      {list.length > 0 && (
+        <ul className="ft-events">
+          {list.map((o) => (
+            <li key={o.key}><strong>{formatWeekdayShort(o.date)} {formatDayMonth(o.date)}</strong>{o.startTime ? ` · ${o.startTime}` : ''} · {o.event.title}</li>
+          ))}
+        </ul>
+      )}
+      <div className="row">
+        <button type="button" className="btn btn--small" onClick={() => setAdding(true)}><CalendarPlus size={16} aria-hidden="true" /> Termin eintragen</button>
+      </div>
+      {adding && <EventEditor members={members} initialDate={from} onClose={() => setAdding(false)} />}
+    </>
   );
 }
 

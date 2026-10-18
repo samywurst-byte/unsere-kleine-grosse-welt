@@ -1,5 +1,5 @@
 import { Bus, ChevronLeft, ChevronRight, Home, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '../../components/Avatar';
 import { Icon } from '../../components/Icon';
@@ -35,6 +35,30 @@ export function DayPage() {
     status: o.status === 'open' && key > today ? 'geplant' as const : o.status,
   }));
 
+  // Alles nach Uhrzeit, damit ein Arzttermin am Vormittag nicht hinter dem Nachmittag steht; ganztägige Termine zuerst
+  const rows: { at: string; node: ReactNode }[] = [];
+  if (kg) {
+    rows.push({ at: settings.kindergartenDeparture, node: (
+      <li key="kg" className="day-list__item day-list__item--soft">
+        <span className="day-list__time">{settings.kindergartenDeparture}</span>
+        <Bus size={22} aria-hidden="true" /> Kindergarten bis ca. {settings.kindergartenReturn}
+      </li>
+    ) });
+    if (settings.afterKindergartenNote) rows.push({ at: settings.kindergartenReturn, node: (
+      <li key="after" className="day-list__item day-list__item--soft">
+        <span className="day-list__time">danach</span>
+        <Icon name="trees" size={22} /> {settings.afterKindergartenNote}
+      </li>
+    ) });
+    if (settings.homeArrivalLabel && settings.homeArrivalDays.includes(weekdayOf(key))) rows.push({ at: settings.papaHome, node: (
+      <li key="home" className="day-list__item day-list__item--soft">
+        <span className="day-list__time">≈ {settings.papaHome}</span>
+        <Home size={22} aria-hidden="true" /> {settings.homeArrivalLabel}
+      </li>
+    ) });
+  }
+  for (const o of occ) rows.push({ at: o.startTime ?? '', node: <EventLine key={o.key} occ={o} onClick={() => setSelected(o)} /> });
+
   return (
     <div>
       <header className="page-head">
@@ -50,25 +74,7 @@ export function DayPage() {
         <div className="card">
           <h2 className="card__title">Ablauf</h2>
           <ul className="day-list">
-            {kg && (
-              <li className="day-list__item day-list__item--soft">
-                <span className="day-list__time">{settings.kindergartenDeparture}</span>
-                <Bus size={22} aria-hidden="true" /> Kindergarten bis ca. {settings.kindergartenReturn}
-              </li>
-            )}
-            {kg && settings.afterKindergartenNote && (
-              <li className="day-list__item day-list__item--soft">
-                <span className="day-list__time">danach</span>
-                <Icon name="trees" size={22} /> {settings.afterKindergartenNote}
-              </li>
-            )}
-            {kg && settings.homeArrivalLabel && settings.homeArrivalDays.includes(weekdayOf(key)) && (
-              <li className="day-list__item day-list__item--soft">
-                <span className="day-list__time">≈ {settings.papaHome}</span>
-                <Home size={22} aria-hidden="true" /> {settings.homeArrivalLabel}
-              </li>
-            )}
-            {occ.map((o) => <EventLine key={o.key} occ={o} onClick={() => setSelected(o)} />)}
+            {rows.sort((x, y) => x.at.localeCompare(y.at)).map((r) => r.node)}
             <li className="day-list__item day-list__item--soft">
               <span className="day-list__time">{bedtimeFor(key, settings)}</span>
               <Icon name="bed" size={22} /> Schlafenszeit
