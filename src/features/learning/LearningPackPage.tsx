@@ -11,7 +11,7 @@ import { useNow } from '../../hooks/useNow';
 import { goalStates, type GoalState } from '../../services/learning';
 import { mathStates } from '../../services/math';
 import {
-  defaultLetter, defaultTrack, packForWeek, pagesForScope, planPack, recordPrint, savePack, themeTitle, TRACK_LABEL,
+  defaultLetter, defaultTrack, joinDe, packForWeek, packTitle, pagesForScope, planPack, recordPrint, reviewSuggestion, savePack, themeTitle, TRACK_LABEL,
   type PackPlan, type PrintScope,
 } from '../../services/learningPack';
 import type { ChildProfile, LearningObservation, LearningPack, PackTrack } from '../../types';
@@ -60,7 +60,7 @@ export function LearningPackPage() {
 
       {(!current || editing) && (
         <PackForm
-          key={current?.id ?? 'new'} week={week} today={today} children={children} statesByChild={statesByChild}
+          key={current?.id ?? 'new'} week={week} today={today} children={children} statesByChild={statesByChild} packs={packs}
           existing={editing ? current : undefined}
           onDone={() => { setEditing(false); setViewId(null); }}
           onCancel={current ? () => setEditing(false) : undefined}
@@ -84,7 +84,7 @@ export function LearningPackPage() {
               <li key={p.id} className="list-item">
                 <FileText size={22} aria-hidden="true" />
                 <div className="list-item__main">
-                  <p className="list-item__title">{themeTitle(LETTERS.find((l) => l.upper === p.letter) ?? LETTERS[0])}</p>
+                  <p className="list-item__title">{packTitle(p)}</p>
                   <p className="list-item__meta">KW {getISOWeek(fromDateKey(p.weekStart))} · {p.prints.length ? `${p.prints.length}× gedruckt` : 'noch nicht gedruckt'}</p>
                 </div>
                 <button type="button" className="btn btn--small" onClick={() => { setEditing(false); setViewId(p.id); }}>Ansehen und drucken</button>
@@ -97,8 +97,8 @@ export function LearningPackPage() {
   );
 }
 
-function PackForm({ week, today, children, statesByChild, existing, onDone, onCancel }: {
-  week: string; today: string; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>;
+function PackForm({ week, today, children, statesByChild, packs, existing, onDone, onCancel }: {
+  week: string; today: string; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>; packs: LearningPack[];
   existing?: LearningPack; onDone: () => void; onCancel?: () => void;
 }) {
   const [letter, setLetter] = useState(() => existing?.letter ?? defaultLetter(
@@ -113,9 +113,18 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
     c.id, existing?.children.find((x) => x.childId === c.id)?.math ?? true,
   ])));
   const anyone = Object.values(tracks).some((t) => t !== 'skip');
+  // Nach zwei neuen Buchstaben schlägt die App eine Wiederholung vor; bei einem bestehenden Paket bleibt, was gewählt war
+  const suggested = useMemo(() => reviewSuggestion(packs, week), [packs, week]);
+  const reviewOptions = existing?.review ?? suggested;
+  const [review, setReview] = useState(() => existing ? !!existing.review?.length : !!suggested);
+  const readers = children.filter((c) => tracks[c.id] === 'letters').map((c) => c.name);
 
   const save = async () => {
-    await savePack(db, week, letter, children.map((c) => ({ childId: c.id, track: tracks[c.id] ?? 'skip', math: math[c.id] ?? false })), existing);
+    const reviewLetters = review && reviewOptions ? reviewOptions : undefined;
+    await savePack(
+      db, week, reviewLetters ? reviewLetters[reviewLetters.length - 1] : letter,
+      children.map((c) => ({ childId: c.id, track: tracks[c.id] ?? 'skip', math: math[c.id] ?? false })), existing, reviewLetters,
+    );
     onDone();
   };
 
@@ -123,11 +132,24 @@ function PackForm({ week, today, children, statesByChild, existing, onDone, onCa
     <div className="card">
       <h3 className="card__title">{existing ? 'Lernpaket ändern' : 'Lernpaket zusammenstellen'}</h3>
       <div className="stack">
-        <Field label="Thema der Woche" hint="Vorgeschlagen ist der Buchstabe, an dem gerade geübt wird. Bilder gibt es bisher für M, A, I, O, L, S, E und N; bei den anderen malen die Kinder selbst.">
+        {reviewOptions && (
+          <div className="pack-review">
+            <Toggle
+              label={`Wiederholungswoche: ${joinDe(reviewOptions)}`}
+              checked={review} onChange={setReview}
+            />
+            <p className="muted" style={{ margin: 0 }}>
+              {review
+                ? `Kein neuer Buchstabe. ${readers.length ? joinDe(readers) : 'Das Lesekind'} wiederholt ${joinDe(reviewOptions)}: wiederfinden, Anlaute sortieren und nur kurz schreiben. Rechnen wiederholt auch. Die anderen Kinder bekommen wie immer neue Blätter.`
+                : 'Nach zwei Wochen mit neuem Buchstaben schlägt die App eine Wiederholung vor. Ausgeschaltet gibt es einen neuen Buchstaben.'}
+            </p>
+          </div>
+        )}
+        {!(review && reviewOptions) && <Field label="Thema der Woche" hint="Vorgeschlagen ist der Buchstabe, an dem gerade geübt wird. Bilder gibt es bisher für M, A, I, O, L, S, E und N; bei den anderen malen die Kinder selbst.">
           <select className="input" value={letter} onChange={(e) => setLetter(e.target.value)}>
             {LETTERS.map((l) => <option key={l.upper} value={l.upper}>{themeTitle(l)}</option>)}
           </select>
-        </Field>
+        </Field>}
         {children.map((c) => (
           <div key={c.id} className="pack-child">
             <span className="pack-child__name"><Avatar avatar={c.avatar} color={c.color} size={40} /> {c.name}</span>
@@ -287,5 +309,5 @@ function fileName(plan: PackPlan, scope: PrintScope, children: ChildProfile[]): 
   const who = scope === 'all' ? 'Wochenmappe' : scope === 'extras' ? 'Basteln-Ausmalen' : scope === 'game' ? 'Memory' : scope === 'observation' ? 'Beobachtungsbogen'
     : children.find((c) => `child:${c.id}` === scope)?.name ?? 'Kind';
   const safe = (s: string) => s.replace(/[^A-Za-z0-9ÄÖÜäöüß-]+/g, '-');
-  return `Lernpaket-KW${kw}-${safe(plan.letter.upper)}-${safe(who)}.pdf`;
+  return `Lernpaket-KW${kw}-${safe(plan.pack.review?.length ? `Wiederholung-${plan.pack.review.join('')}` : plan.letter.upper)}-${safe(who)}.pdf`;
 }

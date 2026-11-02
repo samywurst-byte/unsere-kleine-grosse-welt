@@ -83,6 +83,20 @@ const LETTERS: SwingSheet[] = [
 
 export const SWING_SHEETS: Record<SwingLevel, SwingSheet[]> = { toddler: TODDLER, swing: SWING, letters: LETTERS };
 
+/**
+ * Vorschulstufe: nur ein Buchstabe (groß und klein) und eine Ziffer, und zwar ein Buchstabe, den das Kind schon kennt.
+ * Der Schwung der Woche bleibt, die feste Buchstabenfolge aus der Vorlage wird ersetzt.
+ */
+export function lettersSheetFor(sheet: SwingSheet, letter: { upper: string; lower: string }): SwingSheet {
+  const pattern = sheet.title.split(',')[0];
+  return {
+    ...sheet,
+    title: `${pattern}, ${letter.upper}`,
+    letters: letter.upper === letter.lower ? [letter.upper] : [letter.upper, letter.lower],
+    digits: sheet.digits?.slice(0, 1),
+  };
+}
+
 /** Welche Stufe zu welcher Spur im Lernpaket passt. */
 export function swingLevelForTrack(track: PackTrack): SwingLevel | null {
   if (track === 'toddler') return 'toddler';

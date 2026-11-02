@@ -69,6 +69,7 @@
 .obs-moods .obs-level { min-height: 52px; }
 
 /* Lernpaket */
+.pack-review { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border-radius: 14px; background: var(--surface-soft, rgba(0,0,0,0.04)); }
 .pack-child { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .pack-child__name { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 800; min-width: 150px; }
 .pack-pages { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }

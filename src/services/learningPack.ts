@@ -8,7 +8,7 @@ import { pathPhase, todaysLetter, suggestions, type GoalState } from './learning
 import { currentMathGoals, mathStates } from './math';
 import { extraMathPage, mathMemoryPairs, mathPageFor, type MathPage, type MathSpec } from './mathSheets';
 import type { LearningGoal } from '../data/readingCurriculum';
-import { SWING_SHEETS, swingLevelForTrack, swingVariantForWeek, type SwingLevel, type SwingSheet } from '../data/swingExercises';
+import { SWING_SHEETS, lettersSheetFor, swingLevelForTrack, swingVariantForWeek, type SwingLevel, type SwingSheet } from '../data/swingExercises';
 import { getISOWeek } from 'date-fns';
 import { coloringForWeek } from '../data/coloringPages';
 import { craftForWeek, type Craft } from '../data/crafts';
@@ -37,6 +37,9 @@ const VOWELS = ['A', 'E', 'I', 'O', 'U', 'Ä', 'Ö', 'Ü'];
 export type PageSpec =
   | { kind: 'letter-intro'; letter: LetterInfo; illustration?: string }
   | { kind: 'letter-hunt'; letter: LetterInfo; grid: string[][]; targets: number; pictures: { id: string; match: boolean }[] }
+  | { kind: 'review-hunt'; letters: LetterInfo[]; grid: string[][]; targets: number }
+  | { kind: 'onset-sort'; letters: LetterInfo[]; pictures: { id: string; initial: string }[] }
+  | { kind: 'review-write'; letters: LetterInfo[] }
   | { kind: 'syllables'; letter: LetterInfo; syllables: string[] }
   | { kind: 'word-trace'; letter: LetterInfo; illustration?: string; name: string }
   | { kind: 'counting'; rows: { count: number; illustration: string }[] }
@@ -122,6 +125,58 @@ export function themeTitle(letter: LetterInfo): string {
   return `${letter.upper} wie ${letter.word}`;
 }
 
+/** "M", "M und A", "M, A und I" */
+export const joinDe = (items: string[]) => items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} und ${items[items.length - 1]}`;
+
+/** Buchstaben einer Wiederholungswoche (leer = normale Woche). */
+export function reviewLetters(pack: Pick<LearningPack, 'review'>): LetterInfo[] {
+  return (pack.review ?? []).map((u) => LETTERS.find((l) => l.upper === u)).filter((l): l is LetterInfo => !!l);
+}
+
+/** Titel eines Pakets: "M wie Maus" oder "Wiederholung: M und A". */
+export function packTitle(pack: Pick<LearningPack, 'letter' | 'review'>): string {
+  const review = reviewLetters(pack);
+  return review.length ? `Wiederholung: ${joinDe(review.map((l) => l.upper))}` : themeTitle(letterInfo(pack.letter));
+}
+
+/**
+ * Nach zwei Paketen mit neuem Buchstaben schlägt die App eine Wiederholungswoche vor, mit den Buchstaben dieser beiden Pakete.
+ * Gezählt werden nur Pakete, in denen ein Kind Buchstabenblätter hatte. Danach braucht es wieder zwei neue.
+ */
+export function reviewSuggestion(packs: LearningPack[], weekStart: DateKey): string[] | null {
+  const byWeek = new Map<DateKey, LearningPack>();
+  for (const p of [...packs].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) if (p.weekStart < weekStart) byWeek.set(p.weekStart, p);
+  const last = [...byWeek.values()]
+    .filter((p) => p.children.some((c) => c.track === 'letters'))
+    .sort((a, b) => b.weekStart.localeCompare(a.weekStart))
+    .slice(0, 2);
+  if (last.length < 2 || last.some((p) => p.review?.length)) return null;
+  return [...new Set([last[1].letter, last[0].letter])];
+}
+
+/** Fortlaufende Wochennummer über Jahresgrenzen hinweg. */
+export function weekIndex(weekStart: DateKey): number {
+  const [y, m, d] = weekStart.split('-').map(Number);
+  return Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2024, 0, 1)) / (7 * 86_400_000));
+}
+const mod = (n: number, k: number) => ((n % k) + k) % k;
+
+/** Buchstaben mit eigenem Bildwort, durch die die Vorschulblätter Woche für Woche wandern. */
+const PICTURE_LETTERS = Object.keys(THEME_ILLUSTRATION);
+
+/**
+ * Anfangslaut für die Vorschulblätter: wandert jede Woche weiter, unabhängig vom Buchstaben des Lesekinds.
+ * So bekommt das Vorschulkind auch dann Neues, wenn das große Kind einen Buchstaben länger übt oder wiederholt.
+ */
+export function preschoolLetter(weekStart: DateKey): LetterInfo {
+  return letterInfo(PICTURE_LETTERS[mod(weekIndex(weekStart), PICTURE_LETTERS.length)]);
+}
+
+/** Ausmalbild für die Kleinsten: jede Woche ein anderes aus allen Bildern. */
+export function toddlerPicture(weekStart: DateKey): string {
+  return ALL_ILLUSTRATIONS[mod(weekIndex(weekStart), ALL_ILLUSTRATIONS.length)].id;
+}
+
 /** Welche Blätter ein Kind bekommt: Schulkind → keine, Lesepfad aktiv → Buchstaben, ab 3 Jahren → Vorschule, sonst Malen. */
 export function defaultTrack(child: ChildProfile, today: DateKey, states: GoalState[]): PackTrack {
   const phase = pathPhase(child, today).kind;
@@ -174,6 +229,34 @@ export function letterGrid(letter: LetterInfo, rnd: () => number): { grid: strin
   return { grid: Array.from({ length: rows }, (_, r) => mixed.slice(r * cols, r * cols + cols)), targets };
 }
 
+/** Wiederholungsraster: alle Buchstaben der Wiederholung groß und klein zwischen anderen. */
+export function reviewGrid(letters: LetterInfo[], rnd: () => number): { grid: string[][]; targets: number } {
+  const combo = letters.some((l) => l.combo || l.upper.length > 1);
+  const cols = combo ? 5 : 7;
+  const rows = 6;
+  const per = letters.length > 2 ? 4 : 6;
+  const own = new Set(letters.flatMap((l) => [l.upper, l.lower, l.lower.toUpperCase()]));
+  const pool = (combo ? [...COMBO_TOKENS, ...DISTRACTOR_UPPER] : DISTRACTOR_UPPER)
+    .filter((u) => !own.has(u))
+    .flatMap((u) => [u, u.toLowerCase()])
+    .filter((t) => t !== 'I' && t !== 'l' && !own.has(t));
+  const tokens: string[] = [];
+  for (const l of letters) for (let i = 0; i < per; i++) tokens.push(i % 2 === 0 ? l.upper : l.lower);
+  const targets = tokens.length;
+  while (tokens.length < rows * cols) tokens.push(pool[Math.floor(rnd() * pool.length)]);
+  const mixed = shuffle(tokens, rnd);
+  return { grid: Array.from({ length: rows }, (_, r) => mixed.slice(r * cols, r * cols + cols)), targets };
+}
+
+/** Bilder zum Sortieren nach Anfangslaut: bis zu drei je Buchstabe, nur wenn mindestens zwei Buchstaben Bilder haben. */
+export function sortPictures(letters: LetterInfo[], rnd: () => number): { letters: LetterInfo[]; pictures: { id: string; initial: string }[] } {
+  const withPics = letters.filter((l) => illustrationsStartingWith(l.upper).length > 0);
+  if (withPics.length < 2) return { letters: [], pictures: [] };
+  const per = withPics.length > 2 ? 2 : 3;
+  const pictures = withPics.flatMap((l) => shuffle(illustrationsStartingWith(l.upper), rnd).slice(0, per).map((i) => ({ id: i.id, initial: l.upper })));
+  return { letters: withPics, pictures: shuffle(pictures, rnd).slice(0, 6) };
+}
+
 function otherPictures(upper: string, exclude: Set<string>): Illustration[] {
   return ALL_ILLUSTRATIONS.filter((i) => i.initial !== upper && !exclude.has(i.id));
 }
@@ -218,11 +301,35 @@ function readingSpecs(states: GoalState[], rnd: () => number, fallback: boolean)
   };
 }
 
-function childPages(child: ChildProfile, track: PackTrack, letter: LetterInfo, states: GoalState[], seed: string): PageSpec[] {
+/** Silben aus mehreren Buchstaben (für die Wiederholung), ohne Doppelte. */
+function reviewSyllables(letters: LetterInfo[], known: string[]): string[] {
+  return [...new Set(letters.flatMap((l) => syllablesFor(l, known).slice(0, 3)))].slice(0, 5);
+}
+
+/** Wiederholungswoche für das Lesekind: wiedererkennen, Anlaute sortieren, nur ein bisschen schreiben. */
+function reviewPages(child: ChildProfile, letters: LetterInfo[], states: GoalState[], seed: string): PageSpec[] {
+  const rnd = seededRandom(`${seed}|${child.id}|review`);
+  const { grid, targets } = reviewGrid(letters, rnd);
+  const pages: PageSpec[] = [{ kind: 'review-hunt', letters, grid, targets }];
+  const sort = sortPictures(letters, rnd);
+  if (sort.pictures.length) pages.push({ kind: 'onset-sort', letters: sort.letters, pictures: sort.pictures });
+  pages.push({ kind: 'review-write', letters });
+  const blendReleased = states.some((s) => s.goal.id === 'read.blend' && s.released);
+  const known = states.filter((s) => s.released && s.goal.kind === 'letter').map((s) => s.goal.letter!.upper);
+  const syllables = blendReleased ? reviewSyllables(letters, known) : [];
+  if (syllables.length >= 2) pages.push({ kind: 'syllables', letter: letters[0], syllables });
+  pages.push(...readingSpecs(states, seededRandom(`${seed}|${child.id}|reading`), false).specs);
+  return pages;
+}
+
+function childPages(
+  child: ChildProfile, track: PackTrack, letter: LetterInfo, states: GoalState[], seed: string, weekStart: DateKey, review: LetterInfo[],
+): PageSpec[] {
   const rnd = seededRandom(`${seed}|${child.id}`);
   const theme = themeIllustration(letter);
   switch (track) {
     case 'letters': {
+      if (review.length) return reviewPages(child, review, states, seed);
       const { grid, targets } = letterGrid(letter, rnd);
       const pages: PageSpec[] = [
         { kind: 'letter-intro', letter, illustration: theme },
@@ -240,37 +347,54 @@ function childPages(child: ChildProfile, track: PackTrack, letter: LetterInfo, s
     case 'reading':
       return readingSpecs(states, seededRandom(`${seed}|${child.id}|reading`), true).specs;
     case 'preschool': {
-      const counting = [theme, ...illustrationsStartingWith(letter.upper).map((i) => i.id)].filter((x): x is string => !!x);
-      const pool = counting.length ? counting : ['ball', 'sonne', 'herz'];
+      // Eigener Anlaut der Woche, damit es auch in Wiederholungswochen Neues gibt
+      const own = preschoolLetter(weekStart);
+      const counting = [themeIllustration(own), ...illustrationsStartingWith(own.upper).map((i) => i.id)].filter((x): x is string => !!x);
+      const pool = [...new Set(counting)];
       const counts = shuffle([1, 2, 3, 4, 5], rnd);
-      const onset = onsetPictures(letter, 6, rnd);
+      const onset = onsetPictures(own, 6, rnd);
       const pictures = onset.length ? onset.map((p) => p.id) : shuffle(ALL_ILLUSTRATIONS, rnd).slice(0, 6).map((i) => i.id);
+      const rows = shuffle(pool, rnd);
       return [
-        { kind: 'counting', rows: counts.map((count, i) => ({ count, illustration: pool[i % pool.length] })) },
-        { kind: 'syllable-onset', letter, pictures, onset: onset.length > 0 },
+        { kind: 'counting', rows: counts.map((count, i) => ({ count, illustration: rows[i % rows.length] ?? 'ball' })) },
+        { kind: 'syllable-onset', letter: own, pictures, onset: onset.length > 0 },
       ];
     }
     case 'toddler':
-      return [{ kind: 'coloring', illustration: theme ?? illustrationsStartingWith(letter.upper)[0]?.id ?? 'sonne' }];
+      return [{ kind: 'coloring', illustration: toddlerPicture(weekStart) }];
     default:
       return [];
   }
 }
 
-function memoryCards(letter: LetterInfo, rnd: () => number): string[] {
-  const first = [themeIllustration(letter), ...illustrationsStartingWith(letter.upper).map((i) => i.id)].filter((x): x is string => !!x);
+function memoryCards(letters: LetterInfo[], rnd: () => number): string[] {
+  const first = letters.flatMap((letter) => [themeIllustration(letter), ...illustrationsStartingWith(letter.upper).map((i) => i.id)])
+    .filter((x): x is string => !!x);
   const unique = [...new Set(first)];
   const rest = shuffle(ALL_ILLUSTRATIONS.map((i) => i.id).filter((id) => !unique.includes(id)), rnd);
   const six = [...unique, ...rest].slice(0, 6);
   return shuffle([...six, ...six], rnd);
 }
 
-function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec | undefined, readingRows: SheetRow[]): SheetRow[] {
+function observationGoals(track: PackTrack, letter: LetterInfo, specs: PageSpec[], readingRows: SheetRow[], review: LetterInfo[]): SheetRow[] {
   const letterGoal = letterGoalId(letter.upper);
+  const page3 = specs[2];
   switch (track) {
     case 'reading':
       return readingRows;
     case 'letters':
+      if (review.length) {
+        const sorted = specs.find((s): s is Extract<PageSpec, { kind: 'onset-sort' }> => s.kind === 'onset-sort');
+        const hasSyllables = specs.some((s) => s.kind === 'syllables');
+        return [
+          ...review.flatMap((l) => [
+            { label: `${l.upper === l.lower ? l.upper : `${l.upper} und ${l.lower}`} wiedererkennen und schreiben`, goalId: letterGoalId(l.upper) },
+            ...(sorted?.letters.some((x) => x.upper === l.upper) ? [{ label: `Anlaut ${l.upper} hören`, goalId: letterGoalId(l.upper) }] : []),
+          ]),
+          ...(hasSyllables ? [{ label: 'Silben lesen', goalId: 'read.syllable-reading' }] : []),
+          ...readingRows,
+        ];
+      }
       return [
         { label: `${letter.upper} und ${letter.lower} unter anderen Buchstaben finden`, goalId: letterGoal },
         { label: `Den Laut von ${letter.upper} hören (wie in ${letter.word})`, goalId: letterGoal },
@@ -280,12 +404,14 @@ function observationGoals(track: PackTrack, letter: LetterInfo, page3: PageSpec 
           : { label: 'Den eigenen Namen schreiben', goalId: 'free.own-name' },
         ...readingRows,
       ];
-    case 'preschool':
+    case 'preschool': {
+      const onset = specs.find((s): s is Extract<PageSpec, { kind: 'syllable-onset' }> => s.kind === 'syllable-onset');
       return [
         { label: 'Bis 5 zählen', goalId: 'math.count10' },
         { label: 'Silben klatschen', goalId: 'read.syllables' },
-        { label: `Anfangslaut ${letter.upper} hören`, goalId: 'read.onset' },
+        { label: `Anfangslaut ${(onset?.letter ?? letter).upper} hören`, goalId: 'read.onset' },
       ];
+    }
     case 'toddler':
       return [
         { label: 'Malen oder kleben', goalId: 'free.craft' },
@@ -308,9 +434,10 @@ export interface PlanInput {
 }
 
 /** Ein bis zwei Rechenblätter zu dem, woran das Kind gerade rechnet. */
-function childMathPages(child: ChildProfile, states: GoalState[], today: DateKey, seed: string): { pages: MathPage[]; goals: LearningGoal[] } {
+function childMathPages(child: ChildProfile, states: GoalState[], today: DateKey, seed: string, review = false): { pages: MathPage[]; goals: LearningGoal[] } {
   const rnd = seededRandom(`${seed}|${child.id}|math`);
   const goals = currentMathGoals(states, child, today).map((s) => s.goal);
+  if (review) return reviewMathPages(states, goals, rnd);
   const pages: MathPage[] = [];
   for (const g of goals) {
     const p = mathPageFor(g, rnd);
@@ -326,8 +453,37 @@ function childMathPages(child: ChildProfile, states: GoalState[], today: DateKey
   return { pages, goals };
 }
 
+/**
+ * Rechnen in der Wiederholungswoche: nichts Neues. Ein Blatt zum zuletzt sicheren Ziel und eine andere Blattart zum aktuellen.
+ */
+function reviewMathPages(states: GoalState[], current: LearningGoal[], rnd: () => number): { pages: MathPage[]; goals: LearningGoal[] } {
+  const secured = states
+    .filter((s) => s.released && (s.status === 'mostly' || s.status === 'mastered') && !current.some((g) => g.id === s.goal.id))
+    .sort((a, b) => (b.lastDate ?? '').localeCompare(a.lastDate ?? ''))[0]?.goal;
+  const pages: MathPage[] = [];
+  const goals: LearningGoal[] = [];
+  const add = (goal: LearningGoal, page: MathPage | null) => {
+    if (!page || pages.length >= 2 || pages.some((p) => p.title === page.title)) return;
+    pages.push(page);
+    if (!goals.includes(goal)) goals.push(goal);
+  };
+  if (secured) add(secured, mathPageFor(secured, rnd));
+  for (const g of current) add(g, extraMathPage(g, rnd) ?? mathPageFor(g, rnd));
+  for (const g of current) add(g, mathPageFor(g, rnd));
+  return { pages, goals };
+}
+
+/** Schwungblatt der Vorschulstufe mit einem Buchstaben, den das Kind schon kennt (statt fester Reihenfolge). */
+function swingLetterFor(states: GoalState[], letter: LetterInfo, review: LetterInfo[], weekStart: DateKey): LetterInfo {
+  if (review.length) return review[0];
+  const known = states.filter((s) => s.released && s.goal.kind === 'letter' && s.goal.letter && s.goal.letter.upper !== letter.upper)
+    .map((s) => s.goal.letter!);
+  return known.length ? known[mod(weekIndex(weekStart), known.length)] : letter;
+}
+
 export function planPack({ pack, children, statesByChild, mathStatesByChild, today = pack.weekStart }: PlanInput): PackPlan {
   const letter = letterInfo(pack.letter);
+  const review = reviewLetters(pack);
   const seed = `${pack.weekStart}|${pack.letter}`;
   const pages: PlannedPage[] = [];
   const observationRows: SheetChild[] = [];
@@ -336,15 +492,17 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
   for (const { childId, track, math } of pack.children) {
     const child = children.find((c) => c.id === childId);
     if (!child || track === 'skip') continue;
-    const specs = track === 'math' ? [] : childPages(child, track, letter, statesByChild.get(childId) ?? [], seed);
+    const childReview = track === 'letters' ? review : [];
+    const states = statesByChild.get(childId) ?? [];
+    const specs = track === 'math' ? [] : childPages(child, track, letter, states, seed, pack.weekStart, childReview);
     // Dieselben Zufallszahlen wie in childPages, damit Blätter und Bogen zusammenpassen
     const readingRows = track === 'letters' || track === 'reading'
       ? readingSpecs(statesByChild.get(childId) ?? [], seededRandom(`${seed}|${childId}|reading`), track === 'reading').goals
       : [];
-    const goals = observationGoals(track, letter, specs[2], readingRows);
+    const goals = observationGoals(track, letter, specs, readingRows, childReview);
     // Pakete von vor dem Rechenpfad haben kein Feld: dann gehören Rechenblätter dazu
     if (track === 'math' || (math !== false && track !== 'toddler')) {
-      const m = childMathPages(child, mathStatesByChild?.get(childId) ?? mathStates(childId, [], [], today), today, seed);
+      const m = childMathPages(child, mathStatesByChild?.get(childId) ?? mathStates(childId, [], [], today), today, seed, review.length > 0);
       for (const p of m.pages) specs.push({ kind: 'math', title: p.title, math: p.spec });
       goals.push(...m.goals.filter((g) => !goals.some((x) => x.goalId === g.id)).map((g) => ({ label: g.title, goalId: g.id })));
       mathGoals.push(...m.goals);
@@ -352,7 +510,9 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
     const swing = swingLevelForTrack(track);
     if (swing) {
       const variant = swingVariantForWeek(getISOWeek(fromDateKey(pack.weekStart)));
-      specs.push({ kind: 'swing', level: swing, variant, sheet: SWING_SHEETS[swing][variant] });
+      const base = SWING_SHEETS[swing][variant];
+      const sheet = swing === 'letters' ? lettersSheetFor(base, swingLetterFor(states, letter, childReview, pack.weekStart)) : base;
+      specs.push({ kind: 'swing', level: swing, variant, sheet });
     }
     // Für alle Kinder dieselbe Bastelvorlage und dasselbe Ausmalbild, jedes Kind bekommt sein eigenes Blatt
     if (track !== 'math') specs.push(...weeklyExtras(pack.weekStart));
@@ -368,7 +528,7 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
     .filter((p) => p.name);
   pages.push({
     id: 'game', section: 'game', title: 'Memory für alle',
-    spec: { kind: 'memory', cards: memoryCards(letter, seededRandom(`${seed}|memory`)), players },
+    spec: { kind: 'memory', cards: memoryCards(review.length ? review : [letter], seededRandom(`${seed}|memory`)), players },
   });
   if (mathGoals.length) {
     const { heading, pairs } = mathMemoryPairs(mathGoals, seededRandom(`${seed}|math-memory`));
@@ -378,7 +538,7 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
   if (observationRows.length) {
     pages.push({ id: 'observation', section: 'observation', title: 'Beobachtungsbogen', spec: { kind: 'observation', rows: observationRows } });
   }
-  return { pack, letter, title: themeTitle(letter), pages };
+  return { pack, letter, title: packTitle(pack), pages };
 }
 
 /** Bastelvorlage und Ausmalbild der Woche. */
@@ -397,6 +557,9 @@ export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
   switch (spec.kind) {
     case 'letter-intro': return `Das ${letter.upper}`;
     case 'letter-hunt': return `Finde das ${letter.upper}`;
+    case 'review-hunt': return `Weißt du noch? ${joinDe(spec.letters.map((l) => l.upper))}`;
+    case 'onset-sort': return 'Womit fängt es an?';
+    case 'review-write': return 'Ein bisschen schreiben';
     case 'syllables': return 'Laute verbinden';
     case 'word-trace': return 'Wörter schreiben';
     case 'counting': return 'Wie viele sind es?';
@@ -420,12 +583,13 @@ export function packForWeek(packs: LearningPack[], weekStart: DateKey): Learning
 }
 
 export async function savePack(
-  db: FamilyDatabase, weekStart: DateKey, letter: string, children: LearningPack['children'], existing?: LearningPack,
+  db: FamilyDatabase, weekStart: DateKey, letter: string, children: LearningPack['children'], existing?: LearningPack, review?: string[],
 ): Promise<LearningPack> {
   const pack: LearningPack = {
     id: existing?.id ?? newId('pack'), weekStart, letter, children,
     createdAt: existing?.createdAt ?? new Date().toISOString(), prints: existing?.prints ?? [],
   };
+  if (review?.length) pack.review = review;
   await db.learningPacks.put(pack);
   return pack;
 }
