@@ -521,6 +521,8 @@ export interface LearningPack {
   letter: string;
   /** math: zusätzlich Rechenblätter (fehlt bei älteren Paketen = nein). */
   children: { childId: Id; track: PackTrack; math?: boolean }[];
+  /** Wiederholungswoche: kein neuer Buchstabe, die Buchstaben der letzten zwei Pakete kommen noch einmal (fehlt = normale Woche). */
+  review?: string[];
   createdAt: string;
   /** Wann was gedruckt beziehungsweise als PDF erzeugt wurde. */
   prints: { at: string; scope: string; pages: number }[];

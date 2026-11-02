@@ -34,6 +34,8 @@ const CW = W - 2 * M;
 const BLACK = rgb(0, 0, 0);
 const WHITE = rgb(1, 1, 1);
 const TRACE = rgb(0.68, 0.68, 0.68);
+/** Zweite Stufe beim Nachspuren: kaum noch zu sehen. */
+const FAINT = rgb(0.86, 0.86, 0.86);
 const MUTED = rgb(0.4, 0.4, 0.4);
 const LINE = rgb(0.55, 0.55, 0.55);
 const BAND = rgb(0.93, 0.93, 0.93);
@@ -142,7 +144,7 @@ function lineature(c: Ctx, x: number, baselineTop: number, width: number, capH: 
   hline(c, x, x + width, baselineTop + desc, { color: LINE, thickness: 0.5 });
 }
 
-interface TraceItem { text: string; style: 'model' | 'trace' }
+interface TraceItem { text: string; style: 'model' | 'trace' | 'faint' | 'star' }
 
 /** Eine Schreibzeile: Vorlage schwarz, Nachspur-Buchstaben grau, danach Platz zum Selberschreiben. */
 function traceRow(c: Ctx, items: TraceItem[], x: number, baselineTop: number, width: number, capH: number) {
@@ -154,14 +156,52 @@ function traceRow(c: Ctx, items: TraceItem[], x: number, baselineTop: number, wi
   if (firstWidth > width - 2 * gap) size *= (width - 2 * gap) / firstWidth;
   let cx = x + capH * 0.35;
   for (const item of items) {
+    if (item.style === 'star') {
+      const r = Math.min(10, capH * 0.28);
+      if (cx + 2 * r > x + width - 4) break;
+      // Stern: ab hier ist alles freiwillig
+      star(c, cx + r, baselineTop - capH * 0.45, r);
+      cx += 2 * r + gap;
+      continue;
+    }
     const w = c.school.widthOfTextAtSize(item.text, size);
-    if (cx + w > x + width - 4) break;
-    c.page.drawText(item.text, { x: cx, y: Y(baselineTop), size, font: c.school, color: item.style === 'model' ? BLACK : TRACE });
+    if (cx + w > x + width - 4) {
+      // Zu lang für die Zeile: den Stern trotzdem setzen, damit klar ist, wo Schluss ist
+      const r = Math.min(10, capH * 0.28);
+      if (items.some((it) => it.style === 'star') && cx + 2 * r <= x + width - 4) star(c, cx + r, baselineTop - capH * 0.45, r);
+      break;
+    }
+    c.page.drawText(item.text, { x: cx, y: Y(baselineTop), size, font: c.school, color: item.style === 'model' ? BLACK : item.style === 'faint' ? FAINT : TRACE });
     cx += w + gap;
   }
 }
 
 const repeat = (s: string, n: number, style: TraceItem['style'] = 'trace'): TraceItem[] => Array.from({ length: n }, () => ({ text: s, style }));
+
+/**
+ * Wenig, aber in Stufen: Vorlage, dann dunkel nachspuren, dann hell nachspuren, dann der Stern.
+ * Nach dem Stern ist Platz zum Selberschreiben, freiwillig.
+ */
+const steps = (s: string, dark = 2, faint = 2): TraceItem[] => [
+  { text: s, style: 'model' }, ...repeat(s, dark), ...repeat(s, faint, 'faint'), { text: '', style: 'star' },
+];
+
+/** Größere Schreibzeilen für Anfänger (Versalhöhe in pt). */
+const BIG = 40;
+
+/** Ideen ohne Stift: die Bewegung lernen, bevor die Hand müde wird. */
+function noPencilBox(c: Ctx, letters: LetterInfo[], top: number, height: number) {
+  const names = letters.map((l) => l.upper).join(' und ');
+  roundRect(c, M, top, CW, height, { color: LINE, dash: [4, 3] });
+  text(c, 'Vor dem Stift (das zählt genauso):', M + 14, top + 24, 13, { font: c.bold });
+  const ideas = [
+    `${names} mit dem Finger in Sand, Mehl oder Rasierschaum malen`,
+    `${names} aus Knete, Wolle oder Steinen legen`,
+    `${names} mit Wasserpinsel groß an die Tafel oder Wand malen`,
+    `${names} groß auf den Boden kleben und ablaufen`,
+  ];
+  ideas.forEach((idea, i) => text(c, `•  ${idea}`, M + 14, top + 50 + i * 22, 12));
+}
 
 // ------------------------------------------------------------- Kopf und Fuß
 
@@ -188,7 +228,7 @@ function footer(c: Ctx, plan: PackPlan, page: PlannedPage, index: number, total:
 
 function letterIntro(c: Ctx, letter: LetterInfo, ill: string | undefined) {
   const single = letter.upper === letter.lower;
-  header(c, single ? `Das ${letter.upper}` : `Das ${letter.upper} und das ${letter.lower}`, 'Male die großen Buchstaben an oder fahre sie mit dem Finger nach. Spure dann die grauen Buchstaben nach und schreibe selbst.', true);
+  header(c, single ? `Das ${letter.upper}` : `Das ${letter.upper} und das ${letter.lower}`, 'Fahre die großen Buchstaben mit dem Finger nach. Dann spurst du nach: erst die dunklen, dann die hellen. Beim Stern darfst du aufhören.', true);
   // Große Umrissbuchstaben
   const pair = single ? letter.upper : `${letter.upper} ${letter.lower}`;
   const maxW = CW - 190;
@@ -208,19 +248,13 @@ function letterIntro(c: Ctx, letter: LetterInfo, ill: string | undefined) {
   } else {
     wordWithInitial(c, letter, W - M - 90, 300, 28);
   }
-  const capH = 30;
   const rows: TraceItem[][] = [
-    ...(single ? [] : [
-      [{ text: letter.upper, style: 'model' as const }, ...repeat(letter.upper, 12)],
-      [{ text: letter.upper, style: 'model' as const }, ...repeat(letter.upper, 2)],
-    ]),
-    [{ text: letter.lower, style: 'model' }, ...repeat(letter.lower, 12)],
-    [{ text: letter.lower, style: 'model' }, ...repeat(letter.lower, 2)],
-    [{ text: letter.word, style: 'model' }, ...repeat(letter.word, 3)],
-    [],
-    ...(single ? [[{ text: letter.word, style: 'model' as const }, ...repeat(letter.word, 3)], []] : []),
+    ...(single ? [] : [steps(letter.upper)]),
+    steps(letter.lower),
+    steps(letter.word, 1, 1),
   ];
-  rows.forEach((items, i) => traceRow(c, items, M, 384 + i * 76, CW, capH));
+  rows.forEach((items, i) => traceRow(c, items, M, 384 + i * 86, CW, BIG));
+  noPencilBox(c, [letter], 384 + rows.length * 86 - 18, 150);
 }
 
 /** ß und CH stehen fast nie am Wortanfang, dort fragen die Blätter nach dem Laut im Wort. */
@@ -237,6 +271,73 @@ function wordWithInitial(c: Ctx, letter: LetterInfo, centerX: number, baselineTo
   const before = c.school.widthOfTextAtSize(letter.word.slice(0, at), size);
   const iw = c.school.widthOfTextAtSize(letter.word.slice(at, at + letter.lower.length), size);
   hline(c, x + before, x + before + iw, baselineTop + 5, { thickness: 2 });
+}
+
+const REVIEW_COLORS = ['rot', 'blau', 'grün', 'gelb'];
+
+function reviewHunt(c: Ctx, spec: Extract<PageSpec, { kind: 'review-hunt' }>) {
+  const { letters, grid } = spec;
+  const names = letters.map((l) => l.upper);
+  const how = letters.map((l, i) => `${l.upper === l.lower ? `jedes ${l.upper}` : `jedes ${l.upper} und ${l.lower}`} ${REVIEW_COLORS[i % REVIEW_COLORS.length]}`);
+  header(c, `Weißt du noch? ${names.join(' und ')}`, `Diese Buchstaben kennst du schon. Kreise ${how.join(', ')} ein.`, true);
+  const top = 118;
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const cellW = CW / cols;
+  const cellH = 46;
+  roundRect(c, M, top, CW, rows * cellH + 8, { color: LINE, border: 0.8 });
+  grid.forEach((row, r) => row.forEach((token, col) => {
+    const size = token.length > 2 ? 26 : 32;
+    const w = c.school.widthOfTextAtSize(token, size);
+    c.page.drawText(token, { x: M + col * cellW + (cellW - w) / 2, y: Y(top + 4 + r * cellH + cellH * 0.72), size, font: c.school, color: BLACK });
+  }));
+  const after = top + rows * cellH + 8;
+  letters.forEach((l, i) => {
+    const x = M + i * (CW / letters.length);
+    text(c, `So viele ${l.upper}:`, x, after + 34, 13);
+    hline(c, x + 82, x + 132, after + 36, { color: LINE });
+  });
+  const boxTop = after + 72;
+  const gap = 10;
+  const w = (CW - gap * (letters.length - 1)) / letters.length;
+  letters.forEach((l, i) => {
+    const x = M + i * (w + gap);
+    paragraph(c, startsWords(l) ? `Male etwas mit ${l.upper} am Anfang.` : `Male etwas, in dem man ${l.lower} hört.`, x, boxTop, 13, w, { font: c.bold });
+    roundRect(c, x, boxTop + 34, w, H - 60 - boxTop - 34, { color: LINE });
+  });
+}
+
+function onsetSort(c: Ctx, spec: Extract<PageSpec, { kind: 'onset-sort' }>) {
+  header(c, 'Womit fängt es an?', 'Sag das Wort laut und langsam. Welchen Buchstaben hörst du am Anfang? Kreise ihn ein.', true);
+  const top = 120;
+  const cols = 3;
+  const gap = 12;
+  const w = (CW - gap * (cols - 1)) / cols;
+  const cellH = 300;
+  const choices = spec.letters.map((l) => l.upper);
+  spec.pictures.forEach((p, i) => {
+    const x = M + (i % cols) * (w + gap);
+    const t = top + Math.floor(i / cols) * (cellH + gap);
+    roundRect(c, x, t, w, cellH, { color: LINE, border: 0.8 });
+    const size = Math.min(w - 30, 150);
+    illustration(c, p.id, x + (w - size) / 2, t + 12, size, 2);
+    text(c, ILLUSTRATIONS.get(p.id)?.word ?? '', x + w / 2, t + size + 34, 10, { color: MUTED, align: 'center' });
+    const fs = choices.length > 2 ? 30 : 38;
+    const slot = (w - 20) / choices.length;
+    choices.forEach((ch, k) => {
+      const cw = c.school.widthOfTextAtSize(ch, fs);
+      c.page.drawText(ch, { x: x + 10 + k * slot + (slot - cw) / 2, y: Y(t + cellH - 26), size: fs, font: c.school, color: BLACK });
+    });
+  });
+}
+
+function reviewWrite(c: Ctx, spec: Extract<PageSpec, { kind: 'review-write' }>) {
+  header(c, 'Ein bisschen schreiben', 'Nur eine kurze Zeile pro Buchstabe: erst dunkel, dann hell nachspuren. Beim Stern ist Schluss. Zum Schluss: Kringel deinen schönsten Buchstaben ein.', true);
+  const rows: TraceItem[][] = spec.letters.flatMap((l) => (l.upper === l.lower ? [steps(l.upper)] : [steps(l.upper), steps(l.lower)]));
+  const pitch = rows.length > 4 ? 76 : 86;
+  rows.forEach((items, i) => traceRow(c, items, M, 190 + i * pitch, CW, rows.length > 4 ? 34 : BIG));
+  const boxTop = 190 + rows.length * pitch - 18;
+  noPencilBox(c, spec.letters, boxTop, Math.min(150, H - 50 - boxTop));
 }
 
 function letterHunt(c: Ctx, spec: Extract<PageSpec, { kind: 'letter-hunt' }>) {
@@ -302,23 +403,20 @@ function syllables(c: Ctx, spec: Extract<PageSpec, { kind: 'syllables' }>) {
     c.page.drawSvgPath(`M 0 0 Q ${(x2 - x1) / 2} 34 ${x2 - x1} 0`, {
       x: x1, y: Y(base + 14), borderColor: BLACK, borderWidth: 1.6, borderDashArray: [4, 3],
     });
-    traceRow(c, [{ text: syl, style: 'model' }, ...repeat(syl, 6)], M + 180, base + 4, CW - 180, 30);
+    traceRow(c, steps(syl, 2, 1), M + 180, base + 4, CW - 180, 30);
   });
 }
 
 function wordTrace(c: Ctx, spec: Extract<PageSpec, { kind: 'word-trace' }>) {
   const { letter, name, illustration: ill } = spec;
-  header(c, 'Wörter schreiben', 'Spure das Wort und deinen Namen nach. Danach schreibst du selbst.', true);
+  header(c, 'Wörter schreiben', 'Spure das Wort und deinen Namen nach, erst dunkel, dann hell. Beim Stern darfst du aufhören.', true);
   if (ill) illustration(c, ill, W - M - 120, 112, 115, 2);
   text(c, letter.word, M + 4, 200, 56, { font: c.school });
-  const capH = 30;
-  traceRow(c, [{ text: letter.word, style: 'model' }, ...repeat(letter.word, 4)], M, 300, CW, capH);
-  traceRow(c, repeat(letter.word, 4), M, 376, CW, capH);
-  text(c, 'Mein Name', M, 430, 13, { font: c.bold });
-  traceRow(c, [{ text: name, style: 'model' }, ...repeat(name, 4)], M, 494, CW, capH);
-  traceRow(c, [], M, 570, CW, capH);
-  text(c, startsWords(letter) ? `Male etwas, das mit ${letter.upper} anfängt.` : `Male etwas, in dem man ${letter.lower} hört.`, M, 628, 13, { font: c.bold });
-  roundRect(c, M, 640, CW, 160, { color: LINE });
+  traceRow(c, steps(letter.word, 1, 1), M, 310, CW, BIG);
+  text(c, 'Mein Name', M, 362, 13, { font: c.bold });
+  traceRow(c, steps(name, 1, 1), M, 430, CW, BIG);
+  text(c, startsWords(letter) ? `Male etwas, das mit ${letter.upper} anfängt.` : `Male etwas, in dem man ${letter.lower} hört.`, M, 492, 13, { font: c.bold });
+  roundRect(c, M, 504, CW, 290, { color: LINE });
 }
 
 function counting(c: Ctx, spec: Extract<PageSpec, { kind: 'counting' }>) {
@@ -448,6 +546,9 @@ function renderPage(c: Ctx, spec: PageSpec) {
   switch (spec.kind) {
     case 'letter-intro': return letterIntro(c, spec.letter, spec.illustration);
     case 'letter-hunt': return letterHunt(c, spec);
+    case 'review-hunt': return reviewHunt(c, spec);
+    case 'onset-sort': return onsetSort(c, spec);
+    case 'review-write': return reviewWrite(c, spec);
     case 'syllables': return syllables(c, spec);
     case 'word-trace': return wordTrace(c, spec);
     case 'counting': return counting(c, spec);
@@ -541,7 +642,7 @@ function swingPage(c: Ctx, spec: Extract<PageSpec, { kind: 'swing' }>) {
   const bottom = H - 50;
 
   if (level === 'letters') {
-    const capH = 30;
+    const capH = BIG;
     const lines = [...sheet.rows.map((r) => ({ swing: r })), ...(sheet.letters ?? []).map((l) => ({ glyph: l })), ...(sheet.digits ?? []).map((d) => ({ glyph: d }))];
     const pitch = (bottom - top) / lines.length;
     lines.forEach((line, i) => {
@@ -555,7 +656,7 @@ function swingPage(c: Ctx, spec: Extract<PageSpec, { kind: 'swing' }>) {
         }
         swingRow(c, row, M + 8, base - capH, CW - 16, 1.8, [4, 3], 2.8);
       } else if ('glyph' in line && line.glyph) {
-        traceRow(c, [{ text: line.glyph, style: 'model' }, ...repeat(line.glyph, 14)], M, base, CW, capH);
+        traceRow(c, steps(line.glyph, 2, 2), M, base, CW, capH);
       }
     });
     return;
