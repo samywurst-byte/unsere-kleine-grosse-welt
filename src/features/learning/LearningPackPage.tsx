@@ -11,7 +11,7 @@ import { useNow } from '../../hooks/useNow';
 import { goalStates, type GoalState } from '../../services/learning';
 import { mathStates } from '../../services/math';
 import {
-  defaultLetter, defaultTrack, joinDe, packForWeek, packTitle, pagesForScope, planPack, recordPrint, reviewSuggestion, savePack, themeTitle, TRACK_LABEL,
+  defaultLetter, defaultTrack, joinDe, packForWeek, packTitle, pagesForScope, planPack, priorPackLetters, recordPrint, reviewSuggestion, savePack, themeTitle, TRACK_LABEL,
   type PackPlan, type PrintScope,
 } from '../../services/learningPack';
 import type { ChildProfile, LearningObservation, LearningPack, PackTrack } from '../../types';
@@ -69,7 +69,7 @@ export function LearningPackPage() {
 
       {viewed && !(editing && viewed.id === current?.id) && (
         <PackView
-          key={viewed.id} pack={viewed} children={children} statesByChild={statesByChild} mathStatesByChild={mathStatesByChild} today={today} observations={learning.observations}
+          key={viewed.id} pack={viewed} packs={packs} children={children} statesByChild={statesByChild} mathStatesByChild={mathStatesByChild} today={today} observations={learning.observations}
           isCurrent={viewed.id === current?.id}
           onEdit={() => { setViewId(null); setEditing(true); }}
           onBack={viewId ? () => setViewId(null) : undefined}
@@ -171,14 +171,14 @@ function PackForm({ week, today, children, statesByChild, packs, existing, onDon
 
 interface PdfResult { scope: PrintScope; url: string; file: File; pages: number }
 
-function PackView({ pack, children, statesByChild, mathStatesByChild, today, observations, isCurrent, onEdit, onBack }: {
-  pack: LearningPack; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>; mathStatesByChild: Map<string, GoalState[]>; today: string;
+function PackView({ pack, packs, children, statesByChild, mathStatesByChild, today, observations, isCurrent, onEdit, onBack }: {
+  pack: LearningPack; packs: LearningPack[]; children: ChildProfile[]; statesByChild: Map<string, GoalState[]>; mathStatesByChild: Map<string, GoalState[]>; today: string;
   observations: LearningObservation[];
   isCurrent: boolean; onEdit: () => void; onBack?: () => void;
 }) {
   const plan = useMemo(
-    () => planPack({ pack, children, statesByChild, mathStatesByChild, today }),
-    [pack, children, statesByChild, mathStatesByChild, today],
+    () => planPack({ pack, children, statesByChild, mathStatesByChild, today, priorLetters: priorPackLetters(packs, pack.weekStart) }),
+    [pack, packs, children, statesByChild, mathStatesByChild, today],
   );
   const [busy, setBusy] = useState<PrintScope | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);

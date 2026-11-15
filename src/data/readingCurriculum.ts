@@ -37,21 +37,23 @@ export interface LetterInfo {
 }
 
 /**
- * Reihenfolge so gewählt, dass früh sinnvolle Silben entstehen (M, A, I, O, L, S, E, N ...).
- * Sobald die Buchstabenfolge der Grundschule bekannt ist, wird diese Liste angepasst.
+ * Reihenfolge für die Silbenmethode: früh die Silbenmacher A, E, O und Mitlaute, die man lang klingen lassen kann
+ * (M, L, S, N), damit schnell echte Wörter entstehen (Mama, Oma, Lama, Esel, Sofa, Nase).
+ * Nur die Reihenfolge ändert sich, die Ids bleiben. Sobald die Buchstabenfolge der Grundschule bekannt ist, wird sie angepasst.
  */
 export const LETTERS: LetterInfo[] = [
   { upper: 'M', lower: 'm', word: 'Maus', emoji: '🐭' },
   { upper: 'A', lower: 'a', word: 'Affe', emoji: '🐒' },
-  { upper: 'I', lower: 'i', word: 'Igel', emoji: '🦔' },
+  { upper: 'E', lower: 'e', word: 'Esel', emoji: '🫏' },
   { upper: 'O', lower: 'o', word: 'Ofen', emoji: '🔥' },
   { upper: 'L', lower: 'l', word: 'Löwe', emoji: '🦁' },
+  { upper: 'I', lower: 'i', word: 'Igel', emoji: '🦔' },
   { upper: 'S', lower: 's', word: 'Sonne', emoji: '☀️' },
-  { upper: 'E', lower: 'e', word: 'Esel', emoji: '🫏' },
   { upper: 'N', lower: 'n', word: 'Nase', emoji: '👃' },
-  { upper: 'T', lower: 't', word: 'Tomate', emoji: '🍅' },
-  { upper: 'R', lower: 'r', word: 'Rakete', emoji: '🚀' },
   { upper: 'U', lower: 'u', word: 'Uhu', emoji: '🦉' },
+  { upper: 'R', lower: 'r', word: 'Rakete', emoji: '🚀' },
+  { upper: 'T', lower: 't', word: 'Tomate', emoji: '🍅' },
+  { upper: 'P', lower: 'p', word: 'Pilz', emoji: '🍄' },
   { upper: 'D', lower: 'd', word: 'Dino', emoji: '🦕' },
   { upper: 'W', lower: 'w', word: 'Wal', emoji: '🐳' },
   { upper: 'F', lower: 'f', word: 'Fuchs', emoji: '🦊' },
@@ -59,7 +61,6 @@ export const LETTERS: LetterInfo[] = [
   { upper: 'K', lower: 'k', word: 'Katze', emoji: '🐱' },
   { upper: 'B', lower: 'b', word: 'Ball', emoji: '⚽' },
   { upper: 'G', lower: 'g', word: 'Gabel', emoji: '🍴' },
-  { upper: 'P', lower: 'p', word: 'Pilz', emoji: '🍄' },
   { upper: 'Z', lower: 'z', word: 'Zebra', emoji: '🦓' },
   { upper: 'J', lower: 'j', word: 'Jacke', emoji: '🧥' },
   { upper: 'V', lower: 'v', word: 'Vogel', emoji: '🐦' },
@@ -132,9 +133,9 @@ const SKILLS: LearningGoal[] = [
   },
   {
     id: 'read.syllable-reading', area: 'reading', stage: 5, kind: 'skill', title: 'Einfache Silben lesen',
-    observe: 'Liest offene Silben aus bekannten Buchstaben selbst (MA, MI, MO, LA, SO), nicht nur auswendig.',
+    observe: 'Liest offene Silben aus bekannten Buchstaben selbst (MA, ME, MO, LA, SO), nicht nur auswendig, und liest zwei Silben zu einem Wort zusammen (Ma-ma).',
     activities: ['Silbenkarten aus bekannten Buchstaben legen und lesen', 'Silbenteppich: auf die gelesene Silbe springen', 'Neue Silben aus bekannten Buchstaben bauen'],
-    requires: ['read.blend', letterGoalId('I'), letterGoalId('O')],
+    requires: ['read.blend'],
   },
   {
     id: 'read.words', area: 'reading', stage: 6, kind: 'skill', title: 'Kurze Wörter lesen',

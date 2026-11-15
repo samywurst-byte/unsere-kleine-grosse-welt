@@ -50,7 +50,7 @@ describe('Lernpaket planen', () => {
   it('erzeugt das Wochenpaket aus dem Konzept: 3 + 2 + 1 Seiten und je ein Schwungblatt, Bastelvorlage, Ausmalbild, Memory und Beobachtungsbogen', () => {
     const plan = planPack({ pack: pack(), children, statesByChild: statesFor([]) });
     expect(plan.title).toBe('M wie Maus');
-    expect(pagesForScope(plan, 'child:k1').map((p) => p.spec.kind)).toEqual(['letter-intro', 'letter-hunt', 'word-trace', 'swing', 'craft', 'picture']);
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.spec.kind)).toEqual(['sound-animal', 'letter-hunt', 'word-trace', 'swing', 'craft', 'picture']);
     expect(pagesForScope(plan, 'child:k2').map((p) => p.spec.kind)).toEqual(['counting', 'syllable-onset', 'swing', 'craft', 'picture']);
     expect(pagesForScope(plan, 'child:k3').map((p) => p.spec.kind)).toEqual(['coloring', 'swing', 'craft', 'picture']);
     expect(pagesForScope(plan, 'game')).toHaveLength(1);
@@ -79,13 +79,14 @@ describe('Lernpaket planen', () => {
     expect(JSON.stringify(a.pages)).toBe(JSON.stringify(b.pages));
   });
 
-  it('zeigt Silben erst, wenn "Laute verbinden" freigegeben ist', () => {
-    const letters = ['M', 'A', 'I', 'O'].map((l) => release('k1', `read.letter.${l}`));
-    const without = planPack({ pack: pack(), children, statesByChild: statesFor(letters) });
-    expect(pagesForScope(without, 'child:k1')[2].spec.kind).toBe('word-trace');
-    const withBlend = planPack({ pack: pack(), children, statesByChild: statesFor([...letters, release('k1', 'read.blend')]) });
-    const page = pagesForScope(withBlend, 'child:k1')[2].spec;
-    expect(page.kind === 'syllables' && page.syllables).toEqual(['MA', 'MI', 'MO']);
+  it('liest in Silben, sobald es einen Mitlaut und einen Silbenmacher gibt', () => {
+    // Nur M: noch keine Silbe, die alten Blätter mit Lauttier
+    const onlyM = planPack({ pack: pack(), children, statesByChild: statesFor([]) });
+    expect(pagesForScope(onlyM, 'child:k1')[2].spec.kind).toBe('word-trace');
+    // M, A, E aus früheren Paketen und O in dieser Woche: Silbenwoche, auch ohne Freigabe im Lesepfad
+    const plan = planPack({ pack: { ...pack(), letter: 'O' }, children, statesByChild: statesFor([]), priorLetters: ['M', 'A', 'E'] });
+    expect(pagesForScope(plan, 'child:k1').map((p) => p.spec.kind).slice(0, 6))
+      .toEqual(['sound-week', 'sound-animal', 'syllable-carpet', 'syllable-cards', 'syllable-words', 'syllable-write']);
   });
 
   it('bildet Silben auch bei Vokalen und Umlauten richtig herum', () => {

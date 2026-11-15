@@ -44,24 +44,34 @@ describe('Wiederholungswoche', () => {
     expect(reviewSuggestion([a, b], '2026-10-26')).toBeNull();
   });
 
-  it('gibt dem Lesekind Wiederfinden, Anlaute sortieren und kurzes Schreiben, aber keinen neuen Buchstaben', () => {
+  it('übt in der Wiederholung Silben aus den Buchstaben der letzten Wochen, ohne neuen Buchstaben', () => {
     const pack = mk('2026-11-02', 'A', { review: ['M', 'A'] });
     const plan = planPack({ pack, children, statesByChild: statesFor(['read.letter.M', 'read.letter.A']) });
     expect(plan.title).toBe('Wiederholung: M und A');
     expect(packTitle(pack)).toBe('Wiederholung: M und A');
     const k1 = pagesForScope(plan, 'child:k1');
-    expect(kinds(k1).slice(0, 3)).toEqual(['review-hunt', 'onset-sort', 'review-write']);
-    expect(kinds(k1)).not.toContain('letter-intro');
-    const hunt = k1[0].spec as Extract<PageSpec, { kind: 'review-hunt' }>;
-    const flat = hunt.grid.flat();
-    expect(flat.filter((t) => ['M', 'm', 'A', 'a'].includes(t))).toHaveLength(hunt.targets);
-    const sort = k1[1].spec as Extract<PageSpec, { kind: 'onset-sort' }>;
-    expect(new Set(sort.pictures.map((p) => p.initial))).toEqual(new Set(['M', 'A']));
+    expect(kinds(k1).slice(0, 4)).toEqual(['sound-week', 'syllable-carpet', 'syllable-cards', 'syllable-write']);
+    expect(kinds(k1)).not.toContain('sound-animal');
+    const week = k1[0].spec as Extract<PageSpec, { kind: 'sound-week' }>;
+    expect(week.review).toBe(true);
+    expect(week.letters.map((l) => l.upper)).toEqual(['M', 'A']);
     const swing = k1.find((p) => p.spec.kind === 'swing')!.spec as Extract<PageSpec, { kind: 'swing' }>;
     expect(swing.sheet.letters).toEqual(['M', 'm']);
     const obs = plan.pages.find((p) => p.id === 'observation')!.spec as Extract<PageSpec, { kind: 'observation' }>;
     expect(obs.rows[0].goals.map((g) => g.goalId)).toContain('read.letter.M');
     expect(obs.rows[0].goals.map((g) => g.goalId)).toContain('read.letter.A');
+    expect(obs.rows[0].goals.map((g) => g.goalId)).toContain('read.syllable-reading');
+  });
+
+  it('nimmt ohne Silben (nur Silbenmacher) die Wiederholung mit Wiederfinden, Anlauten und kurzem Schreiben', () => {
+    const pack = mk('2026-11-02', 'E', { review: ['A', 'E'] });
+    const plan = planPack({ pack, children, statesByChild: statesFor(['read.letter.A', 'read.letter.E']) });
+    const k1 = pagesForScope(plan, 'child:k1');
+    expect(kinds(k1).slice(0, 3)).toEqual(['review-hunt', 'onset-sort', 'review-write']);
+    const hunt = k1[0].spec as Extract<PageSpec, { kind: 'review-hunt' }>;
+    expect(hunt.grid.flat().filter((t) => ['A', 'a', 'E', 'e'].includes(t))).toHaveLength(hunt.targets);
+    const sort = k1[1].spec as Extract<PageSpec, { kind: 'onset-sort' }>;
+    expect(new Set(sort.pictures.map((p) => p.initial))).toEqual(new Set(['A', 'E']));
   });
 
   it('nimmt aufs Schwungblatt einen Buchstaben, den das Kind schon kennt, und nur ein Paar', () => {

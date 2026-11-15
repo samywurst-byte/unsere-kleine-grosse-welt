@@ -13,7 +13,9 @@ import { getISOWeek } from 'date-fns';
 import { coloringForWeek } from '../data/coloringPages';
 import { craftForWeek, type Craft } from '../data/crafts';
 import type { Drawing } from '../data/drawKit';
-import { readingPages, readsWords, type ReadingSpec } from './reading';
+import { plain, readingPages, readsWords, type ReadingSpec } from './reading';
+import { soundAnimal, type SoundAnimal } from '../data/syllableMethod';
+import { canBuildSyllables, openSyllables, recipe, syllableCards, syllableCarpet, syllableWords, weekWord, wordIllustration, type SyllableCard } from './syllables';
 
 /**
  * Lernpaket der Woche: ein gemeinsames Thema (Buchstabe mit Bildwort), passende Blätter für jedes Kind,
@@ -52,7 +54,17 @@ export type PageSpec =
   | { kind: 'observation'; rows: SheetChild[] }
   | { kind: 'swing'; level: SwingLevel; variant: number; sheet: SwingSheet }
   | { kind: 'picture'; theme: string; index: number; title: string; drawing: Drawing }
-  | { kind: 'craft'; craft: Craft };
+  | { kind: 'craft'; craft: Craft }
+  // Silbenmethode
+  | { kind: 'sound-week'; childName: string; letters: LetterInfo[]; animals: SoundAnimal[]; days: WeekDay[]; goals: string[]; review: boolean }
+  | { kind: 'sound-animal'; letter: LetterInfo; animal: SoundAnimal; pictures: { id: string; match: boolean }[] }
+  | { kind: 'syllable-carpet'; letters: LetterInfo[]; carpet: string[][]; slide: string[] }
+  | { kind: 'syllable-words'; words: { word: string; options: string[]; answer?: string }[] }
+  | { kind: 'syllable-cards'; cards: SyllableCard[]; recipes: string[] }
+  | { kind: 'syllable-write'; syllables: string[]; word?: string };
+
+/** Ein Tag der Silbenwoche: 5 bis 10 Minuten gemeinsam. */
+export interface WeekDay { day: string; title: string; todo: string }
 
 /** Eine Zeile im Beobachtungsbogen. Ohne Lernziel ("free.…") wird sie nur für euch festgehalten. */
 export interface SheetRow { label: string; goalId: string }
@@ -322,17 +334,123 @@ function reviewPages(child: ChildProfile, letters: LetterInfo[], states: GoalSta
   return pages;
 }
 
+
+// ------------------------------------------------------------- Silbenmethode
+
+/** Laute, mit denen das Kind Silben bauen darf: freigegebene Buchstaben, Buchstaben früherer Pakete und die der Woche. */
+export function syllableKnown(states: GoalState[], prior: string[], focus: LetterInfo[]): string[] {
+  const released = states.filter((s) => s.released && s.goal.kind === 'letter').map((s) => s.goal.letter!.upper);
+  return [...new Set([...released, ...prior, ...focus.map((l) => l.upper)])].filter((u) => LETTERS.some((l) => l.upper === u));
+}
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+const shown = (w: string) => plain(w);
+
+/** Fünf kurze Lernzeiten (Montag bis Freitag) und ein Ausblick fürs Wochenende. */
+export function syllableWeekDays(letters: LetterInfo[], animals: SoundAnimal[], slide: string[], words: string[], word: string | undefined, review: boolean): WeekDay[] {
+  const names = joinDe(letters.map((l) => l.upper));
+  const first = slide[0] ?? '';
+  const [c0, v0] = first.length >= 2 ? [first.slice(0, first.length - 1), first.slice(-1)] : [first, ''];
+  const sample = words.slice(0, 2).map(shown);
+  return [
+    {
+      day: 'Montag',
+      title: review ? 'Lauttiere wiederholen' : `${animals[0].animal} kennenlernen`,
+      todo: review
+        ? `Alle Lauttiere der letzten Wochen mit ihren Gebärden zeigen: ${letters.map((l, i) => `${l.upper} wie ${animals[i].animal}`).join(', ')}. Mama macht eine Gebärde, das Kind sagt den Laut.`
+        : `Lautspruch sagen und die Gebärde zusammen machen. Blatt „Das ${letters[0].upper}“: großen Buchstaben mit dem Finger fahren, Bilder mit dem Laut suchen. Den Tag über: Wer hört den Laut zuerst?`,
+    },
+    {
+      day: 'Dienstag',
+      title: 'Silben rutschen und schwingen',
+      todo: `${c0 ? `${c0} und ${v0} rutschen zusammen: ${c0.toLowerCase().repeat(3)}${v0.toLowerCase().repeat(3)}, ${first}. ` : ''}Silbenteppich lesen: Mama zeigt, das Kind liest. Dann Silben schwingen: bei jeder Silbe einen Schritt gehen und den Arm in einem Bogen schwingen.`,
+    },
+    {
+      day: 'Mittwoch',
+      title: 'Silbenkarten legen',
+      todo: 'Karten ausschneiden. Mama legt ein Wort aus einer blauen und einer roten Karte, das Kind liest. Dann tauschen: Das Kind legt, Mama liest. Quatschwörter sind erlaubt und machen am meisten Spaß.',
+    },
+    {
+      day: 'Donnerstag',
+      title: 'Wörter lesen',
+      todo: sample.length
+        ? `Blatt „Wörter lesen“: Silbe für Silbe, der Finger fährt die Bögen mit. Erst langsam, dann noch einmal schnell. Wörter wie ${joinDe(sample)} als Kärtchen an die passende Stelle in der Wohnung legen.`
+        : `Mit den Silbenkarten Quatschwörter legen und vorlesen. Wer liest das lustigste Wort?`,
+    },
+    {
+      day: 'Freitag',
+      title: 'Selbst schreiben',
+      todo: word
+        ? `Blatt „Silben schreiben“: Silbe erst schwingen, dann schreiben. Das Wort ${shown(word)} auf den Zettel schreiben und echt benutzen: verschenken, an die Tür hängen oder auf den Einkaufszettel.`
+        : 'Blatt „Silben schreiben“: Silbe erst schwingen, dann schreiben.',
+    },
+    {
+      day: 'Wochenende',
+      title: 'Nur im Alltag, ganz ohne Blatt',
+      todo: `Namen der Familie und Dinge beim Einkaufen in Silben klatschen (To-ma-te). ${names}: Wer entdeckt die Buchstaben auf Schildern und Verpackungen?`,
+    },
+  ];
+}
+
+interface SyllablePlan { specs: PageSpec[]; slide: string[]; words: string[]; word?: string; animals: SoundAnimal[] }
+
+/** Blätter der Silbenwoche für das Lesekind. Null, wenn es noch keine Silbe gibt (z. B. nur M bekannt). */
+function syllablePages(child: ChildProfile, letters: LetterInfo[], states: GoalState[], prior: string[], seed: string, review: boolean): SyllablePlan | null {
+  const known = syllableKnown(states, prior, letters);
+  if (!canBuildSyllables(known)) return null;
+  const focus = letters.map((l) => l.upper);
+  const rnd = seededRandom(`${seed}|${child.id}|silben`);
+  const animals = letters.map((l) => soundAnimal(l.upper, l.word));
+  const open = openSyllables(known, focus);
+  const slide = open.slice(0, 3);
+  const carpet = syllableCarpet(known, focus, rnd);
+  const words = syllableWords(known, focus, rnd, 6);
+  const word = weekWord(known, focus, words);
+  const days = syllableWeekDays(letters, animals, slide, words, word, review);
+  const goals = [
+    `die Silben ${joinDe(slide)} lesen`,
+    ...(words.length >= 2 ? [`Wörter wie ${joinDe(words.slice(0, 2).map(shown))} Silbe für Silbe lesen`] : []),
+    ...(word ? [`das Wort ${shown(word)} selbst schreiben und im Alltag benutzen`] : []),
+  ];
+  const specs: PageSpec[] = [{ kind: 'sound-week', childName: child.name, letters, animals, days, goals, review }];
+  if (!review) {
+    specs.push({ kind: 'sound-animal', letter: letters[0], animal: animals[0], pictures: onsetPictures(letters[0], 6, rnd) });
+  }
+  specs.push({ kind: 'syllable-carpet', letters, carpet, slide });
+  // Das Wort der Woche zuerst, damit es sicher gelegt werden kann
+  const cardWords = [...new Set([...(word ? [word] : []), ...words])].filter((w) => w.includes('-')).slice(0, 4);
+  specs.push({ kind: 'syllable-cards', cards: syllableCards(cardWords, open.slice(0, 4)), recipes: cardWords.map(recipe) });
+  if (words.length >= 2) {
+    const picked = words.slice(0, 6).map((w) => {
+      const ill = wordIllustration(w);
+      if (!ill) return { word: w, options: [] };
+      const others = shuffle(ALL_ILLUSTRATIONS.filter((i) => i.id !== ill), rnd).slice(0, 2).map((i) => i.id);
+      return { word: w, options: shuffle([ill, ...others], rnd), answer: ill };
+    });
+    specs.push({ kind: 'syllable-words', words: picked });
+  }
+  const writeSyl = slide.length >= 2 ? [cap(slide[0]), slide[1].toLowerCase()] : [cap(slide[0]), slide[0].toLowerCase()];
+  specs.push({ kind: 'syllable-write', syllables: writeSyl, word });
+  return { specs, slide, words, word, animals };
+}
+
 function childPages(
   child: ChildProfile, track: PackTrack, letter: LetterInfo, states: GoalState[], seed: string, weekStart: DateKey, review: LetterInfo[],
+  prior: string[] = [],
 ): PageSpec[] {
   const rnd = seededRandom(`${seed}|${child.id}`);
   const theme = themeIllustration(letter);
   switch (track) {
     case 'letters': {
+      // Silbenmethode: sobald es eine Silbe gibt, lesen die Blätter in Silben statt nur nachzuspuren
+      const silben = syllablePages(child, review.length ? review : [letter], states, prior, seed, review.length > 0);
+      if (silben) {
+        return [...silben.specs, ...readingSpecs(states, seededRandom(`${seed}|${child.id}|reading`), false).specs];
+      }
       if (review.length) return reviewPages(child, review, states, seed);
       const { grid, targets } = letterGrid(letter, rnd);
       const pages: PageSpec[] = [
-        { kind: 'letter-intro', letter, illustration: theme },
+        { kind: 'sound-animal', letter, animal: soundAnimal(letter.upper, letter.word), pictures: [] },
         { kind: 'letter-hunt', letter, grid, targets, pictures: onsetPictures(letter, 6, rnd) },
       ];
       const blendReleased = states.some((s) => s.goal.id === 'read.blend' && s.released);
@@ -382,7 +500,24 @@ function observationGoals(track: PackTrack, letter: LetterInfo, specs: PageSpec[
   switch (track) {
     case 'reading':
       return readingRows;
-    case 'letters':
+    case 'letters': {
+      const week = specs.find((s): s is Extract<PageSpec, { kind: 'sound-week' }> => s.kind === 'sound-week');
+      if (week) {
+        const carpet = specs.find((s): s is Extract<PageSpec, { kind: 'syllable-carpet' }> => s.kind === 'syllable-carpet');
+        const words = specs.find((s): s is Extract<PageSpec, { kind: 'syllable-words' }> => s.kind === 'syllable-words');
+        const write = specs.find((s): s is Extract<PageSpec, { kind: 'syllable-write' }> => s.kind === 'syllable-write');
+        return [
+          ...week.letters.flatMap((l, i) => [
+            { label: `Laut ${l.upper} mit Lauttier (${week.animals[i].animal}) und Gebärde`, goalId: letterGoalId(l.upper) },
+            ...(review.length ? [] : [{ label: `${l.upper} im Wort hören und ${l.upper === l.lower ? l.upper : `${l.upper} und ${l.lower}`} wiedererkennen`, goalId: letterGoalId(l.upper) }]),
+          ]),
+          { label: 'Silben schwingen und klatschen', goalId: 'read.syllables' },
+          { label: `Silben lesen (${joinDe(carpet?.slide ?? [])})`, goalId: 'read.syllable-reading' },
+          ...(words ? [{ label: `Wörter aus Silben lesen (${joinDe(words.words.slice(0, 2).map((w) => plain(w.word)))})`, goalId: 'read.syllable-reading' }] : []),
+          ...(write?.word ? [{ label: `${plain(write.word)} selbst schreiben`, goalId: 'free.week-word' }] : []),
+          ...readingRows,
+        ];
+      }
       if (review.length) {
         const sorted = specs.find((s): s is Extract<PageSpec, { kind: 'onset-sort' }> => s.kind === 'onset-sort');
         const hasSyllables = specs.some((s) => s.kind === 'syllables');
@@ -404,6 +539,7 @@ function observationGoals(track: PackTrack, letter: LetterInfo, specs: PageSpec[
           : { label: 'Den eigenen Namen schreiben', goalId: 'free.own-name' },
         ...readingRows,
       ];
+    }
     case 'preschool': {
       const onset = specs.find((s): s is Extract<PageSpec, { kind: 'syllable-onset' }> => s.kind === 'syllable-onset');
       return [
@@ -431,6 +567,8 @@ export interface PlanInput {
   mathStatesByChild?: Map<string, GoalState[]>;
   /** Für die Phase vor oder nach der Einschulung. */
   today?: DateKey;
+  /** Buchstaben früherer Pakete: zählen für die Silben mit, auch wenn sie im Lesepfad nicht freigegeben sind. */
+  priorLetters?: string[];
 }
 
 /** Ein bis zwei Rechenblätter zu dem, woran das Kind gerade rechnet. */
@@ -481,7 +619,7 @@ function swingLetterFor(states: GoalState[], letter: LetterInfo, review: LetterI
   return known.length ? known[mod(weekIndex(weekStart), known.length)] : letter;
 }
 
-export function planPack({ pack, children, statesByChild, mathStatesByChild, today = pack.weekStart }: PlanInput): PackPlan {
+export function planPack({ pack, children, statesByChild, mathStatesByChild, today = pack.weekStart, priorLetters = [] }: PlanInput): PackPlan {
   const letter = letterInfo(pack.letter);
   const review = reviewLetters(pack);
   const seed = `${pack.weekStart}|${pack.letter}`;
@@ -494,7 +632,7 @@ export function planPack({ pack, children, statesByChild, mathStatesByChild, tod
     if (!child || track === 'skip') continue;
     const childReview = track === 'letters' ? review : [];
     const states = statesByChild.get(childId) ?? [];
-    const specs = track === 'math' ? [] : childPages(child, track, letter, states, seed, pack.weekStart, childReview);
+    const specs = track === 'math' ? [] : childPages(child, track, letter, states, seed, pack.weekStart, childReview, priorLetters);
     // Dieselben Zufallszahlen wie in childPages, damit Blätter und Bogen zusammenpassen
     const readingRows = track === 'letters' || track === 'reading'
       ? readingSpecs(statesByChild.get(childId) ?? [], seededRandom(`${seed}|${childId}|reading`), track === 'reading').goals
@@ -572,6 +710,12 @@ export function pageTitle(spec: PageSpec, letter: LetterInfo): string {
     case 'observation': return 'Beobachtungsbogen';
     case 'swing': return `Schwungblatt ${spec.variant + 1}: ${spec.sheet.title}`;
     case 'craft': return `Basteln: ${spec.craft.title}`;
+    case 'sound-week': return spec.review ? 'Silbenwoche: Wiederholung' : `Silbenwoche: ${spec.letters[0].upper} wie ${spec.animals[0].animal}`;
+    case 'sound-animal': return `Das ${spec.letter.upper} wie ${spec.animal.animal}`;
+    case 'syllable-carpet': return 'Silbenteppich';
+    case 'syllable-words': return 'Wörter lesen';
+    case 'syllable-cards': return 'Silbenkarten';
+    case 'syllable-write': return 'Silben schreiben';
     case 'picture': return `Ausmalbild: ${spec.title}`;
   }
 }
@@ -598,4 +742,12 @@ export async function recordPrint(db: FamilyDatabase, packId: string, scope: Pri
   await db.learningPacks.where('id').equals(packId).modify((p) => {
     p.prints = [...p.prints, { at: new Date().toISOString(), scope, pages }];
   });
+}
+
+/** Buchstaben aller Pakete vor dieser Woche, in denen ein Kind Buchstabenblätter hatte (auch Wiederholungen). */
+export function priorPackLetters(packs: LearningPack[], weekStart: DateKey): string[] {
+  const out = packs
+    .filter((p) => p.weekStart < weekStart && p.children.some((c) => c.track === 'letters'))
+    .flatMap((p) => [p.letter, ...(p.review ?? [])]);
+  return [...new Set(out)];
 }
