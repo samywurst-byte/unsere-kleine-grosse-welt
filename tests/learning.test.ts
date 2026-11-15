@@ -67,7 +67,7 @@ describe('Vorschläge', () => {
     for (const d of ['2026-10-06', '2026-10-07', '2026-10-08']) await addObservation(db, 'child-1', letterGoalId('M'), 'independent', d);
     st = goalStates('child-1', await db.learningObservations.toArray(), await db.learningReleases.toArray(), today);
     const next = suggestions(st, await db.learningReleases.toArray(), 'child-1', today).find((x) => x.goal.kind === 'letter');
-    expect(next?.goal.id).toBe(letterGoalId('I'));
+    expect(next?.goal.id).toBe(letterGoalId('E'));
     expect(todaysLetter(st)?.goal.id).toBe(letterGoalId('A'));
   });
 
@@ -88,8 +88,8 @@ describe('Vorschläge', () => {
     expect(await unreleaseGoal(db, 'child-1', letterGoalId('M'))).toBe(false);
   });
 
-  it('beginnt mit M, A, I, O, L, S, E, N', () => {
-    expect(LETTER_ORDER.slice(0, 8).map((id) => id.split('.').pop())).toEqual(['M', 'A', 'I', 'O', 'L', 'S', 'E', 'N']);
+  it('beginnt für die Silbenmethode mit M, A, E, O, L, I, S, N', () => {
+    expect(LETTER_ORDER.slice(0, 8).map((id) => id.split('.').pop())).toEqual(['M', 'A', 'E', 'O', 'L', 'I', 'S', 'N']);
   });
 });
 

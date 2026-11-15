@@ -39,6 +39,10 @@ const FAINT = rgb(0.86, 0.86, 0.86);
 const MUTED = rgb(0.4, 0.4, 0.4);
 const LINE = rgb(0.55, 0.55, 0.55);
 const BAND = rgb(0.93, 0.93, 0.93);
+/** Silbenfarben: erste Silbe blau, zweite rot, dann wieder blau. Bögen zeigen die Silben auch im Schwarzweißdruck. */
+const BLUE = rgb(0.05, 0.3, 0.78);
+const RED = rgb(0.84, 0.1, 0.12);
+const SYL = [BLUE, RED];
 
 /** Maße der Grundschrift relativ zur Schriftgröße (aus der Schriftdatei: Versalhöhe 935, x-Höhe 520, Unterlänge 440 je 1000). */
 const CAP = 0.935;
@@ -562,6 +566,12 @@ function renderPage(c: Ctx, spec: PageSpec) {
     case 'swing': return swingPage(c, spec);
     case 'picture': return picturePage(c, spec);
     case 'craft': return craftPage(c, spec);
+    case 'sound-week': return soundWeek(c, spec);
+    case 'sound-animal': return soundAnimalPage(c, spec);
+    case 'syllable-carpet': return syllableCarpetPage(c, spec);
+    case 'syllable-cards': return syllableCardsPage(c, spec);
+    case 'syllable-words': return syllableWordsPage(c, spec);
+    case 'syllable-write': return syllableWritePage(c, spec);
   }
 }
 
@@ -1169,6 +1179,240 @@ function readingPage(c: Ctx, title: string, spec: ReadingSpec) {
       return;
     }
   }
+}
+
+
+// ------------------------------------------------------------- Silbenmethode
+
+/** Breite eines Silbenworts ("Ma-ma") in Schulschrift. */
+const sylWidth = (c: Ctx, word: string, size: number) => c.school.widthOfTextAtSize(plain(word), size);
+
+/**
+ * Silbenwort in Blau und Rot im Wechsel, mit Silbenbögen in derselben Farbe. Gibt die Breite zurück.
+ * `start` verschiebt die Farbe (für einzelne Silben im Teppich).
+ */
+function colorWord(c: Ctx, word: string, x: number, baselineTop: number, size: number, opts: { arcs?: boolean; start?: number } = {}): number {
+  let cx = x;
+  word.split('-').forEach((syl, i) => {
+    const color = SYL[(i + (opts.start ?? 0)) % 2];
+    const w = c.school.widthOfTextAtSize(syl, size);
+    c.page.drawText(syl, { x: cx, y: Y(baselineTop), size, font: c.school, color });
+    if (opts.arcs !== false) {
+      const drop = size * 0.28;
+      c.page.drawSvgPath(`M 0 0 Q ${w / 2} ${drop * 2} ${w} 0`, { x: cx + 1, y: Y(baselineTop + size * 0.18), borderColor: color, borderWidth: Math.max(1.2, size / 26) });
+    }
+    cx += w;
+  });
+  return cx - x;
+}
+
+/** Kästchen zum Abhaken. */
+const tick = (c: Ctx, x: number, top: number) => box(c, x, top, 13);
+
+function soundWeek(c: Ctx, spec: Extract<PageSpec, { kind: 'sound-week' }>) {
+  const title = spec.review ? `Silbenwoche für ${spec.childName}: Wiederholung` : `Silbenwoche für ${spec.childName}`;
+  let t = header(c, title, 'Für Mama und Papa: jeden Tag 5 bis 10 Minuten, immer gemeinsam. Lieber fröhlich aufhören, solange es noch Spaß macht.', false) + 8;
+  // Lauttiere
+  const boxTop = t;
+  t += 22;
+  spec.letters.forEach((l, i) => {
+    const a = spec.animals[i];
+    if (spec.letters.length > 1) {
+      t = paragraph(c, `${l.upper} wie ${a.animal}: ${a.sound}. Gebärde: ${a.sign}`, M + 14, t, 10.5, CW - 28) + 4;
+      return;
+    }
+    text(c, `${l.upper} wie ${a.animal}`, M + 14, t, 16, { font: c.bold });
+    t = paragraph(c, `Laut: ${a.sound}${a.inside ? ` (der Laut steckt mitten im Wort ${a.animal})` : ''}.`, M + 14, t + 20, 11, CW - 28);
+    t = paragraph(c, `Lautspruch: „${a.rhyme}“`, M + 14, t + 2, 11, CW - 28);
+    t = paragraph(c, `Gebärde: ${a.sign} Immer wenn der Laut vorkommt, macht ihr die Gebärde dazu.`, M + 14, t + 2, 11, CW - 28);
+  });
+  roundRect(c, M, boxTop, CW, t - boxTop + 4, { color: LINE, border: 0.8 });
+  t += 26;
+  // Tage
+  for (const d of spec.days) {
+    tick(c, M, t - 11);
+    text(c, `${d.day}: ${d.title}`, M + 22, t, 12, { font: c.bold });
+    t = paragraph(c, d.todo, M + 22, t + 16, 10.5, CW - 22) + 8;
+  }
+  // So geht es
+  t += 6;
+  text(c, 'So funktioniert die Silbenmethode', M, t, 12.5, { font: c.bold });
+  const tips = [
+    'A, E, I, O, U sind die Silbenmacher: In jeder Silbe steckt einer. Ein Mitlaut rutscht zu ihm hin: mmm + aaa = MA.',
+    'Blau und Rot wechseln sich ab, so sieht man, wo eine Silbe aufhört. Die Bögen zeigen es auch im Schwarzweißdruck.',
+    'Immer den Laut sagen (mmm), nicht den Buchstabennamen (em). Fehler sind Hinweise, kein Versagen.',
+  ];
+  t += 6;
+  for (const tip of tips) t = paragraph(c, `•  ${tip}`, M, t + 10, 10, CW) - 2;
+  // Ziel der Woche
+  t += 16;
+  text(c, `Am Ende der Woche kann ${spec.childName} …`, M, t, 12.5, { font: c.bold });
+  t += 6;
+  for (const g of spec.goals) t = paragraph(c, `•  ${g}`, M, t + 10, 10.5, CW) - 2;
+}
+
+function soundAnimalPage(c: Ctx, spec: Extract<PageSpec, { kind: 'sound-animal' }>) {
+  const { letter, animal } = spec;
+  const single = letter.upper === letter.lower;
+  header(c, `Das ${letter.upper} wie ${animal.animal}`, 'Sag den Lautspruch und mach die Gebärde. Fahre die großen Buchstaben mit dem Finger nach. Danach nur eine kurze Zeile nachspuren: Beim Stern ist Schluss.', true);
+  const pair = single ? letter.upper : `${letter.upper} ${letter.lower}`;
+  let size = 150;
+  while (c.school.widthOfTextAtSize(pair, size) > CW - 200) size -= 5;
+  const accent = /[ÄÖÜ]/.test(letter.upper) ? 0.22 : 0;
+  const descender = /[fgjpqyß]/.test(letter.lower) ? DESC : 0;
+  size = Math.min(size, 160 / (CAP + accent + descender));
+  outlineText(c, pair, M + 6, 130 + size * (CAP + accent), size, 1.8);
+  // Lauttier
+  const x = W - M - 170;
+  if (animal.illustration) illustration(c, animal.illustration, x + 15, 120, 140, 2.2);
+  else {
+    roundRect(c, x, 120, 170, 140, { color: LINE, dash: [4, 3] });
+    text(c, `Male ${animal.animal.endsWith('e') ? 'die' : 'den'} ${animal.animal}.`, x + 85, 196, 11, { color: MUTED, align: 'center' });
+  }
+  const aw = Math.min(28, (28 * 160) / c.school.widthOfTextAtSize(animal.animal, 28));
+  const ax = x + 85 - c.school.widthOfTextAtSize(animal.animal, aw) / 2;
+  c.page.drawText(animal.animal, { x: ax, y: Y(292), size: aw, font: c.school, color: BLACK });
+  const at = animal.animal.toLowerCase().indexOf(letter.lower);
+  if (at >= 0) {
+    const before = c.school.widthOfTextAtSize(animal.animal.slice(0, at), aw);
+    hline(c, ax + before, ax + before + c.school.widthOfTextAtSize(animal.animal.slice(at, at + letter.lower.length), aw), 297, { thickness: 2 });
+  }
+  text(c, `„${animal.rhyme}“`, M, 330, 14, { font: c.bold });
+  paragraph(c, `Für Mama oder Papa: Laut ${animal.sound}. Gebärde: ${animal.sign}`, M, 350, 10, CW, { color: MUTED });
+  const rows: TraceItem[][] = single ? [steps(letter.upper, 1, 1)] : [steps(letter.upper, 1, 1), steps(letter.lower, 1, 1)];
+  rows.forEach((items, i) => traceRow(c, items, M, 430 + i * 80, CW, 36));
+  const top = 430 + rows.length * 80 - 10;
+  if (spec.pictures.length) {
+    text(c, `Welche Bilder fangen mit ${letter.lower.repeat(3)} an? Male sie an.`, M, top, 14, { font: c.bold });
+    pictureGrid(c, spec.pictures.map((p) => p.id), top + 12, 3, Math.min(110, (H - 60 - top - 22) / 2));
+  } else {
+    noPencilBox(c, [letter], top, Math.min(150, H - 50 - top));
+  }
+}
+
+const SWING_WORDS = ['Ma-ma', 'Ba-na-ne', 'Scho-ko-la-de', 'Ap-fel'];
+
+function syllableCarpetPage(c: Ctx, spec: Extract<PageSpec, { kind: 'syllable-carpet' }>) {
+  header(c, 'Silbenteppich', 'Erst rutschen: Die Laute klingen lang und rutschen zusammen. Dann zeigt Mama auf eine Silbe und du liest sie. Jede gelesene Silbe darfst du ausmalen.', true);
+  // Silbenrutschen
+  const slides = spec.slide.slice(0, 3);
+  const sw = CW / Math.max(slides.length, 1);
+  slides.forEach((syl, i) => {
+    const x = M + i * sw;
+    const onset = syl.slice(0, syl.length - 1);
+    const vowel = syl.slice(-1);
+    const ow = text(c, onset, x + 8, 160, 36, { font: c.school });
+    text(c, vowel, x + sw * 0.4, 222, 36, { font: c.school });
+    // Rutsche vom Mitlaut hinunter zum Silbenmacher (zum Nachfahren mit dem Finger)
+    const dx = sw * 0.4 - ow - 12;
+    c.page.drawSvgPath(`M 0 0 C ${dx * 0.55} 0 ${dx * 0.45} 44 ${dx} 46`, { x: x + 12 + ow, y: Y(146), borderColor: LINE, borderWidth: 2.4, borderDashArray: [5, 3] });
+    text(c, '→', x + sw * 0.6, 216, 22, { color: MUTED });
+    colorWord(c, cap(syl), x + sw * 0.72, 220, 34, { start: 0 });
+  });
+  // Teppich
+  const top = 262;
+  const rows = spec.carpet.length;
+  const cols = spec.carpet[0]?.length ?? 5;
+  const cw = CW / cols;
+  const ch = 66;
+  roundRect(c, M, top, CW, rows * ch + 8, { color: LINE, border: 0.8 });
+  spec.carpet.forEach((row, r) => row.forEach((syl, k) => {
+    const size = 38;
+    const w = c.school.widthOfTextAtSize(syl, size);
+    colorWord(c, syl, M + k * cw + (cw - w) / 2, top + 4 + r * ch + ch * 0.62, size, { start: (r + k) % 2 });
+  }));
+  // Silben schwingen
+  const t = top + rows * ch + 34;
+  text(c, 'Silben schwingen (ohne Lesen, nur hören):', M, t, 14, { font: c.bold });
+  paragraph(c, 'Sag ein Wort und schwing bei jeder Silbe den Arm in einem Bogen, oder geh bei jeder Silbe einen Schritt. Wie viele Bögen hat dein Name?', M, t + 18, 11.5, CW);
+  SWING_WORDS.forEach((w, i) => colorWord(c, w, M + 6 + (i % 2) * (CW / 2), t + 100 + Math.floor(i / 2) * 64, 30));
+  // Ausprobieren mit eigenen Wörtern
+  const bt = t + 200;
+  if (bt < H - 90) {
+    text(c, 'Mein Name in Bögen:', M, bt, 13, { font: c.bold });
+    hline(c, M + 140, W - M, bt + 2, { color: LINE });
+  }
+}
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+function syllableCardsPage(c: Ctx, spec: Extract<PageSpec, { kind: 'syllable-cards' }>) {
+  header(c, 'Silbenkarten', 'Für Mama oder Papa: an den gestrichelten Linien ausschneiden. Blaue Karten (mit Punkt) sind erste Silben, rote Karten (mit Ring) zweite. Legt daraus Wörter und lest sie laut. Quatschwörter sind ausdrücklich erlaubt!', true);
+  const cols = 4;
+  const top = 136;
+  const cw = CW / cols;
+  const ch = 104;
+  spec.cards.forEach((card, i) => {
+    const x = M + (i % cols) * cw;
+    const t = top + Math.floor(i / cols) * ch;
+    c.page.drawRectangle({ x, y: Y(t + ch), width: cw, height: ch, borderColor: LINE, borderWidth: 0.8, borderDashArray: [5, 4] });
+    const color = SYL[card.color];
+    // Punkt (blau) oder Ring (rot), damit man die Karten auch schwarzweiß unterscheidet
+    c.page.drawCircle({ x: x + 14, y: Y(t + 14), size: 6, color: card.color === 0 ? color : undefined, borderColor: color, borderWidth: 1.6 });
+    let size = 48;
+    while (c.school.widthOfTextAtSize(card.text, size) > cw - 20) size -= 2;
+    const w = c.school.widthOfTextAtSize(card.text, size);
+    c.page.drawText(card.text, { x: x + (cw - w) / 2, y: Y(t + ch * 0.66), size, font: c.school, color });
+  });
+  const after = top + Math.ceil(spec.cards.length / cols) * ch + 34;
+  if (spec.recipes.length) {
+    text(c, 'Diese Wörter könnt ihr legen:', M, after, 13, { font: c.bold });
+    text(c, spec.recipes.join('     '), M, after + 24, 14, { font: c.school });
+  }
+  paragraph(c, 'Spielidee: Karten verdeckt ziehen, eine blaue und eine rote. Lesen! Ist es ein echtes Wort oder ein Quatschwort?', M, after + 56, 11, CW, { color: MUTED });
+}
+
+function syllableWordsPage(c: Ctx, spec: Extract<PageSpec, { kind: 'syllable-words' }>) {
+  const anyPics = spec.words.some((w) => w.options.length);
+  const allPics = spec.words.every((w) => w.options.length);
+  header(c, 'Wörter lesen', `Lies Silbe für Silbe, dein Finger fährt die Bögen mit. Dann lies das Wort noch einmal schnell. ${
+    allPics ? 'Kreuze das passende Bild an.' : anyPics ? 'Kreuze das passende Bild an. Ist kein Bild da, malst du selbst eins.' : 'Male zu jedem Wort ein kleines Bild.'}`, true);
+  const top = 130;
+  const rh = Math.min(112, (H - 60 - top) / spec.words.length);
+  spec.words.forEach((item, i) => {
+    const t = top + i * rh;
+    roundRect(c, M, t, CW, rh - 10, { color: LINE, border: 0.8 });
+    let size = 40;
+    while (sylWidth(c, item.word, size) > CW * 0.42 && size > 22) size -= 2;
+    colorWord(c, item.word, M + 16, t + (rh - 10) / 2 + size * 0.32, size);
+    const px = M + CW * 0.48;
+    if (item.options.length) {
+      const pw = (CW * 0.52 - 12) / item.options.length;
+      const ps = Math.min(rh - 34, pw - 24);
+      item.options.forEach((id, k) => {
+        const x = px + k * pw;
+        illustration(c, id, x + (pw - ps) / 2 - 8, t + 6, ps, 1.6);
+        box(c, x + pw - 26, t + rh - 34, 14);
+      });
+    } else {
+      roundRect(c, px, t + 8, CW * 0.52 - 12, rh - 26, { color: LINE, dash: [4, 3], border: 0.8 });
+    }
+  });
+}
+
+function syllableWritePage(c: Ctx, spec: Extract<PageSpec, { kind: 'syllable-write' }>) {
+  header(c, 'Silben schreiben', 'Erst schwingen, dann schreiben: Sag die Silbe laut und schwing den Arm. Dann einmal dunkel und einmal hell nachspuren. Beim Stern ist Schluss.', true);
+  const rows = spec.syllables.map((s) => steps(s, 1, 1));
+  if (spec.word) rows.push(steps(plain(spec.word), 1, 0));
+  rows.forEach((items, i) => traceRow(c, items, M, 200 + i * 82, CW, 36));
+  let t = 200 + rows.length * 82;
+  // Silbendiktat
+  text(c, 'Silbendiktat: Mama sagt eine Silbe, du schreibst sie über einen Bogen.', M, t, 13, { font: c.bold });
+  lineature(c, M, t + 64, CW, 30);
+  const slot = CW / 3;
+  for (let k = 0; k < 3; k++) {
+    c.page.drawSvgPath(`M 0 0 Q ${(slot - 40) / 2} 22 ${slot - 40} 0`, { x: M + k * slot + 20, y: Y(t + 80), borderColor: SYL[k % 2], borderWidth: 1.6 });
+  }
+  t += 120;
+  if (!spec.word) return;
+  // Zettel für den Alltag
+  const nh = Math.min(170, H - 50 - t);
+  if (nh < 110) return;
+  c.page.drawRectangle({ x: M, y: Y(t + nh), width: CW, height: nh, borderColor: LINE, borderWidth: 1, borderDashArray: [5, 4] });
+  text(c, `Mein Zettel: Schreib ${plain(spec.word)} auf. Dann ausschneiden und benutzen!`, M + 14, t + 24, 13, { font: c.bold });
+  text(c, 'An die Tür hängen, verschenken oder auf den Einkaufszettel kleben.', M + 14, t + 42, 10.5, { color: MUTED });
+  colorWord(c, spec.word, M + 18, t + nh - 34, 30);
+  lineature(c, M + 18 + sylWidth(c, spec.word, 30) + 30, t + nh - 30, CW - sylWidth(c, spec.word, 30) - 66, 34);
 }
 
 export async function renderWorksheets(plan: PackPlan, pages: PlannedPage[], fonts: WorksheetFonts): Promise<Uint8Array> {
